@@ -3,7 +3,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/", "destination": "/navoi_platform.html" }
+    { "source": "/", "destination": "/navoi_platform" }
   ],
   "headers": [
     {
