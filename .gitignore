@@ -1,0 +1,39 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+.vscode/
+.idea/
+.claude/
+
+# Vercel
+.vercel
+
+# Node (agar келажакда ишлатилса)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Local env / секретлар
+.env
+.env.local
+*.pem
+*.key
+
+# Каталоглар — катта/вақтинчалик
+kmz_extract/*.tmp
+*.log
+*.bak
+
+# Эски / бекор қилинган файллар (деплойга керак эмас)
+_defstate.txt
+_extract.ps1
+parse_kml.ps1
+index.html
+navoi_map_platform.html
+navoi_land_platform_search_svod_fixed.html
+navoi_platform.backup.*.html
+changed_data_v2.js
+changed_data_v3.js
+changed_data_v4.js
