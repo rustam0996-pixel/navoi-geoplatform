@@ -46,7 +46,9 @@ a{color:inherit;text-decoration:none}
   pointer-events:none;
 }
 .topbar>*{pointer-events:auto}
-.brand{grid-column:1;display:flex;align-items:center;gap:12px;min-width:0;min-height:78px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:10px;padding:10px 14px;border:1px solid rgba(220,230,244,.9);box-shadow:var(--shadow-md)}
+.brand{grid-column:1;display:flex;align-items:center;gap:12px;min-width:0;min-height:78px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:10px;padding:10px 14px;border:1px solid rgba(220,230,244,.9);box-shadow:var(--shadow-md);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.brand:hover{transform:translateY(-1px);box-shadow:0 10px 24px -8px rgba(29,78,216,.28);border-color:#bcd2ff}
+.brand:focus-visible{outline:2px solid #1d4ed8;outline-offset:2px}
 .brand-logo{
   width:38px;height:38px;border-radius:10px;
   background:linear-gradient(135deg,#1d4ed8 0%,#3b82f6 45%,#22d3ee 100%);
@@ -56,6 +58,30 @@ a{color:inherit;text-decoration:none}
 }
 .brand-text .t1{font-weight:800;font-size:14px;line-height:1.1;color:var(--ink)}
 .brand-text .t2{font-size:10.5px;color:var(--muted);margin-top:2px;font-weight:500;letter-spacing:.2px}
+.brand-home-hint{margin-left:auto;width:22px;height:22px;display:none;align-items:center;justify-content:center;color:#1d4ed8;background:rgba(29,78,216,.08);border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .2s ease}
+body.has-selection .brand-home-hint{display:flex}
+.brand:hover .brand-home-hint{opacity:1}
+/* Home pill — contextual: only visible when a selection is active */
+.home-pill{
+  position:fixed;top:94px;left:20px;z-index:1500;
+  display:none;align-items:center;gap:8px;
+  padding:8px 12px 8px 10px;border-radius:999px;
+  background:#0f172a;color:#fff;border:none;cursor:pointer;
+  font-size:12.5px;font-weight:700;letter-spacing:.2px;
+  box-shadow:0 12px 28px -8px rgba(15,23,42,.42),0 4px 10px -3px rgba(15,23,42,.28);
+  transition:transform .15s ease,background .15s ease,box-shadow .15s ease;
+  animation:homePillIn .22s ease both;
+}
+body.has-selection .home-pill{display:inline-flex}
+.home-pill:hover{transform:translateY(-1px);background:#1e293b;box-shadow:0 16px 34px -10px rgba(15,23,42,.55)}
+.home-pill:active{transform:translateY(0)}
+.home-pill svg{flex-shrink:0}
+.home-pill kbd{display:inline-flex;padding:2px 6px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);border-radius:5px;font-size:10px;font-weight:700;font-family:inherit;color:#e2e8f0}
+@keyframes homePillIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+@media (max-width: 768px){
+  .home-pill{top:auto;bottom:20px;left:50%;transform:translateX(-50%)}
+  .home-pill:hover{transform:translateX(-50%) translateY(-1px)}
+}
 
 .kpis{grid-column:2;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:1fr;gap:6px;min-width:0;padding:0;align-items:stretch}
 .kpi{
@@ -399,6 +425,20 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
 .plot-card-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}
 .plot-card-sources{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .plot-card-source{padding:4px 7px;border-radius:7px;background:#eef3fb;color:#38506f;font-size:10px;font-weight:800}
+/* ===== Plot hover card v2 — "Асос"-centric, clean 3-block ===== */
+.plot-card-v2{width:320px;background:#fff;border:1px solid #dbe6f5;border-radius:12px;box-shadow:0 18px 40px -14px rgba(15,26,54,.35),0 6px 18px -10px rgba(15,26,54,.18);overflow:hidden;color:#0f1a36}
+.pcv2-head{padding:12px 14px 10px;background:linear-gradient(135deg,#f8fbff,#eef6ff);border-bottom:1px solid #e5ecf5}
+.pcv2-loc{font-size:10.5px;color:#6b7a99;font-weight:700;letter-spacing:.2px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcv2-title{font-size:14.5px;font-weight:800;line-height:1.25;margin-top:4px;color:#0f1a36;word-break:break-word}
+.pcv2-meta{margin-top:5px;font-size:11px;color:#52627c;font-weight:650;line-height:1.35}
+.pcv2-basis{padding:11px 14px;background:#fff;border-bottom:1px solid #eef2f9}
+.pcv2-basis-l{font-size:9.5px;color:#1d4ed8;font-weight:900;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.pcv2-basis-v{font-size:12.2px;color:#10203b;font-weight:600;line-height:1.4;white-space:pre-wrap;word-break:break-word;max-height:140px;overflow:auto}
+.pcv2-empty{color:#94a3b8;font-style:italic;font-weight:500}
+.pcv2-cat{padding:9px 14px;display:flex;flex-wrap:wrap;gap:6px;background:#fbfdff;border-bottom:1px solid #eef2f9}
+.pcv2-cat-tag{padding:3px 8px;border-radius:999px;background:#eef6ff;color:#1d4ed8;font-size:10.5px;font-weight:800;border:1px solid #dbeafe}
+.pcv2-cat-proj{padding:3px 8px;border-radius:999px;background:#f1f5f9;color:#334155;font-size:10.5px;font-weight:700;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcv2-foot{padding:7px 14px;font-size:10px;color:#6b7a99;font-weight:650;text-align:right;background:#f8fafc}
 .plot-passport{padding:10px 12px;border-top:1px solid #e5ecf5;background:#fbfdff}
 .plot-passport .pp-title{font-size:10px;color:#1d4ed8;font-weight:900;text-transform:uppercase;letter-spacing:.45px;margin-bottom:7px}
 .plot-passport .pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -1103,13 +1143,21 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="brand">
+  <div class="brand" id="brandHome" role="button" tabindex="0" title="Бош саҳифага қайтиш" aria-label="Бош саҳифага қайтиш">
     <div class="brand-logo">NV</div>
     <div class="brand-text">
       <div class="t1">Навоий вилояти</div>
       <div class="t2">Ер ресурслари геоплатформаси</div>
     </div>
+    <div class="brand-home-hint" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+    </div>
   </div>
+  <button class="home-pill" id="homePill" type="button" aria-label="Бош саҳифага қайтиш" title="Бош саҳифа (Esc)">
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>
+    <span>Бош саҳифа</span>
+    <kbd>Esc</kbd>
+  </button>
 
   <div class="kpis" id="kpis"></div>
 
@@ -1262,7 +1310,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
   <div class="sr-query">
     <div class="sr-q-wrap">
       <svg class="sr-q-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="srQ" type="text" autocomplete="off" spellcheck="false" placeholder="Калит сўз: кадастр рақами, ташаббускор, МФЙ, хомашё…">
+      <input id="srQ" type="text" autocomplete="off" spellcheck="false" placeholder="Туман, МФЙ, кон, лойиҳа, контур ёки ПҚ рақами бўйича қидириш…">
       <button class="sr-q-clear" id="srQClear" onclick="clearSearchQuery()" title="Тозалаш" style="display:none">✕</button>
     </div>
   </div>
@@ -2182,6 +2230,7 @@ function renderSectionTabs(){
       restyleMfyLayer();
       if(currentDistrict) renderDrawer(currentDistrict);
       closeResultsPanel();
+      updateHomePillState();
     };
   });
 }
@@ -2878,31 +2927,63 @@ function computeClustersForRender(items){
   }
   return {clusters, singles};
 }
+/* Extract "АСОС" (basis for inclusion) from row across all possible field variants */
+function plotBasis(row){
+  if(!row) return '';
+  const keys = [
+    'АСОС',
+    'Асос',
+    'Ер участкасини киритиш учун асос',
+    'Ҳукумат комиссияси баёни/ВМ фармойиши билан тоифасини ўзгартириш / Ҳукумат комиссиясига киритилган расмий хати',
+    'Қарор асоси',
+    'Ҳужжат асоси'
+  ];
+  for(const k of keys){
+    const v = row[k];
+    if(v != null && String(v).trim()) return String(v).trim();
+  }
+  return '';
+}
+function plotContour(row){
+  if(!row) return '';
+  const keys = ['Контур рақами','Контур','Контур №','Номер контура'];
+  for(const k of keys){
+    const v = row[k];
+    if(v != null && String(v).trim()) return String(v).trim();
+  }
+  return '';
+}
+function plotCategory(row){
+  if(!row) return '';
+  const v = row['Кон ёки бино-иншоот, завод учун бериладиган'];
+  if(v && String(v).trim()) return String(v).trim();
+  return '';
+}
 function plotTooltipHtml(item){
-  const {row, color, distLabel, area, mfy, title, points, status, sources, passport} = item;
-  const sourceTags = (sources || []).slice(0,4).map(s=>`<span class="plot-card-source">${escHtml(s)}</span>`).join('');
-  return `<div class="plot-card">
-    <div class="plot-card-head">
-      <div class="plot-card-kicker">Ер участкаси — жорий ҳолат</div>
-      <div class="plot-card-title">${escHtml(title)}</div>
-      <div class="plot-card-status">
-        <span class="s-dot" style="background:${status.color};box-shadow:0 0 0 3px ${hexToRgba(status.color,.15)}"></span>
-        <div><div class="s-main">${escHtml(status.label)}</div><div class="s-sub">${escHtml(status.detail)}</div></div>
-      </div>
+  const {row, distLabel, area, mfy, title, points} = item;
+  const basis = plotBasis(row);
+  const contour = plotContour(row);
+  const category = plotCategory(row);
+  const project = row && row['Лойиҳа номи'] ? String(row['Лойиҳа номи']).trim() : '';
+  const metaChips = [];
+  if(contour) metaChips.push(`Контур: ${escHtml(contour)}`);
+  if(area) metaChips.push(`${fmtArea(area)} га`);
+  if(points && points.length) metaChips.push(`${fmt(points.length)} нуқта`);
+  return `<div class="plot-card plot-card-v2">
+    <div class="pcv2-head">
+      <div class="pcv2-loc">${escHtml((distLabel||'—'))}${mfy?` · ${escHtml(mfy)}`:''}</div>
+      <div class="pcv2-title">${escHtml(title || 'Ер участкаси')}</div>
+      ${metaChips.length?`<div class="pcv2-meta">${metaChips.join(' · ')}</div>`:''}
     </div>
-    <div class="plot-card-grid">
-      <div class="plot-card-stat"><div class="l">Туман / шаҳар</div><div class="v">${escHtml(distLabel || '—')}</div></div>
-      <div class="plot-card-stat"><div class="l">Майдон</div><div class="v">${area ? fmtArea(area)+' га' : '—'}</div></div>
-      <div class="plot-card-stat"><div class="l">Қиймати</div><div class="v">${escHtml(plotValue(row))}</div></div>
-      <div class="plot-card-stat"><div class="l">Координата</div><div class="v">${fmt(points.length)} нуқта</div></div>
+    <div class="pcv2-basis">
+      <div class="pcv2-basis-l">Ер участкасини киритиш учун асос</div>
+      <div class="pcv2-basis-v">${basis ? escHtml(basis) : '<span class="pcv2-empty">Асос ҳужжат киритилмаган</span>'}</div>
     </div>
-    <div class="plot-card-body">
-      <div class="plot-card-row"><span class="plot-card-dot" style="background:${color}"></span><span>${escHtml(status.label)}</span></div>
-      <div class="plot-card-row"><span class="plot-card-dot" style="background:#94a3b8"></span><span>${escHtml(mfy || 'МФЙ маълумоти киритилмаган')}</span></div>
-      ${sourceTags ? `<div class="plot-card-sources">${sourceTags}</div>` : ''}
-    </div>
-    ${passportMiniHtml(passport)}
-    <div class="plot-card-foot">Батафсил маълумот учун нуқтани босинг</div>
+    ${(category||project)?`<div class="pcv2-cat">
+      ${category?`<span class="pcv2-cat-tag">${escHtml(category)}</span>`:''}
+      ${project?`<span class="pcv2-cat-proj">${escHtml(project)}</span>`:''}
+    </div>`:''}
+    <div class="pcv2-foot">Батафсил → нуқтани босинг</div>
   </div>`;
 }
 function plotHoverCardEl(){
@@ -3213,6 +3294,7 @@ function selectDistrict(key){
   renderDrawer(key);
   document.getElementById('drawer').classList.add('open');
   updateLayoutState();
+  updateHomePillState();
   closeResultsPanel();
   const bc = document.getElementById('bcCur');
   const dLabel = (distByKey[key]||{label:key}).label;
@@ -3514,7 +3596,109 @@ function updateLayoutState(){
   const drawer = document.getElementById('drawer');
   document.body.classList.toggle('sidepanel-open', !!side && !side.classList.contains('collapsed'));
   document.body.classList.toggle('drawer-open', !!drawer && drawer.classList.contains('open'));
+  updateHomePillState();
 }
+
+/* ================= HOME BUTTON / RESET ================= */
+function isNonDefaultState(){
+  const drawer = document.getElementById('drawer');
+  const searchPanel = document.getElementById('searchPanel');
+  const resultsPanel = document.getElementById('resultsPanel');
+  const propPanel = document.querySelector('.prop-panel') || document.getElementById('proposalsPanel');
+  return !!(
+    currentDistrict ||
+    (typeof currentSection !== 'undefined' && currentSection && currentSection !== 'all') ||
+    (typeof currentYear !== 'undefined' && currentYear && currentYear !== 'all') ||
+    (drawer && drawer.classList.contains('open')) ||
+    (searchPanel && searchPanel.classList.contains('open')) ||
+    (resultsPanel && resultsPanel.classList.contains('open')) ||
+    (propPanel && propPanel.classList.contains('open'))
+  );
+}
+function updateHomePillState(){
+  try { document.body.classList.toggle('has-selection', isNonDefaultState()); } catch(e){}
+}
+function goHome(){
+  try { if(typeof closeSearchPanel === 'function') closeSearchPanel(); } catch(e){}
+  try { if(typeof closeResultsPanel === 'function') closeResultsPanel(); } catch(e){}
+  try { if(typeof closeProposalsPanel === 'function') closeProposalsPanel(); } catch(e){}
+  try {
+    const drawer = document.getElementById('drawer');
+    if(drawer) drawer.classList.remove('open');
+  } catch(e){}
+  try { if(typeof hidePlotHoverCard === 'function') hidePlotHoverCard(); } catch(e){}
+  currentDistrict = null;
+  if(typeof currentSection !== 'undefined') currentSection = 'all';
+  if(typeof currentYear !== 'undefined') currentYear = 'all';
+  /* Clear breadcrumb decorations */
+  try {
+    const bc = document.getElementById('bcCur');
+    if(bc) bc.textContent = 'Навоий вилояти';
+    const bcEl = document.getElementById('breadcrumb');
+    if(bcEl){
+      bcEl.classList.remove('has-district');
+      const x = bcEl.querySelector('.bc-clear');
+      if(x) x.remove();
+    }
+  } catch(e){}
+  /* Re-render */
+  try { if(typeof renderSectionTabs === 'function') renderSectionTabs(); } catch(e){}
+  try { if(typeof renderYearBar === 'function') renderYearBar(); } catch(e){}
+  try { if(typeof renderDistrictList === 'function') renderDistrictList(); } catch(e){}
+  try { if(typeof renderBubbles === 'function') renderBubbles(); } catch(e){}
+  try { if(typeof restyleMfyLayer === 'function') restyleMfyLayer(); } catch(e){}
+  /* Map: fly back to Navoi overall bounds */
+  try {
+    if(typeof map !== 'undefined' && map && typeof districtBounds !== 'undefined'){
+      const all = L.latLngBounds([]);
+      for(const k in districtBounds) all.extend(districtBounds[k]);
+      if(all.isValid()) map.flyToBounds(all, {padding:[40,40], duration:0.6});
+    }
+  } catch(e){}
+  updateLayoutState();
+}
+/* Wire brand-home click, home-pill click, and Esc-key shortcut */
+(function wireHomeControls(){
+  function bind(){
+    const brand = document.getElementById('brandHome');
+    if(brand && !brand._wired){
+      brand._wired = true;
+      brand.addEventListener('click', goHome);
+      brand.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); goHome(); } });
+    }
+    const pill = document.getElementById('homePill');
+    if(pill && !pill._wired){
+      pill._wired = true;
+      pill.addEventListener('click', goHome);
+    }
+    if(!document._homeEscWired){
+      document._homeEscWired = true;
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape'){
+          /* Tiered: first Esc closes an open panel/drawer, second Esc goes home */
+          const drawer = document.getElementById('drawer');
+          const searchP = document.getElementById('searchPanel');
+          const resultsP = document.getElementById('resultsPanel');
+          const propP = document.querySelector('.prop-panel.open');
+          if(searchP && searchP.classList.contains('open')){ try { closeSearchPanel(); } catch(_){} return; }
+          if(propP){ try { closeProposalsPanel(); } catch(_){} return; }
+          if(resultsP && resultsP.classList.contains('open')){ try { closeResultsPanel(); } catch(_){} return; }
+          if(drawer && drawer.classList.contains('open') && currentDistrict){ goHome(); return; }
+          if(isNonDefaultState()) goHome();
+        }
+        /* "/" = focus search input (unless already typing in a field) */
+        if(e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey){
+          const tag = (e.target && e.target.tagName || '').toLowerCase();
+          if(tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable)) return;
+          e.preventDefault();
+          if(typeof openSearchPanel === 'function'){ openSearchPanel(); setTimeout(()=>{ const q = document.getElementById('srQ'); if(q) q.focus(); }, 80); }
+        }
+      });
+    }
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+})();
 
 /* ================= PROPOSAL SYSTEM ================= */
 const PROPOSALS_KEY = 'navoi_proposals_v1';
@@ -3548,7 +3732,32 @@ function escapeHtmlP(s){
 const SEARCH_STATE = {q:'', dist:'', sec:'', year:'', mfyQ:'', areaMin:'', areaMax:''};
 let __searchIndex = null;
 let __searchDebounce = null;
-function __normalizeS(s){ return String(s==null?'':s).toLowerCase().replace(/\s+/g,' ').trim(); }
+/* Latin → Cyrillic translit (Uzbek). "karmana" → "кармана", "navoi" → "навои" */
+const __TRANSLIT_PAIRS = [
+  ['sh','ш'],['ch','ч'],['yo','ё'],['yu','ю'],['ya','я'],['ts','ц'],['ye','е'],["g'",'ғ'],["o'",'ў'],
+  ['q','қ'],['h','ҳ'],['x','х'],['a','а'],['b','б'],['v','в'],['g','г'],['d','д'],['e','е'],['j','ж'],
+  ['z','з'],['i','и'],['y','й'],['k','к'],['l','л'],['m','м'],['n','н'],['o','о'],['p','п'],['r','р'],
+  ['s','с'],['t','т'],['u','у'],['f','ф']
+];
+function __transliterate(s){
+  let out = '';
+  let i = 0;
+  const lo = s.toLowerCase();
+  while(i < lo.length){
+    let matched = false;
+    for(const [lat, cyr] of __TRANSLIT_PAIRS){
+      if(lo.startsWith(lat, i)){ out += cyr; i += lat.length; matched = true; break; }
+    }
+    if(!matched){ out += lo[i]; i++; }
+  }
+  return out;
+}
+function __normalizeS(s){
+  let t = String(s==null?'':s).toLowerCase().replace(/\s+/g,' ').trim();
+  /* Fold Uzbek diacritics to base letters so queries match either spelling */
+  t = t.replace(/[ғ]/g,'г').replace(/[қ]/g,'к').replace(/[ҳ]/g,'х').replace(/[ў]/g,'у').replace(/[ъ]/g,'');
+  return t;
+}
 function escapeHtmlSafe(s){
   return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -3594,8 +3803,12 @@ function buildSearchIndex(){
 function invalidateSearchIndex(){ __searchIndex = null; }
 function runSearch(){
   const idx = buildSearchIndex();
-  const q = __normalizeS(SEARCH_STATE.q);
+  const qRaw = __normalizeS(SEARCH_STATE.q);
+  /* Also transliterate: if user types "navoi" we also match "навои" */
+  const qTrans = qRaw ? __transliterate(qRaw) : '';
+  const q = qRaw;
   const qTerms = q ? q.split(' ').filter(t => t.length >= 1) : [];
+  const qTermsTrans = qTrans && qTrans !== qRaw ? qTrans.split(' ').filter(t => t.length >= 1) : [];
   const mfyQ = __normalizeS(SEARCH_STATE.mfyQ);
   const aMin = SEARCH_STATE.areaMin !== '' ? parseFloat(SEARCH_STATE.areaMin) : null;
   const aMax = SEARCH_STATE.areaMax !== '' ? parseFloat(SEARCH_STATE.areaMax) : null;
@@ -3615,9 +3828,13 @@ function runSearch(){
     if(aMin != null && !(it.area >= aMin)) continue;
     if(aMax != null && !(it.area <= aMax)) continue;
     if(qTerms.length){
+      /* Build folded text for diacritic-insensitive match */
+      const text = it.text; /* already normalized */
       let ok = true;
-      for(const t of qTerms){
-        if(!it.text.includes(t)){ ok = false; break; }
+      for(let idxT=0; idxT<qTerms.length; idxT++){
+        const t = qTerms[idxT];
+        const tTrans = qTermsTrans[idxT];
+        if(!text.includes(t) && !(tTrans && text.includes(tTrans))){ ok = false; break; }
       }
       if(!ok) continue;
     }
