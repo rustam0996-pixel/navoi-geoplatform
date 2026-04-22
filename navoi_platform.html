@@ -132,6 +132,109 @@ body.has-selection .home-pill{display:inline-flex}
 .kpi.propose:hover .kpi-plus{transform:translateY(-50%) rotate(90deg) scale(1.08)}
 .kpi.propose.clickable::after{display:none}
 
+/* ========== CATEGORY TREE (KPI reimagined) ========== */
+.kpis{grid-column:2;display:block;padding:0;min-width:0}
+.cat-tree{display:flex;flex-direction:column;gap:6px;width:100%;min-width:0}
+.cat{
+  --cat-color:#3b82f6;
+  all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;
+  padding:8px 12px;min-height:50px;width:100%;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(220,230,244,.82);border-radius:10px;
+  cursor:pointer;transition:transform .18s,box-shadow .18s,border-color .18s,background .18s;
+  box-shadow:var(--shadow-sm);position:relative;overflow:hidden;
+}
+.cat::before{
+  content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;
+  background:var(--cat-color);opacity:.85;
+}
+.cat:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);border-color:#cfe0ff;background:#fff}
+.cat:focus-visible{outline:2px solid var(--cat-color);outline-offset:2px}
+.cat.is-selected{
+  border-color:var(--cat-color);
+  box-shadow:0 4px 14px -4px color-mix(in srgb, var(--cat-color) 45%, transparent), var(--shadow-md);
+  background:linear-gradient(135deg, color-mix(in srgb, var(--cat-color) 8%, #fff), #fff);
+}
+.cat-dot{
+  width:10px;height:10px;border-radius:50%;background:var(--cat-color);flex-shrink:0;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--cat-color) 22%, transparent);
+}
+.cat-main{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.cat-label{font-size:11.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.1px}
+.cat-nums{font-size:10.5px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-nums b{color:var(--ink);font-weight:800;font-size:11.5px;margin-right:1px}
+.cat-nums em{font-style:normal;opacity:.5;margin:0 3px}
+.cat-caret{
+  width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  color:var(--cat-color);font-size:13px;font-weight:900;
+  transition:transform .22s;
+}
+.cat.is-expanded .cat-caret{transform:rotate(180deg)}
+
+/* Hero card (tier-0: жами ер майдонлари) */
+.cat-hero{
+  --cat-color:#1d4ed8;
+  padding:12px 16px;min-height:64px;
+  background:linear-gradient(135deg,#1d4ed8 0%,#3b82f6 55%,#60a5fa 100%);
+  color:#fff;border:0;
+}
+.cat-hero::before{background:rgba(255,255,255,.6)}
+.cat-hero:hover{background:linear-gradient(135deg,#1e40af 0%,#2563eb 55%,#3b82f6 100%);border-color:transparent}
+.cat-hero.is-selected{box-shadow:0 8px 22px -6px rgba(29,78,216,.45),var(--shadow-md);background:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 55%,#3b82f6 100%)}
+.cat-hero-icon{
+  width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.18);
+  display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;
+  border:1px solid rgba(255,255,255,.3);
+}
+.cat-hero-main{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.cat-hero-label{font-size:12px;font-weight:800;color:rgba(255,255,255,.92);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-hero-nums{font-size:15px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-hero-nums b{font-size:18px;margin-right:2px}
+.cat-hero-nums em{font-style:normal;opacity:.65;margin:0 4px;font-weight:600}
+.cat-hero-caret{color:rgba(255,255,255,.85);width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;transition:transform .22s;flex-shrink:0}
+.cat-hero.is-expanded .cat-hero-caret{transform:rotate(180deg)}
+
+/* Rows (tier-1, tier-2) — horizontal grid that wraps */
+.cat-row{
+  display:grid;gap:6px;width:100%;
+  animation:catRowIn .22s ease-out;
+}
+.cat-row[hidden]{display:none !important}
+.cat-row-t1{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cat-row-t2{grid-template-columns:repeat(5,minmax(0,1fr));padding-left:20px;position:relative}
+.cat-row-t2::before{
+  content:"";position:absolute;left:8px;top:-2px;bottom:6px;width:2px;
+  background:linear-gradient(to bottom, color-mix(in srgb,#8b5cf6 60%,transparent), transparent);
+  border-radius:2px;
+}
+.cat-t1{padding:7px 10px;min-height:46px}
+.cat-t1 .cat-label{font-size:11px}
+.cat-t1 .cat-nums{font-size:10px}
+.cat-t1 .cat-nums b{font-size:11px}
+.cat-t2{padding:6px 9px;min-height:42px}
+.cat-t2 .cat-label{font-size:10.5px}
+.cat-t2 .cat-nums{font-size:9.5px}
+.cat-t2 .cat-nums b{font-size:10.5px}
+.cat-t2 .cat-dot{width:8px;height:8px}
+
+@keyframes catRowIn{
+  from{opacity:0;transform:translateY(-4px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Responsive: collapse tier rows to 2 columns on narrow */
+@media (max-width:1180px){
+  .cat-row-t1{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cat-row-t2{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:720px){
+  .cat-row-t1{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cat-row-t2{grid-template-columns:repeat(2,minmax(0,1fr));padding-left:12px}
+  .cat-hero{padding:10px 14px}
+  .cat-hero-nums{font-size:13px}
+  .cat-hero-nums b{font-size:16px}
+}
+
 /* ========== PROPOSAL PANEL ========== */
 .prop-overlay{position:fixed;inset:0;z-index:1400;display:flex;align-items:stretch;justify-content:flex-end}
 .prop-backdrop{position:absolute;inset:0;background:rgba(15,26,54,.42);backdrop-filter:blur(2px)}
@@ -1527,6 +1630,77 @@ function relatedInfoSections(){
   return SECTIONS.filter(s => s.key !== 'all' && !isPrimarySection(s.key) && !isIndependentSection(s.key)).map(s => s.key);
 }
 
+/* ================= CATEGORY TAXONOMY ================= */
+/* Tier-1: bino / other / geology
+   Tier-2 (geology): nkmk / uran / sochma / noruda / strategic
+   These are the user's requested directions (Бино / Бошқа / Геология → НКМК/Уран/Сочма олтин/Норуда/Стратегик конлар) */
+const CATEGORY_META = {
+  all:       {label:'Жами ер майдонлари', color:'#1d4ed8', tier:0},
+  bino:      {label:'Бино / иншоот',      color:'#10b981', tier:1, parent:'all'},
+  other:     {label:'Бошқа йўналишлар',   color:'#f59e0b', tier:1, parent:'all'},
+  geology:   {label:'Геология йўналиши',   color:'#8b5cf6', tier:1, parent:'all', hasChildren:true},
+  nkmk:      {label:'НКМК',                color:'#dc2626', tier:2, parent:'geology'},
+  uran:      {label:'Уран',                color:'#84cc16', tier:2, parent:'geology'},
+  sochma:    {label:'Сочма олтин',         color:'#fbbf24', tier:2, parent:'geology'},
+  noruda:    {label:'Норуда',              color:'#a16207', tier:2, parent:'geology'},
+  strategic: {label:'Стратегик конлар',   color:'#4338ca', tier:2, parent:'geology'}
+};
+const GEOLOGY_SUBS = ['nkmk','uran','sochma','noruda','strategic'];
+const TIER1_CATS   = ['bino','other','geology'];
+
+/* Classify a single parcel row → category key.
+   Relies on the "Кон ёки бино-иншоот..." field + keyword scan on project/initiator/title. */
+function classifyParcel(sec, row){
+  if(!row) return 'other';
+  if(sec === 'strategic') return 'strategic';
+  const kbi  = String(row['Кон ёки бино-иншоот, завод учун бериладиган'] || '').toLowerCase();
+  const proj = String(row['Лойиҳа номи'] || '').toLowerCase();
+  const init = String(row['Лойиҳа ташаббускори'] || row['Ер участкаси ажратилган корхона номи'] || row['Бугунги кунда ердан фойдаланувчи номи'] || '').toLowerCase();
+  const title = String(row['Жойлашган участка номи'] || '').toLowerCase();
+  const blob = kbi+' | '+proj+' | '+init+' | '+title;
+  const isKon  = kbi.includes('кон') || sec === 'mining' || sec === 'geology_changed';
+  const isBino = (kbi.includes('бино') || kbi.includes('иншоот') || kbi.includes('завод') || kbi.includes('фабрика'));
+  if(isKon){
+    if(/нкмк|нгмк|навоий\s+кон[-\s]?металлург|навоий\s+тоғ[-\s]?металлург/.test(blob)) return 'nkmk';
+    if(/уран|uran/.test(blob)) return 'uran';
+    if(/сочма|олтин\s+кон|олтин кон|oltin kon/.test(blob)) return 'sochma';
+    if(/норуда|noruda|цемент|гранит|мармар|оҳак|қум|шағал|пардозбоп|парадозбоп|гипс/.test(blob)) return 'noruda';
+    return 'noruda';
+  }
+  if(isBino) return 'bino';
+  return 'other';
+}
+
+/* Pre-computed aggregates: CATEGORY_STATS[cat] = {count, area} */
+const CATEGORY_STATS = {};
+function buildCategoryStats(){
+  for(const k of Object.keys(CATEGORY_STATS)) delete CATEGORY_STATS[k];
+  for(const k of Object.keys(CATEGORY_META)) CATEGORY_STATS[k] = {count:0, area:0};
+  if(typeof SECTIONS_RAW === 'undefined' || !SECTIONS_RAW) return;
+  for(const sec of Object.keys(SECTIONS_RAW)){
+    const rows = SECTIONS_RAW[sec] || [];
+    for(const r of rows){
+      if(sec === 'hk' && r['Тоифаси ўзгаргани (+/-)'] && String(r['Тоифаси ўзгаргани (+/-)']).trim() === '+') continue;
+      const dist = rowDistrict(sec, r);
+      if(!dist) continue;
+      const area = rowArea(sec, r) || 0;
+      const cat = classifyParcel(sec, r);
+      if(!CATEGORY_STATS[cat]) CATEGORY_STATS[cat] = {count:0, area:0};
+      CATEGORY_STATS[cat].count += 1;
+      CATEGORY_STATS[cat].area  += area;
+      CATEGORY_STATS.all.count += 1;
+      CATEGORY_STATS.all.area  += area;
+      if(['nkmk','uran','sochma','noruda','strategic'].includes(cat)){
+        CATEGORY_STATS.geology.count += 1;
+        CATEGORY_STATS.geology.area  += area;
+      }
+    }
+  }
+}
+
+/* Category UI state: expanded (which tile is showing children) + selected (filter) */
+const CAT_STATE = { expanded: null, selected: 'all' };
+
 /* Districts present in the KMZ — canonical keys (latin) to Cyrillic labels */
 const DISTRICTS = [
   {key:"Ғозғон шаҳри",   label:'Ғозғон шаҳри',    type:'city',     hue:200},
@@ -2143,30 +2317,59 @@ function globalAllocationKpis(){
   return {binoAucSoldCount, binoAucSoldArea, binoDirectCount, binoDirectArea, konAucSoldCount, konAucSoldArea, konDirectCount, konDirectArea, changedCount, changedArea};
 }
 
-/* ================= KPI RENDER ================= */
+/* ================= KPI RENDER — category tree (hero + tier-1 + tier-2) ================= */
 function renderKpis(){
-  const alloc = globalAllocationKpis();
-  const proposals = getProposals();
-  const pendingCount = proposals.filter(p=>p.status==='pending').length;
-  const allProposalsCount = proposals.length;
-  const html = [
-    {l:'Туманлар / шаҳарлар',  v: DISTRICTS.length+' та', cls:'accent', action:'districts', title:'Туманлар рўйхатини очиш'},
-    {l:'Бино аукционда сотилган',        v: fmt(alloc.binoAucSoldCount)+' та', sub: fmtArea(alloc.binoAucSoldArea)+' га', action:'binoAucSold', title:'Реестрда кўриш'},
-    {l:'Кон аукционда сотилган',         v: fmt(alloc.konAucSoldCount)+' та',  sub: fmtArea(alloc.konAucSoldArea)+' га', action:'konAucSold', title:'Реестрда кўриш'},
-    {l:'Кон тўғридан тўғри ажратилган',  v: fmt(alloc.konDirectCount)+' та',   sub: fmtArea(alloc.konDirectArea)+' га', action:'konDirect', title:'Реестрда кўриш'},
-  ].map(k=>{
-    const kicker = k.action==='newProposal' ? '<div class="kpi-plus">+</div>' : '';
-    return `<div class="kpi ${k.cls||''} ${k.action?'clickable':''}" ${k.action?`data-kpi-action="${k.action}" title="${k.title||'Очиш'}"`:''}>${kicker}<div class="label">${k.l}</div><div class="val">${k.v}</div>${k.sub?`<div class="kpi-sub">${k.sub}</div>`:`<div class="kpi-sub" style="visibility:hidden">—</div>`}</div>`;
-  }).join('');
-  document.getElementById('kpis').innerHTML = html;
-  document.querySelectorAll('#kpis [data-kpi-action]').forEach(el=>{
-    el.onclick = ()=>{
-      if(el.dataset.kpiAction === 'districts'){
-        activateDistrictsMode();
-        return;
-      }
-      openAllocationResults(el.dataset.kpiAction);
-    };
+  const host = document.getElementById('kpis');
+  if(!host) return;
+  const s = CATEGORY_STATS || {};
+  const sel = CAT_STATE.selected || 'all';
+  const exp = CAT_STATE.expanded || null;
+  const cell = (key, extraCls) => {
+    const meta = CATEGORY_META[key] || {};
+    const stat = s[key] || {count:0, area:0};
+    const selected = sel === key;
+    const expanded = exp === key;
+    const hasKids = !!meta.hasChildren;
+    return `<button class="cat ${extraCls||''} ${selected?'is-selected':''} ${expanded?'is-expanded':''} ${hasKids?'has-kids':''}"
+      data-cat="${key}"
+      style="--cat-color:${meta.color}"
+      aria-pressed="${selected?'true':'false'}"
+      title="${meta.label}">
+      <span class="cat-dot" aria-hidden="true"></span>
+      <span class="cat-main">
+        <span class="cat-label">${meta.label}</span>
+        <span class="cat-nums"><b>${fmt(stat.count)}</b> та <em>·</em> ${fmtArea(stat.area)} га</span>
+      </span>
+      ${hasKids?`<span class="cat-caret" aria-hidden="true">▾</span>`:''}
+    </button>`;
+  };
+  const tier1 = TIER1_CATS.map(k => cell(k, 'cat-t1')).join('');
+  const tier2 = GEOLOGY_SUBS.map(k => cell(k, 'cat-t2')).join('');
+  host.innerHTML = `
+    <div class="cat-tree" data-expanded="${exp||'none'}" data-selected="${sel}">
+      <button class="cat cat-hero ${sel==='all'?'is-selected':''} ${exp==='all'?'is-expanded':''}"
+        data-cat="all" style="--cat-color:${CATEGORY_META.all.color}" aria-pressed="${sel==='all'?'true':'false'}">
+        <span class="cat-hero-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12L12 3l9 9"/><path d="M5 10v10h14V10"/></svg>
+        </span>
+        <span class="cat-hero-main">
+          <span class="cat-hero-label">${CATEGORY_META.all.label}</span>
+          <span class="cat-hero-nums"><b>${fmt((s.all||{}).count||0)}</b> та участка <em>·</em> ${fmtArea((s.all||{}).area||0)} га</span>
+        </span>
+        <span class="cat-hero-caret" aria-hidden="true">▾</span>
+      </button>
+      <div class="cat-row cat-row-t1" ${exp==='all'||TIER1_CATS.includes(exp)?'':'hidden'}>
+        ${tier1}
+      </div>
+      <div class="cat-row cat-row-t2" ${exp==='geology'?'':'hidden'}>
+        ${tier2}
+      </div>
+    </div>`;
+  host.querySelectorAll('.cat').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      onCategoryClick(el.dataset.cat);
+    });
   });
   // Render separate "Янги таклиф" action block
   const act = document.getElementById('proposeAction');
@@ -2190,6 +2393,73 @@ function renderKpis(){
   }
 }
 
+/* ================= CATEGORY TREE INTERACTION ================= */
+function onCategoryClick(cat){
+  if(!CATEGORY_META[cat]) return;
+  const meta = CATEGORY_META[cat];
+  const prevSel = CAT_STATE.selected;
+  const prevExp = CAT_STATE.expanded;
+
+  if(cat === 'all'){
+    // Hero click: toggle tier-1 visibility; selection always resets to 'all'
+    CAT_STATE.expanded = (prevExp ? null : 'all');
+    CAT_STATE.selected = 'all';
+  } else if(meta.tier === 1){
+    if(cat === 'geology'){
+      // Geology: click toggles sub-branch expansion; also selects geology as filter
+      if(prevExp === 'geology' && prevSel === 'geology'){
+        // Collapse back to tier-1 only, deselect
+        CAT_STATE.expanded = 'all';
+        CAT_STATE.selected = 'all';
+      } else {
+        CAT_STATE.expanded = 'geology';
+        CAT_STATE.selected = 'geology';
+      }
+    } else {
+      // Bino / Other: plain leaf selection, keep tier-1 open
+      CAT_STATE.expanded = 'all';
+      CAT_STATE.selected = (prevSel === cat ? 'all' : cat);
+    }
+  } else if(meta.tier === 2){
+    // Geology sub-branch leaf
+    CAT_STATE.expanded = 'geology';
+    CAT_STATE.selected = (prevSel === cat ? 'geology' : cat);
+  }
+
+  renderKpis();
+  // Map reactivity: re-color parcels based on selection
+  if(typeof renderBubbles === 'function') renderBubbles();
+  updateHomePillState && updateHomePillState();
+}
+
+/* Resolve active category filter for rendering pipeline.
+   Returns null if no filter (i.e. 'all'). Otherwise the category key. */
+function activeCategoryFilter(){
+  const sel = (CAT_STATE && CAT_STATE.selected) || 'all';
+  return sel === 'all' ? null : sel;
+}
+/* True if parcel's classified category is within the active filter.
+   - Leaf filter: exact match.
+   - 'geology' branch: any of GEOLOGY_SUBS matches. */
+function parcelMatchesCategory(sec, row, filter){
+  if(!filter) return true;
+  const cat = classifyParcel(sec, row);
+  if(filter === 'geology') return GEOLOGY_SUBS.includes(cat);
+  return cat === filter;
+}
+/* Best color to render a parcel under the active filter:
+   - 'geology' branch selected → color by its sub-category for visual variety
+   - Leaf selected → uniform category color
+   - No filter → null (caller keeps existing color) */
+function parcelCategoryColor(sec, row, filter){
+  if(!filter) return null;
+  const cat = classifyParcel(sec, row);
+  if(filter === 'geology'){
+    const meta = CATEGORY_META[cat] || CATEGORY_META.geology;
+    return meta.color;
+  }
+  return (CATEGORY_META[filter] || {}).color || null;
+}
 
 /* ================= SECTION TABS (hierarchical) ================= */
 function renderSectionTabs(){
@@ -2324,6 +2594,21 @@ function hexToRgba(hex, a){
   const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
   return `rgba(${r},${g},${b},${a})`;
 }
+function distCountByCategory(distKey, section, catFilter){
+  let count = 0;
+  const sections = (section==='all' || !section) ? Object.keys(SECTIONS_RAW) : [section];
+  for(const sec of sections){
+    const rows = SECTIONS_RAW[sec] || [];
+    for(const r of rows){
+      if(sec === 'hk' && r['Тоифаси ўзгаргани (+/-)'] === '+') continue;
+      const dk = rowDistrict(sec, r);
+      if(dk !== distKey) continue;
+      if(!parcelMatchesCategory(sec, r, catFilter)) continue;
+      count++;
+    }
+  }
+  return count;
+}
 function renderBubbles(){
   bubbleMarkers.forEach(m=>map.removeLayer(m));
   bubbleMarkers = [];
@@ -2333,18 +2618,20 @@ function renderBubbles(){
   }
   const secMeta = SECTIONS.find(s=>s.key===currentSection) || SECTIONS[0];
   const focused = currentSection !== 'all';
-  const col = secMeta.color;
+  const catFilter = (typeof activeCategoryFilter === 'function') ? activeCategoryFilter() : null;
+  const catColor = catFilter ? ((CATEGORY_META[catFilter]||{}).color || null) : null;
+  const col = catColor || secMeta.color;
   for(const d of DISTRICTS){
     const c = districtCentroids[d.key];
     if(!c) continue;
-    const count = distCount(d.key, currentSection);
-    if(focused && count===0) continue;      // hide empty bubbles in focused mode
+    const count = catFilter ? distCountByCategory(d.key, currentSection, catFilter) : distCount(d.key, currentSection);
+    if((focused || catFilter) && count===0) continue;      // hide empty bubbles when filtered
     const size = Math.max(44, Math.min(92, 40 + Math.sqrt(count) * 5));
     const isHi = currentDistrict===d.key;
     // Tint bubble by current section color
     const bgA = isHi
       ? `radial-gradient(circle at 35% 30%,#fda4af 0%,#e11d48 55%,#9f1239 100%)`
-      : focused
+      : (focused || catFilter)
         ? `radial-gradient(circle at 35% 30%, ${hexToRgba(col,.85)} 0%, ${col} 55%, ${col} 100%)`
         : `radial-gradient(circle at 35% 30%,#6ea6ff 0%,#2563eb 55%,#1d4ed8 100%)`;
     const shadow = isHi
@@ -3059,8 +3346,21 @@ function collectPlotPoints(){
       candidates = coreMatches.concat(candidates);
     }
   }
+  // Apply category filter — only parcels matching the currently-selected branch/leaf
+  const catFilter = (typeof activeCategoryFilter === 'function') ? activeCategoryFilter() : null;
+  if(catFilter){
+    candidates = candidates.filter(c => parcelMatchesCategory(c.section, c.row, catFilter));
+  }
   resetPassportRegistry();
-  return spreadPlotItems(aggregatePlotCandidates(candidates));
+  const items = spreadPlotItems(aggregatePlotCandidates(candidates));
+  // Override color with category color when filter active
+  if(catFilter){
+    for(const it of items){
+      const col = parcelCategoryColor(it.section, it.row, catFilter);
+      if(col) it.color = col;
+    }
+  }
+  return items;
 }
 function enrichCandidatesByCoordinate(baseCandidates, sections){
   if(!baseCandidates.length) return baseCandidates;
@@ -3605,10 +3905,14 @@ function isNonDefaultState(){
   const searchPanel = document.getElementById('searchPanel');
   const resultsPanel = document.getElementById('resultsPanel');
   const propPanel = document.querySelector('.prop-panel') || document.getElementById('proposalsPanel');
+  const catSel = (typeof CAT_STATE !== 'undefined' && CAT_STATE) ? CAT_STATE.selected : 'all';
+  const catExp = (typeof CAT_STATE !== 'undefined' && CAT_STATE) ? CAT_STATE.expanded : null;
   return !!(
     currentDistrict ||
     (typeof currentSection !== 'undefined' && currentSection && currentSection !== 'all') ||
     (typeof currentYear !== 'undefined' && currentYear && currentYear !== 'all') ||
+    (catSel && catSel !== 'all') ||
+    (catExp && catExp !== null) ||
     (drawer && drawer.classList.contains('open')) ||
     (searchPanel && searchPanel.classList.contains('open')) ||
     (resultsPanel && resultsPanel.classList.contains('open')) ||
@@ -3630,6 +3934,7 @@ function goHome(){
   currentDistrict = null;
   if(typeof currentSection !== 'undefined') currentSection = 'all';
   if(typeof currentYear !== 'undefined') currentYear = 'all';
+  if(typeof CAT_STATE !== 'undefined' && CAT_STATE){ CAT_STATE.selected = 'all'; CAT_STATE.expanded = null; }
   /* Clear breadcrumb decorations */
   try {
     const bc = document.getElementById('bcCur');
@@ -3642,6 +3947,7 @@ function goHome(){
     }
   } catch(e){}
   /* Re-render */
+  try { if(typeof renderKpis === 'function') renderKpis(); } catch(e){}
   try { if(typeof renderSectionTabs === 'function') renderSectionTabs(); } catch(e){}
   try { if(typeof renderYearBar === 'function') renderYearBar(); } catch(e){}
   try { if(typeof renderDistrictList === 'function') renderDistrictList(); } catch(e){}
@@ -5477,6 +5783,7 @@ function saveEditRecord(){
   });
   // Rebuild stats to reflect changes
   try { buildUnifiedStats(); } catch(e){ console.error('rebuild stats',e); }
+  try { buildCategoryStats(); } catch(e){ console.error('rebuild cat stats',e); }
   renderKpis();
   renderDistrictList();
   renderBubbles();
@@ -6191,6 +6498,7 @@ function boot(){
   try {
     buildUnifiedStats();
   } catch(e){ console.error('unified stats', e); }
+  try { buildCategoryStats(); } catch(e){ console.error('category stats', e); }
   renderKpis();
   renderSectionTabs();
   renderYearBar();
