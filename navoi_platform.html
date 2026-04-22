@@ -2374,6 +2374,9 @@ function renderKpis(){
   // Render separate "Янги таклиф" action block
   const act = document.getElementById('proposeAction');
   if(act){
+    const proposalsArr = (typeof getProposals === 'function') ? (getProposals() || []) : [];
+    const allProposalsCount = proposalsArr.length;
+    const pendingCount = proposalsArr.filter(p => p && p.status === 'pending').length;
     const countTxt = allProposalsCount ? fmt(allProposalsCount) : '';
     const pending = pendingCount ? pendingCount : 0;
     act.innerHTML = `
