@@ -577,6 +577,25 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
 .plot-hover-card .plot-card{
   box-shadow:0 18px 44px -18px rgba(15,26,54,.52),0 8px 22px -12px rgba(15,26,54,.28);
 }
+/* LOCKED variant — map-first preview card that stays open and is clickable */
+.plot-hover-card.locked{pointer-events:auto;z-index:2400}
+.plot-hover-card.locked .plot-card-v2{box-shadow:0 24px 58px -18px rgba(15,26,54,.55),0 10px 28px -14px rgba(15,26,54,.35);border-color:#1d4ed8}
+.pcv2-close{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.92);border:1px solid #dbe6f5;color:#334165;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s ease;z-index:2}
+.pcv2-close:hover{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.pcv2-head{position:relative}
+.pcv2-registry{padding:11px 14px;background:linear-gradient(135deg,#f0f7ff,#e7f1ff);border-top:1px solid #dbeafe}
+.pcv2-registry-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:10px;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:0;font-size:12.5px;font-weight:800;letter-spacing:.2px;cursor:pointer;box-shadow:0 4px 14px -4px rgba(29,78,216,.5);transition:transform .15s ease,box-shadow .2s ease}
+.pcv2-registry-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px -6px rgba(29,78,216,.6)}
+.pcv2-registry-btn:active{transform:translateY(0)}
+.pcv2-registry-btn svg{flex-shrink:0}
+.pcv2-registry-hint{text-align:center;font-size:10px;color:#52627c;font-weight:600;margin-top:6px}
+/* Pulse ring around a pin when it is the locked/preview target */
+.plot-pin.focus-pulse{animation:plotPinPulse 1.6s ease-out infinite}
+@keyframes plotPinPulse{
+  0%{filter:drop-shadow(0 0 0 rgba(29,78,216,0))}
+  50%{filter:drop-shadow(0 0 10px rgba(29,78,216,.75))}
+  100%{filter:drop-shadow(0 0 0 rgba(29,78,216,0))}
+}
 
 /* Legend / section selector (left panel) */
 .sidepanel{
@@ -1650,24 +1669,122 @@ const TIER1_CATS   = ['bino','other','geology'];
 
 /* Classify a single parcel row → category key.
    Relies on the "Кон ёки бино-иншоот..." field + keyword scan on project/initiator/title. */
+/* Normalize Cyrillic text for keyword matching: lowercase + diacritic fold */
+function __catNorm(s){
+  return String(s==null?'':s).toLowerCase()
+    .replace(/[ғ]/g,'г').replace(/[қ]/g,'к').replace(/[ҳ]/g,'х').replace(/[ў]/g,'у').replace(/[ъ]/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+
+/* Map a "Коннинг тури" label to internal key */
+function __mineTypeToKey(raw){
+  const t = __catNorm(raw);
+  if(!t) return null;
+  if(/нкмк|нгмк|навои(и|й)?\s+(кон|тог)[-\s]?металлург/.test(t)) return 'nkmk';
+  if(/уран|uran/.test(t)) return 'uran';
+  if(/сочма|олтин/.test(t)) return 'sochma';
+  if(/стратегик|strategic/.test(t)) return 'strategic';
+  if(/норуда|noruda|цемент|гранит|мармар|охак|кум|шагал|пардозбоп|гипс|керамзит|оптлик/.test(t)) return 'noruda';
+  return null;
+}
+
+/* Detect mine sub-type from free-text fields (enterprise, mineral, purpose) */
+function __detectMineSubtype(blob){
+  const t = __catNorm(blob);
+  if(!t) return null;
+  if(/нкмк|нгмк|навои(и|й)?\s+(кон|тог)[-\s]?металлург|navoi\s+(kon|tog)/.test(t)) return 'nkmk';
+  if(/уран|uran/.test(t)) return 'uran';
+  if(/сочма\s+олтин|сочма|placer|олтин\s+кон(?!центрат)/.test(t)) return 'sochma';
+  if(/стратегик|strategic/.test(t)) return 'strategic';
+  if(/норуда|noruda|цемент|cement|гранит|granit|мармар|marmar|охак|кум|шагал|gravel|гипс|gips|керамзит|пардозбоп|бет[оа]нит|каолин|доломит/.test(t)) return 'noruda';
+  return null;
+}
+
+/* Does free-text signal a building / factory / installation? */
+function __detectBuilding(blob){
+  const t = __catNorm(blob);
+  if(!t) return false;
+  return /бино|иншоот|завод|фабрика|комплекс|цех|омбор|инвестиц|куввати|ишлаб\s+чик|курилиш|логистик|кластер|теплиц|иссикхона|сут\s+махс|гушт|паррандачилик|тикувчилик|текстил|дармон/.test(t);
+}
+
 function classifyParcel(sec, row){
   if(!row) return 'other';
+
+  // 1) strategic section — always strategic
   if(sec === 'strategic') return 'strategic';
-  const kbi  = String(row['Кон ёки бино-иншоот, завод учун бериладиган'] || '').toLowerCase();
-  const proj = String(row['Лойиҳа номи'] || '').toLowerCase();
-  const init = String(row['Лойиҳа ташаббускори'] || row['Ер участкаси ажратилган корхона номи'] || row['Бугунги кунда ердан фойдаланувчи номи'] || '').toLowerCase();
-  const title = String(row['Жойлашган участка номи'] || '').toLowerCase();
-  const blob = kbi+' | '+proj+' | '+init+' | '+title;
-  const isKon  = kbi.includes('кон') || sec === 'mining' || sec === 'geology_changed';
-  const isBino = (kbi.includes('бино') || kbi.includes('иншоот') || kbi.includes('завод') || kbi.includes('фабрика'));
-  if(isKon){
-    if(/нкмк|нгмк|навоий\s+кон[-\s]?металлург|навоий\s+тоғ[-\s]?металлург/.test(blob)) return 'nkmk';
-    if(/уран|uran/.test(blob)) return 'uran';
-    if(/сочма|олтин\s+кон|олтин кон|oltin kon/.test(blob)) return 'sochma';
-    if(/норуда|noruda|цемент|гранит|мармар|оҳак|қум|шағал|пардозбоп|парадозбоп|гипс/.test(blob)) return 'noruda';
-    return 'noruda';
+
+  // 2) geology_changed has a direct authoritative column
+  if(sec === 'geology_changed'){
+    const direct = __mineTypeToKey(row['Коннинг тури (Норуда, Сочма, Стратегик, НКМК, Уран)']);
+    if(direct) return direct;
+    // fallback through enterprise + purpose
+    const blob = [row['Ер участкаси ажратилган корхона номи'], row['Фойдаланиш мақсади']].join(' | ');
+    return __detectMineSubtype(blob) || 'noruda';
   }
-  if(isBino) return 'bino';
+
+  // 3) mining — enterprise name + mineral type/name
+  if(sec === 'mining'){
+    const enterprise = row['Номи'] || '';
+    const mineral = [row['Қазилма тури'], row['Қазилма номи'], row['Хом ашё тури (рус)']].join(' | ');
+    const blob = enterprise + ' | ' + mineral + ' | ' + (row['Корхонанинг асосий фаолият тури']||'');
+    return __detectMineSubtype(blob) || 'noruda';
+  }
+
+  // 4) pq13 — raw material type ("Хомашё тури") directly indicates mine type
+  if(sec === 'pq13'){
+    const blob = [row['Хомашё тури'], row['Захира ва ташаббукори']].join(' | ');
+    return __detectMineSubtype(blob) || 'noruda';
+  }
+
+  // 5) changed has "Бино-иншоот/Кон" marker
+  if(sec === 'changed'){
+    const kind = __catNorm(row['Бино-иншоот/Кон']);
+    const blob = [row['Ер участкаси ажратилган корхона номи'], row['Фойдаланиш мақсади'], row['Изоҳ']].join(' | ');
+    if(/кон/.test(kind)) return __detectMineSubtype(blob) || 'noruda';
+    if(/бино|иншоот/.test(kind)) return 'bino';
+    // no marker — infer
+    if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
+    if(__detectBuilding(blob)) return 'bino';
+    return 'other';
+  }
+
+  // 6) changed_vm88 — activity type + purpose (usually investment projects → building)
+  if(sec === 'changed_vm88'){
+    const blob = [row['Фаолият тури бўйича'], row['Фойдаланиш мақсади'], row['Ер участкаси ажратилган корхона номи'], row['Инвестиция лойиҳалари']].join(' | ');
+    if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
+    if(__detectBuilding(blob)) return 'bino';
+    return 'other';
+  }
+
+  // 7) pq12 — activity / purpose
+  if(sec === 'pq12'){
+    const blob = [row['Фаолият тури'], row['Фойдаланиш мақсади'], row['Ердан фойдаланувчи номи']].join(' | ');
+    if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
+    if(__detectBuilding(blob)) return 'bino';
+    return 'other';
+  }
+
+  // 8) auction — "Номланиши" describes what's being auctioned
+  if(sec === 'auction'){
+    const blob = [row['Номланиши'], row['Юридик ёки жисмоний шахс']].join(' | ');
+    if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
+    if(__detectBuilding(blob)) return 'bino';
+    // auction + no mine signal → likely building/land for construction
+    return 'bino';
+  }
+
+  // 9) hk — explicit "Кон ёки бино-иншоот, завод учун бериладиган"
+  if(sec === 'hk'){
+    const kbi = __catNorm(row['Кон ёки бино-иншоот, завод учун бериладиган']);
+    const blob = [row['Лойиҳа номи'], row['Лойиҳа ташаббускори'], row['Бугунги кунда ердан фойдаланувчи номи'], row['Жойлашган участка номи']].join(' | ');
+    if(/кон/.test(kbi)) return __detectMineSubtype(blob) || 'noruda';
+    if(/бино|иншоот|завод|фабрика/.test(kbi)) return 'bino';
+    // fall back to content
+    if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
+    if(__detectBuilding(blob)) return 'bino';
+    return 'other';
+  }
+
   return 'other';
 }
 
@@ -3249,7 +3366,8 @@ function plotCategory(row){
   if(v && String(v).trim()) return String(v).trim();
   return '';
 }
-function plotTooltipHtml(item){
+function plotTooltipHtml(item, opts){
+  const locked = !!(opts && opts.locked);
   const {row, distLabel, area, mfy, title, points} = item;
   const basis = plotBasis(row);
   const contour = plotContour(row);
@@ -3259,8 +3377,19 @@ function plotTooltipHtml(item){
   if(contour) metaChips.push(`Контур: ${escHtml(contour)}`);
   if(area) metaChips.push(`${fmtArea(area)} га`);
   if(points && points.length) metaChips.push(`${fmt(points.length)} нуқта`);
+  const closeBtn = locked ? `<button class="pcv2-close" data-action="close" aria-label="Ёпиш" title="Ёпиш (Esc)">×</button>` : '';
+  const footer = locked
+    ? `<div class="pcv2-registry">
+         <button class="pcv2-registry-btn" data-action="registry" type="button">
+           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+           Рўйхатга ўтиш
+         </button>
+         <div class="pcv2-registry-hint">Тўлиқ паспорт ва ёзувлар</div>
+       </div>`
+    : `<div class="pcv2-foot">Нуқтани босинг → тўлиқ маълумот</div>`;
   return `<div class="plot-card plot-card-v2">
     <div class="pcv2-head">
+      ${closeBtn}
       <div class="pcv2-loc">${escHtml((distLabel||'—'))}${mfy?` · ${escHtml(mfy)}`:''}</div>
       <div class="pcv2-title">${escHtml(title || 'Ер участкаси')}</div>
       ${metaChips.length?`<div class="pcv2-meta">${metaChips.join(' · ')}</div>`:''}
@@ -3273,7 +3402,7 @@ function plotTooltipHtml(item){
       ${category?`<span class="pcv2-cat-tag">${escHtml(category)}</span>`:''}
       ${project?`<span class="pcv2-cat-proj">${escHtml(project)}</span>`:''}
     </div>`:''}
-    <div class="pcv2-foot">Батафсил → нуқтани босинг</div>
+    ${footer}
   </div>`;
 }
 function plotHoverCardEl(){
@@ -3292,19 +3421,24 @@ function plotHoverCardEl(){
   }
   return el;
 }
-function hidePlotHoverCard(){
+function hidePlotHoverCard(opts){
   const el = document.getElementById('plotHoverCard');
-  if(el){
-    el.style.display = 'none';
-    el.innerHTML = '';
-  }
+  if(!el) return;
+  const force = !!(opts && opts.force);
+  // Don't auto-hide a locked card on hover-out; only explicit close/action/map-click hides it
+  if(el.classList.contains('locked') && !force) return;
+  el.classList.remove('locked');
+  el.style.pointerEvents = 'none';
+  el.style.display = 'none';
+  el.innerHTML = '';
+  __clearFocusedPin();
 }
-function showPlotHoverCard(item, latlng){
-  if(!map || !item) return;
-  const el = plotHoverCardEl();
-  el.innerHTML = plotTooltipHtml(item);
-  el.style.display = 'block';
-  el.style.zIndex = '2200';
+function __clearFocusedPin(){
+  const prev = document.querySelector('.plot-pin.focus-pulse');
+  if(prev) prev.classList.remove('focus-pulse');
+}
+function __positionHoverCard(el, latlng, item){
+  if(!map) return;
   const mapEl = map.getContainer ? map.getContainer() : document.getElementById('map');
   const mapRect = mapEl ? mapEl.getBoundingClientRect() : {left:0, top:0};
   const p = map.latLngToContainerPoint(latlng || item.displayCenter || item.center);
@@ -3318,6 +3452,101 @@ function showPlotHoverCard(item, latlng){
   el.style.left = Math.round(left) + 'px';
   el.style.top = Math.round(top) + 'px';
 }
+function showPlotHoverCard(item, latlng){
+  if(!map || !item) return;
+  const el = plotHoverCardEl();
+  // If a locked card is already shown, don't let hover overwrite it
+  if(el.classList.contains('locked')) return;
+  el.innerHTML = plotTooltipHtml(item);
+  el.style.display = 'block';
+  el.style.pointerEvents = 'none';
+  el.style.zIndex = '2200';
+  __positionHoverCard(el, latlng, item);
+}
+/* Locked (map-first preview) card — interactive, stays open, has Registry button */
+function showPlotHoverCardLocked(item, latlng, opts){
+  if(!map || !item) return;
+  // Unlock any previous card first
+  const el = plotHoverCardEl();
+  el.classList.add('locked');
+  el.innerHTML = plotTooltipHtml(item, {locked:true});
+  el.style.display = 'block';
+  el.style.pointerEvents = 'auto';
+  el.style.zIndex = '2400';
+  __positionHoverCard(el, latlng, item);
+  // Wire card actions
+  el.querySelectorAll('[data-action="close"]').forEach(btn => {
+    btn.onclick = (e) => { e.stopPropagation(); hidePlotHoverCard({force:true}); };
+  });
+  el.querySelectorAll('[data-action="registry"]').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      hidePlotHoverCard({force:true});
+      try { showRowDetail(item.section, item.rowIdx); } catch(err){ console.error('showRowDetail failed', err); }
+    };
+  });
+  // Pulse the pin if we can find it
+  __clearFocusedPin();
+  if(opts && opts.pinEl){
+    const pin = opts.pinEl.querySelector ? opts.pinEl.querySelector('.plot-pin') : null;
+    if(pin) pin.classList.add('focus-pulse');
+  }
+}
+/* Map-first preview: given section+rowIdx, fly the map to that parcel and open locked card.
+   If district isn't active, activates it first. Fallback to direct registry if no coord. */
+function previewParcelOnMap(section, rowIdx){
+  if(typeof rowIdx === 'undefined' || rowIdx === null) return;
+  // Find the row
+  const arr = (typeof SECTIONS_RAW !== 'undefined' && SECTIONS_RAW[section]) ? SECTIONS_RAW[section] : [];
+  const row = arr.find(r => String(r && r._row) === String(rowIdx)) || arr.find(r => r && (r.id === rowIdx));
+  if(!row){
+    // Row not found — fall back to direct registry
+    try { showRowDetail(section, rowIdx); } catch(e){}
+    return;
+  }
+  // If no coordinates, fall back directly
+  if(typeof rowHasCoordinates === 'function' && !rowHasCoordinates(section, row)){
+    try { showRowDetail(section, rowIdx); } catch(e){}
+    return;
+  }
+  const distKey = (typeof rowDistrict === 'function') ? rowDistrict(section, row) : null;
+  const needSelect = distKey && distKey !== currentDistrict;
+  const openIt = () => {
+    // Locate the plot item matching section+rowIdx among currently rendered items
+    const items = (window.__lastPlotItems || []);
+    let match = items.find(it => it.section === section && String(it.rowIdx) === String(rowIdx));
+    if(!match){
+      match = items.find(it => (it.candidates || []).some(c => c.section === section && String(c.rowIdx) === String(rowIdx)));
+    }
+    if(!match){
+      // Items not (yet) rendered — fall back to direct registry
+      try { showRowDetail(section, rowIdx); } catch(e){}
+      return;
+    }
+    const target = match.displayCenter || match.center;
+    const curZ = map.getZoom();
+    map.flyTo(target, Math.max(curZ, 13), {duration: 0.6});
+    // Wait for the flyTo to settle, then open locked card
+    setTimeout(() => {
+      // Find the pin element by matching its position
+      let pinEl = null;
+      document.querySelectorAll('#map .leaflet-marker-icon').forEach(el => {
+        const p = el.querySelector('.plot-pin');
+        if(!p) return;
+        // Trust first pin that matches item via DOM position — simplest heuristic:
+        // Leaflet stores latlng via leaflet internals, not exposed. Use focus pulse instead.
+      });
+      showPlotHoverCardLocked(match, target, {pinEl});
+    }, 320);
+  };
+  if(needSelect){
+    try { selectDistrict(distKey); } catch(e){}
+    setTimeout(openIt, 540);
+  } else {
+    openIt();
+  }
+}
+window.previewParcelOnMap = previewParcelOnMap;
 function collectPlotPoints(){
   if(!currentDistrict) return [];
   let candidates = [];
@@ -3423,8 +3652,10 @@ function renderPlotPoints(){
       hidePlotHoverCard();
     });
     marker.on('click', () => {
-      hidePlotHoverCard();
-      showRowDetail(item.section, item.rowIdx);
+      // Map-first: clicking the pin opens a locked preview with "Рўйхатга ўтиш" button.
+      // The button is what opens the full registry (showRowDetail).
+      const pinEl = marker.getElement();
+      showPlotHoverCardLocked(item, marker.getLatLng(), {pinEl});
     });
     marker.addTo(plotLayer);
   });
@@ -3862,8 +4093,15 @@ function initMap(){
   if(all.isValid()) map.fitBounds(all, {padding:[40,40]});
 
   renderBubbles();
-  map.on('zoomstart movestart dragstart', hidePlotHoverCard);
+  // Hover hint: auto-dismiss on any pan/zoom. Locked preview is also dismissed
+  // (we'd lose the pin→card anchor once the map moves).
+  map.on('zoomstart movestart dragstart', () => hidePlotHoverCard({force:true}));
   map.on('zoomend', ()=>renderPlotPoints());
+  // Click on empty map background → close locked card
+  map.on('click', () => {
+    const el = document.getElementById('plotHoverCard');
+    if(el && el.classList.contains('locked')) hidePlotHoverCard({force:true});
+  });
 }
 
 /* ================= VIEW TABS ================= */
@@ -3984,7 +4222,9 @@ function goHome(){
       document._homeEscWired = true;
       document.addEventListener('keydown', (e)=>{
         if(e.key === 'Escape'){
-          /* Tiered: first Esc closes an open panel/drawer, second Esc goes home */
+          /* Tiered: 1) locked hover card, 2) panels/drawers, 3) home */
+          const hover = document.getElementById('plotHoverCard');
+          if(hover && hover.classList.contains('locked')){ try { hidePlotHoverCard({force:true}); } catch(_){} return; }
           const drawer = document.getElementById('drawer');
           const searchP = document.getElementById('searchPanel');
           const resultsP = document.getElementById('resultsPanel');
@@ -4232,13 +4472,17 @@ function renderSearchResults(){
       const section = el.dataset.section;
       const row = parseInt(el.dataset.row, 10);
       const dist = el.dataset.dist;
+      // Map-first flow: previewParcelOnMap will select the district (if needed),
+      // fly to the parcel, and open the locked preview card with "Рўйхатга ўтиш" button.
       if(dist && dist !== currentDistrict){
         selectDistrict(dist);
         setTimeout(() => {
-          try { showRowDetail(section, row); } catch(e){}
+          try { previewParcelOnMap(section, row); } catch(e){}
         }, 520);
       } else if(dist && dist === currentDistrict){
-        try { showRowDetail(section, row); } catch(e){}
+        try { previewParcelOnMap(section, row); } catch(e){}
+      } else {
+        try { previewParcelOnMap(section, row); } catch(e){}
       }
     };
   });
