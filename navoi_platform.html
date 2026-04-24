@@ -3541,7 +3541,9 @@ function previewParcelOnMap(section, rowIdx){
   };
   if(needSelect){
     try { selectDistrict(distKey); } catch(e){}
-    setTimeout(openIt, 540);
+    // selectDistrict runs flyToBounds (duration 0.8s). Wait for it to settle so that
+    // our inner flyTo doesn't conflict with the ongoing animation.
+    setTimeout(openIt, 900);
   } else {
     openIt();
   }
