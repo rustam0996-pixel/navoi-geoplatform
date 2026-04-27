@@ -542,6 +542,17 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
 .pcv2-cat-tag{padding:3px 8px;border-radius:999px;background:#eef6ff;color:#1d4ed8;font-size:10.5px;font-weight:800;border:1px solid #dbeafe}
 .pcv2-cat-proj{padding:3px 8px;border-radius:999px;background:#f1f5f9;color:#334155;font-size:10.5px;font-weight:700;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pcv2-foot{padding:7px 14px;font-size:10px;color:#6b7a99;font-weight:650;text-align:right;background:#f8fafc}
+/* ===== Status badge inside plot card v2 ===== */
+.pcv2-status{padding:10px 14px;background:#fff;border-bottom:1px solid #eef2f9;display:flex;flex-direction:column;gap:5px}
+.pcv2-status-row{display:flex;align-items:center;gap:8px}
+.pcv2-status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 3px var(--st-soft,rgba(37,99,235,.18))}
+.pcv2-status-label{font-size:12px;font-weight:900;color:var(--st-color,#1d4ed8);letter-spacing:.1px;line-height:1.2;flex:1;min-width:0}
+.pcv2-status-kind{font-size:9.5px;color:#6b7a99;font-weight:850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px}
+.pcv2-status-detail{font-size:11.2px;color:#475569;font-weight:600;line-height:1.4;padding-left:18px;word-break:break-word}
+.pcv2-status-extra{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;padding-left:18px}
+.pcv2-status-pill{padding:2px 7px;border-radius:999px;font-size:10px;font-weight:800;background:var(--st-soft,#eef3fb);color:var(--st-color,#38506f);border:1px solid var(--st-border,rgba(37,99,235,.22))}
+.pcv2-status-proposal{background:#fff7ed;border:1px dashed #fdba74;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;color:#c2410c;margin-top:4px}
+.pcv2-status-proposal svg{flex-shrink:0}
 .plot-passport{padding:10px 12px;border-top:1px solid #e5ecf5;background:#fbfdff}
 .plot-passport .pp-title{font-size:10px;color:#1d4ed8;font-weight:900;text-transform:uppercase;letter-spacing:.45px;margin-bottom:7px}
 .plot-passport .pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -3366,6 +3377,45 @@ function plotCategory(row){
   if(v && String(v).trim()) return String(v).trim();
   return '';
 }
+/* Classify computed status into one of the high-level kinds the platform tracks. */
+function plotStatusKind(label){
+  const s = String(label||'').toLowerCase();
+  if(/аукционда\s+сотилган/.test(s)) return {kind:'auction-sold', kindLabel:'Аукционда сотилган'};
+  if(/аукцион\s+савдоларига\s+чиқарилган|аукцион\s+жараёнида|аукцион\s+бўлимида/.test(s)) return {kind:'auction-listed', kindLabel:'Аукцион савдоларига чиқарилган'};
+  if(/тўғридан[-\s]?тўғри/.test(s)) return {kind:'direct', kindLabel:'Тўғридан-тўғри берилган'};
+  if(/тоифаси\s+ўзгарган/.test(s)) return {kind:'changed', kindLabel:'Тоифаси ўзгарган'};
+  if(/таклиф\s+босқичида|жараён\s+кутилмоқда|кейинги\s+ажратиш\s+кутилмоқда|кейинги\s+босқич\s+кутилмоқда|ҳукумат\s+комиссиясига\s+киритилган|ташаббускори/.test(s)) return {kind:'process', kindLabel:'Тоифаси ўзгариш жараёнида'};
+  if(/заҳирага/.test(s)) return {kind:'reserve', kindLabel:'Заҳирага қайтарилган'};
+  return {kind:'other', kindLabel:'Жорий ҳолат'};
+}
+function __normTitleKey(s){
+  return String(s||'').toLowerCase().replace(/[ғқҳў]/g, ch=>({'ғ':'г','қ':'к','ҳ':'х','ў':'у'}[ch])).replace(/[^a-zа-я0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+}
+/* Look for a user proposal that targets this parcel (same district + similar title/MFY).
+   Returns {count, latest} or null. Proposals don't carry section/rowIdx, so we match
+   loosely on district + title overlap. */
+function plotMatchingProposals(item){
+  if(typeof getProposals !== 'function') return null;
+  const all = getProposals() || [];
+  if(!all.length) return null;
+  const distKey = item.primary && item.primary.distKey;
+  const distLbl = (item.distLabel||'').toLowerCase();
+  const titleKey = __normTitleKey(item.title);
+  const mfyKey = __normTitleKey(item.mfy);
+  const matches = all.filter(p => {
+    if(!p) return false;
+    const pd = String(p.district||'').toLowerCase();
+    if(distLbl && pd && !pd.includes(distLbl) && !distLbl.includes(pd)) return false;
+    const pt = __normTitleKey(p.title);
+    const pm = __normTitleKey(p.mfy);
+    if(titleKey && pt && (pt===titleKey || pt.includes(titleKey) || titleKey.includes(pt))) return true;
+    if(mfyKey && pm && pm.includes(mfyKey)) return true;
+    return false;
+  });
+  if(!matches.length) return null;
+  matches.sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+  return { count: matches.length, latest: matches[0] };
+}
 function plotTooltipHtml(item, opts){
   const locked = !!(opts && opts.locked);
   const {row, distLabel, area, mfy, title, points} = item;
@@ -3373,6 +3423,9 @@ function plotTooltipHtml(item, opts){
   const contour = plotContour(row);
   const category = plotCategory(row);
   const project = row && row['Лойиҳа номи'] ? String(row['Лойиҳа номи']).trim() : '';
+  const status = item.status || (item.candidates ? currentParcelStatus(item.candidates) : null);
+  const kindInfo = status ? plotStatusKind(status.label) : null;
+  const proposalMatch = plotMatchingProposals(item);
   const metaChips = [];
   if(contour) metaChips.push(`Контур: ${escHtml(contour)}`);
   if(area) metaChips.push(`${fmtArea(area)} га`);
@@ -3387,6 +3440,25 @@ function plotTooltipHtml(item, opts){
          <div class="pcv2-registry-hint">Тўлиқ паспорт ва ёзувлар</div>
        </div>`
     : `<div class="pcv2-foot">Нуқтани босинг → тўлиқ маълумот</div>`;
+  const statusBlock = (status && status.label) ? (() => {
+    const c = status.color || '#1d4ed8';
+    const soft = `${c}1a`;     // ~10% opacity overlay
+    const border = `${c}4d`;   // ~30% opacity border
+    const proposalChip = proposalMatch ? `
+      <div class="pcv2-status-proposal" title="Бу участка бўйича ${proposalMatch.count} та таклиф юборилган">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Янги таклиф · ${fmt(proposalMatch.count)} та</span>
+      </div>` : '';
+    return `<div class="pcv2-status" style="--st-color:${c};--st-soft:${soft};--st-border:${border}">
+      <div class="pcv2-status-kind">${escHtml(kindInfo.kindLabel)}</div>
+      <div class="pcv2-status-row">
+        <span class="pcv2-status-dot" style="background:${c}"></span>
+        <span class="pcv2-status-label">${escHtml(status.label)}</span>
+      </div>
+      ${status.detail?`<div class="pcv2-status-detail">${escHtml(status.detail)}</div>`:''}
+      ${proposalChip}
+    </div>`;
+  })() : '';
   return `<div class="plot-card plot-card-v2">
     <div class="pcv2-head">
       ${closeBtn}
@@ -3394,6 +3466,7 @@ function plotTooltipHtml(item, opts){
       <div class="pcv2-title">${escHtml(title || 'Ер участкаси')}</div>
       ${metaChips.length?`<div class="pcv2-meta">${metaChips.join(' · ')}</div>`:''}
     </div>
+    ${statusBlock}
     <div class="pcv2-basis">
       <div class="pcv2-basis-l">Ер участкасини киритиш учун асос</div>
       <div class="pcv2-basis-v">${basis ? escHtml(basis) : '<span class="pcv2-empty">Асос ҳужжат киритилмаган</span>'}</div>
