@@ -642,6 +642,30 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
 .sp-search-body::-webkit-scrollbar-thumb{background:#cfdaec;border-radius:3px}
 
 /* Propose action block — sticky bottom */
+.sp-stage{
+  flex-shrink:0;padding:9px 12px 10px;border-top:1px solid var(--line);
+  background:linear-gradient(180deg,#f8fafc,#f1f5f9);display:flex;flex-direction:column;gap:7px;
+}
+.sp-stage:empty{display:none}
+.sp-stage-label{font-size:9.5px;font-weight:800;color:#1e293b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sp-stage-label .sp-stage-count{font-size:10px;color:#475569;background:#fff;border:1px solid #e2e8f0;padding:1px 6px;border-radius:6px;font-weight:800;text-transform:none}
+.sp-stage-chips{display:flex;flex-wrap:wrap;gap:4px}
+.sp-stage-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:7px;font-size:10.8px;font-weight:800;
+  background:#fff;border:1px solid #e2e8f0;color:#475569;cursor:pointer;transition:all .15s}
+.sp-stage-chip:hover{border-color:#94a3b8;color:#1e293b}
+.sp-stage-chip.active{background:var(--ch-bg,#1d4ed8);color:#fff;border-color:var(--ch-bg,#1d4ed8);box-shadow:0 2px 6px -2px var(--ch-bg,rgba(29,78,216,.5))}
+.sp-stage-chip i{width:7px;height:7px;border-radius:50%;display:inline-block;background:var(--ch-dot,#64748b);flex-shrink:0}
+.sp-stage-chip.active i{background:#fff}
+.sp-stage-chip .n{margin-left:2px;font-size:9.5px;font-weight:700;opacity:.85}
+.sp-stage-export{display:flex;align-items:center;gap:6px;margin-top:3px}
+.sp-stage-export-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 10px;font-size:11.5px;font-weight:800;letter-spacing:.1px;
+  background:linear-gradient(135deg,#16a34a,#0e7c3a);color:#fff;border:0;border-radius:8px;cursor:pointer;
+  box-shadow:0 4px 10px -3px rgba(22,163,74,.4);transition:all .15s}
+.sp-stage-export-btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px -3px rgba(22,163,74,.5)}
+.sp-stage-export-btn:disabled{background:#cbd5e1;color:#94a3b8;cursor:not-allowed;box-shadow:none;transform:none}
+.sp-stage-export-btn svg{flex-shrink:0}
+.sp-stage-export-hint{font-size:10px;color:#64748b;font-weight:600}
 .sp-propose{
   flex-shrink:0;padding:10px 12px;border-top:1px solid var(--line);
   background:linear-gradient(180deg,#f7fcf9,#f0fbf5);
@@ -1389,6 +1413,8 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
     </div>
   </div>
 
+  <!-- Stage filter + Excel export (above the proposeAction) -->
+  <div class="sp-stage" id="stageFilter"></div>
   <!-- Fixed bottom: Янги таклиф action block -->
   <div class="sp-propose" id="proposeAction"></div>
 </aside>
@@ -1665,18 +1691,29 @@ function relatedInfoSections(){
    Tier-2 (geology): nkmk / uran / sochma / noruda / strategic
    These are the user's requested directions (Бино / Бошқа / Геология → НКМК/Уран/Сочма олтин/Норуда/Стратегик конлар) */
 const CATEGORY_META = {
-  all:       {label:'Жами ер майдонлари', color:'#1d4ed8', tier:0},
-  bino:      {label:'Бино / иншоот',      color:'#10b981', tier:1, parent:'all'},
-  other:     {label:'Бошқа йўналишлар',   color:'#f59e0b', tier:1, parent:'all'},
-  geology:   {label:'Геология йўналиши',   color:'#8b5cf6', tier:1, parent:'all', hasChildren:true},
-  nkmk:      {label:'НКМК',                color:'#dc2626', tier:2, parent:'geology'},
-  uran:      {label:'Уран',                color:'#84cc16', tier:2, parent:'geology'},
-  sochma:    {label:'Сочма олтин',         color:'#fbbf24', tier:2, parent:'geology'},
-  noruda:    {label:'Норуда',              color:'#a16207', tier:2, parent:'geology'},
-  strategic: {label:'Стратегик конлар',   color:'#4338ca', tier:2, parent:'geology'}
+  all:        {label:'Жами ер майдонлари', color:'#1d4ed8', tier:0},
+  // Tier-1 — two main branches (per leadership taxonomy: Геология vs Тадбиркорлик/инвестиция)
+  geology:    {label:'Геология йўналиши',  color:'#8b5cf6', tier:1, parent:'all', hasChildren:true},
+  business:   {label:'Тадбиркорлик / инвестиция', color:'#0ea5e9', tier:1, parent:'all', hasChildren:true},
+  // Geology sub-branches (tier-2)
+  nkmk:       {label:'НКМК',               color:'#dc2626', tier:2, parent:'geology'},
+  uran:       {label:'Уран',               color:'#84cc16', tier:2, parent:'geology'},
+  sochma:     {label:'Сочма олтин',        color:'#fbbf24', tier:2, parent:'geology'},
+  noruda:     {label:'Норуда',             color:'#a16207', tier:2, parent:'geology'},
+  strategic:  {label:'Стратегик конлар',   color:'#4338ca', tier:2, parent:'geology'},
+  // Business / investment sub-branches (tier-2)
+  zavod:      {label:'Завод қурилиши',     color:'#10b981', tier:2, parent:'business'},
+  turizm:     {label:'Туризм',             color:'#06b6d4', tier:2, parent:'business'},
+  energetika: {label:'Қуёш / шамол энергияси', color:'#f59e0b', tier:2, parent:'business'},
+  elektr:     {label:'Электр линияси',     color:'#a78bfa', tier:2, parent:'business'},
+  ijtimoiy:   {label:'Ижтимоий / бошқа',   color:'#64748b', tier:2, parent:'business'},
+  // Legacy aliases — kept so older code paths / saved state continue to work
+  bino:       {label:'Бино / иншоот',      color:'#10b981', tier:99, parent:'business', alias:'zavod'},
+  other:      {label:'Бошқа йўналишлар',   color:'#64748b', tier:99, parent:'business', alias:'ijtimoiy'}
 };
-const GEOLOGY_SUBS = ['nkmk','uran','sochma','noruda','strategic'];
-const TIER1_CATS   = ['bino','other','geology'];
+const GEOLOGY_SUBS  = ['nkmk','uran','sochma','noruda','strategic'];
+const BUSINESS_SUBS = ['zavod','turizm','energetika','elektr','ijtimoiy'];
+const TIER1_CATS    = ['geology','business'];
 
 /* Classify a single parcel row → category key.
    Relies on the "Кон ёки бино-иншоот..." field + keyword scan on project/initiator/title. */
@@ -1718,8 +1755,54 @@ function __detectBuilding(blob){
   return /бино|иншоот|завод|фабрика|комплекс|цех|омбор|инвестиц|куввати|ишлаб\s+чик|курилиш|логистик|кластер|теплиц|иссикхона|сут\s+махс|гушт|паррандачилик|тикувчилик|текстил|дармон/.test(t);
 }
 
+/* Detect business / investment sub-purpose from free-text fields.
+   Mirrors the explicit columns in the new master file:
+   Завод қурилиши / Туризм / Қуёш-шамол / Электр линияси / Ижтимоий ёки бошқа. */
+function __detectBusinessPurpose(blob){
+  const t = __catNorm(blob);
+  if(!t) return null;
+  if(/туризм|tourism|дам\s+олиш|сайёх|туристик|санатор|курорт|меҳмонхон|мехмонхон|хостел|отел|hotel/.test(t)) return 'turizm';
+  if(/куёш|солнечн|шамол|ветер|солар|солнечная|фотоэлектр|фотовольт|вэс|sespa|шамол\s+энерг/.test(t)) return 'energetika';
+  if(/электр\s+линия|линия\s+электр|электр\s+таъминот|подстанция|трансформатор|кабел\s+линия|элт\b|вл\s*-\s*\d+|кл\s*-\s*\d+/.test(t)) return 'elektr';
+  if(/ижтимоий|социал|мактаб|школ|боғча|богча|болалар|спорт|стадион|маҳалла|махалла|сог\s*ликни|сог\s*лом|социаль|муассас|дин|маж|жамоат|ёшлар|ижод/.test(t)) return 'ijtimoiy';
+  if(/завод|фабрика|комплекс|цех|омбор|инвестиц|куввати|ишлаб\s+чик|курилиш|логистик|кластер|теплиц|иссикхона|сут\s+махс|гушт|паррандачилик|тикувчилик|текстил|пластик|металл|керамик|охак\s*з|дармон|саноат|production|кондитер|нон|бакалея/.test(t)) return 'zavod';
+  return null;
+}
+
+/* Some sections (per the new master file) may include explicit boolean columns:
+   "Завод қурилиши учун", "Туризм ташкил этиш учун", "Қуёш ёки шамол фотоэлектр…",
+   "Электр линияси учун", "Ижтимоий ёки бошқа мақсадлар учун".
+   When present (truthy / non-zero), they take precedence over keyword detection. */
+function __detectBusinessExplicit(row){
+  if(!row) return null;
+  const tr = (k) => { const v = row[k]; return v != null && String(v).trim() !== '' && Number(v) !== 0 && String(v).trim() !== '-'; };
+  if(tr('Завод қурилиши учун')) return 'zavod';
+  if(tr('Туризм ташкил этиш учун')) return 'turizm';
+  if(tr('Қуёш ёки шамол фотоэлектр станциялари қуриш учун') || tr('Қуёш ёки шамол фотоэлектр станциялари')) return 'energetika';
+  if(tr('Электр линияси учун') || tr('Электр линияси')) return 'elektr';
+  if(tr('Ижтимоий ёки бошқа мақсадлар учун') || tr('Ижтимоий')) return 'ijtimoiy';
+  return null;
+}
+/* Same idea for explicit geology columns in the new master file. */
+function __detectGeologyExplicit(row){
+  if(!row) return null;
+  const tr = (k) => { const v = row[k]; return v != null && String(v).trim() !== '' && Number(v) !== 0 && String(v).trim() !== '-'; };
+  if(tr('Стратегик конлар')) return 'strategic';
+  if(tr('НКМК учун ажратиладиган конлар') || tr('НКМК')) return 'nkmk';
+  if(tr('УРАН қазиб олиш учун ажратиладиган конлар') || tr('УРАН')) return 'uran';
+  if(tr('Сочма олтин конлари') || tr('Сочма олтин')) return 'sochma';
+  if(tr('Норуда фойдали қазилма конлари') || tr('Норуда')) return 'noruda';
+  return null;
+}
+
 function classifyParcel(sec, row){
-  if(!row) return 'other';
+  if(!row) return 'ijtimoiy';
+
+  // 0) explicit columns from the new master file always win
+  const explicitGeo = __detectGeologyExplicit(row);
+  if(explicitGeo) return explicitGeo;
+  const explicitBiz = __detectBusinessExplicit(row);
+  if(explicitBiz) return explicitBiz;
 
   // 1) strategic section — always strategic
   if(sec === 'strategic') return 'strategic';
@@ -1728,7 +1811,6 @@ function classifyParcel(sec, row){
   if(sec === 'geology_changed'){
     const direct = __mineTypeToKey(row['Коннинг тури (Норуда, Сочма, Стратегик, НКМК, Уран)']);
     if(direct) return direct;
-    // fallback through enterprise + purpose
     const blob = [row['Ер участкаси ажратилган корхона номи'], row['Фойдаланиш мақсади']].join(' | ');
     return __detectMineSubtype(blob) || 'noruda';
   }
@@ -1752,36 +1834,30 @@ function classifyParcel(sec, row){
     const kind = __catNorm(row['Бино-иншоот/Кон']);
     const blob = [row['Ер участкаси ажратилган корхона номи'], row['Фойдаланиш мақсади'], row['Изоҳ']].join(' | ');
     if(/кон/.test(kind)) return __detectMineSubtype(blob) || 'noruda';
-    if(/бино|иншоот/.test(kind)) return 'bino';
-    // no marker — infer
+    if(/бино|иншоот/.test(kind)) return __detectBusinessPurpose(blob) || 'zavod';
     if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
-    if(__detectBuilding(blob)) return 'bino';
-    return 'other';
+    return __detectBusinessPurpose(blob) || 'ijtimoiy';
   }
 
-  // 6) changed_vm88 — activity type + purpose (usually investment projects → building)
+  // 6) changed_vm88 — activity type + purpose (usually investment projects)
   if(sec === 'changed_vm88'){
     const blob = [row['Фаолият тури бўйича'], row['Фойдаланиш мақсади'], row['Ер участкаси ажратилган корхона номи'], row['Инвестиция лойиҳалари']].join(' | ');
     if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
-    if(__detectBuilding(blob)) return 'bino';
-    return 'other';
+    return __detectBusinessPurpose(blob) || 'ijtimoiy';
   }
 
   // 7) pq12 — activity / purpose
   if(sec === 'pq12'){
     const blob = [row['Фаолият тури'], row['Фойдаланиш мақсади'], row['Ердан фойдаланувчи номи']].join(' | ');
     if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
-    if(__detectBuilding(blob)) return 'bino';
-    return 'other';
+    return __detectBusinessPurpose(blob) || 'ijtimoiy';
   }
 
   // 8) auction — "Номланиши" describes what's being auctioned
   if(sec === 'auction'){
     const blob = [row['Номланиши'], row['Юридик ёки жисмоний шахс']].join(' | ');
     if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
-    if(__detectBuilding(blob)) return 'bino';
-    // auction + no mine signal → likely building/land for construction
-    return 'bino';
+    return __detectBusinessPurpose(blob) || 'zavod';
   }
 
   // 9) hk — explicit "Кон ёки бино-иншоот, завод учун бериладиган"
@@ -1789,14 +1865,12 @@ function classifyParcel(sec, row){
     const kbi = __catNorm(row['Кон ёки бино-иншоот, завод учун бериладиган']);
     const blob = [row['Лойиҳа номи'], row['Лойиҳа ташаббускори'], row['Бугунги кунда ердан фойдаланувчи номи'], row['Жойлашган участка номи']].join(' | ');
     if(/кон/.test(kbi)) return __detectMineSubtype(blob) || 'noruda';
-    if(/бино|иншоот|завод|фабрика/.test(kbi)) return 'bino';
-    // fall back to content
+    if(/бино|иншоот|завод|фабрика/.test(kbi)) return __detectBusinessPurpose(blob) || 'zavod';
     if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
-    if(__detectBuilding(blob)) return 'bino';
-    return 'other';
+    return __detectBusinessPurpose(blob) || 'ijtimoiy';
   }
 
-  return 'other';
+  return 'ijtimoiy';
 }
 
 /* Pre-computed aggregates: CATEGORY_STATS[cat] = {count, area} */
@@ -1818,9 +1892,12 @@ function buildCategoryStats(){
       CATEGORY_STATS[cat].area  += area;
       CATEGORY_STATS.all.count += 1;
       CATEGORY_STATS.all.area  += area;
-      if(['nkmk','uran','sochma','noruda','strategic'].includes(cat)){
+      if(GEOLOGY_SUBS.includes(cat)){
         CATEGORY_STATS.geology.count += 1;
         CATEGORY_STATS.geology.area  += area;
+      } else if(BUSINESS_SUBS.includes(cat)){
+        CATEGORY_STATS.business.count += 1;
+        CATEGORY_STATS.business.area  += area;
       }
     }
   }
@@ -2446,6 +2523,234 @@ function globalAllocationKpis(){
 }
 
 /* ================= KPI RENDER — category tree (hero + tier-1 + tier-2) ================= */
+/* ================= STAGE FILTER ================= */
+/* High-level stages a parcel can be in. Order = display order in UI.
+   Predicate operates on a row (with optional section context). */
+const STAGE_DEFS = [
+  { key:'all',          label:'Барча босқичлар',     color:'#1d4ed8' },
+  { key:'proposal',     label:'Янги таклиф',         color:'#c2410c' },
+  { key:'in_process',   label:'Тоифаси ўзгариш жараёнида', color:'#3b82f6' },
+  { key:'changed',      label:'Тоифаси ўзгарган',    color:'#2563eb' },
+  { key:'auction_listed',label:'Аукционга чиқарилган',color:'#f59e0b' },
+  { key:'auction_sold', label:'Аукционда сотилган',  color:'#16a34a' },
+  { key:'direct',       label:'Тўғридан-тўғри берилган', color:'#0d9488' }
+];
+const STAGE_STATE = { selected: 'all' };
+/* Map a parcel "kind" (from plotStatusKind) to a stage key. */
+function __stageFromKind(kind){
+  switch(kind){
+    case 'auction-sold': return 'auction_sold';
+    case 'auction-listed': return 'auction_listed';
+    case 'direct': return 'direct';
+    case 'changed': return 'changed';
+    case 'process': return 'in_process';
+    default: return null;
+  }
+}
+/* Compute stage of a single SECTION row (used for stats over SECTIONS_RAW). */
+function rowStageKey(sec, row){
+  if(!row) return null;
+  // Match the same order used in candidateStatus → keep platform-wide consistency
+  let st = null;
+  try {
+    const cand = (typeof makePlotCandidate === 'function') ? makePlotCandidate(sec, row) : null;
+    if(cand){
+      const status = candidateStatus(cand);
+      if(status && status.label){
+        const k = (typeof plotStatusKind === 'function') ? plotStatusKind(status.label) : null;
+        if(k) st = __stageFromKind(k.kind);
+      }
+    }
+  } catch(e){}
+  if(st) return st;
+  // Fallback: explicit hk-style flags
+  if(sec === 'hk'){
+    if(String(row['Тоифаси ўзгаргани (+/-)']||'').trim() === '+') return 'changed';
+    if(String(row['Заҳирага қайтарилган (+/-)']||'').trim() === '+') return 'in_process';
+    if(String(row['Ҳукумат комиссиясига киритилган (+/-)']||'').trim() === '+') return 'in_process';
+    return 'in_process';
+  }
+  return null;
+}
+/* Pre-computed counts by stage (rebuilt alongside CATEGORY_STATS). */
+const STAGE_STATS = {};
+function buildStageStats(){
+  for(const k of Object.keys(STAGE_STATS)) delete STAGE_STATS[k];
+  for(const def of STAGE_DEFS) STAGE_STATS[def.key] = {count:0, area:0};
+  if(typeof SECTIONS_RAW === 'undefined' || !SECTIONS_RAW) return;
+  for(const sec of Object.keys(SECTIONS_RAW)){
+    for(const r of (SECTIONS_RAW[sec]||[])){
+      if(sec === 'hk' && String(r['Тоифаси ўзгаргани (+/-)']||'').trim() === '+') continue;
+      const dist = (typeof rowDistrict === 'function') ? rowDistrict(sec, r) : null;
+      if(!dist) continue;
+      const area = (typeof rowArea === 'function') ? (rowArea(sec, r)||0) : 0;
+      const st = rowStageKey(sec, r);
+      STAGE_STATS.all.count += 1; STAGE_STATS.all.area += area;
+      if(st && STAGE_STATS[st]){ STAGE_STATS[st].count += 1; STAGE_STATS[st].area += area; }
+    }
+  }
+  // Proposals → "Янги таклиф" stage
+  if(typeof getProposals === 'function'){
+    const all = getProposals() || [];
+    STAGE_STATS.proposal.count = all.length;
+    STAGE_STATS.proposal.area  = 0;
+  }
+}
+/* Filter predicate against current STAGE_STATE.
+   Items can be either a section row (sec, row) or a plot item with .candidates. */
+function activeStageFilter(){
+  const s = (STAGE_STATE && STAGE_STATE.selected) || 'all';
+  return s === 'all' ? null : s;
+}
+function rowMatchesStage(sec, row, stageKey){
+  if(!stageKey) return true;
+  return rowStageKey(sec, row) === stageKey;
+}
+function plotItemMatchesStage(item, stageKey){
+  if(!stageKey) return true;
+  const status = item && (item.status || (item.candidates ? currentParcelStatus(item.candidates) : null));
+  if(!status) return false;
+  const k = plotStatusKind(status.label);
+  return __stageFromKind(k.kind) === stageKey;
+}
+
+/* Render the stage chips + Excel export button into #stageFilter */
+function renderStageFilter(){
+  const host = document.getElementById('stageFilter');
+  if(!host) return;
+  const sel = STAGE_STATE.selected || 'all';
+  const stats = STAGE_STATS || {};
+  const total = (stats.all && stats.all.count) || 0;
+  const chips = STAGE_DEFS.map(def => {
+    const active = sel === def.key;
+    const cnt = (stats[def.key] && stats[def.key].count) || 0;
+    const dot = `<i style="background:${def.color}"></i>`;
+    return `<button class="sp-stage-chip ${active?'active':''}" data-stage="${def.key}"
+      style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button">${dot}<span>${def.label}</span>${cnt?`<span class="n">${fmt(cnt)}</span>`:''}</button>`;
+  }).join('');
+  const filteredCount = (sel === 'all') ? total : ((stats[sel] && stats[sel].count) || 0);
+  host.innerHTML = `
+    <div class="sp-stage-label">
+      <span>Босқич бўйича фильтр</span>
+      <span class="sp-stage-count">${fmt(filteredCount)} та / ${fmt(total)}</span>
+    </div>
+    <div class="sp-stage-chips">${chips}</div>
+    <div class="sp-stage-export">
+      <button class="sp-stage-export-btn" id="stageExportBtn" type="button" title="Танланган босқичдаги участкалар Excel'га ёзиб олиш">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Excel рўйхатига чиқариш
+      </button>
+    </div>
+    <div class="sp-stage-export-hint">Танланган босқич + категория + туман бўйича жорий филтрни юклаб олинг</div>`;
+  host.querySelectorAll('.sp-stage-chip').forEach(el => {
+    el.onclick = () => {
+      STAGE_STATE.selected = el.dataset.stage;
+      renderStageFilter();
+      if(typeof renderBubbles === 'function') renderBubbles();
+      if(currentDistrict && typeof renderPlotPoints === 'function') renderPlotPoints();
+    };
+  });
+  const btn = document.getElementById('stageExportBtn');
+  if(btn) btn.onclick = () => exportFilteredToExcel();
+}
+
+/* ================= EXCEL EXPORT ================= */
+/* Lazily load SheetJS (xlsx) library from CDN. */
+let __xlsxLibPromise = null;
+function ensureXlsxLib(){
+  if(typeof XLSX !== 'undefined') return Promise.resolve(XLSX);
+  if(__xlsxLibPromise) return __xlsxLibPromise;
+  __xlsxLibPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload = () => resolve(XLSX);
+    s.onerror = () => reject(new Error('xlsx library load failed'));
+    document.head.appendChild(s);
+  });
+  return __xlsxLibPromise;
+}
+/* Collect rows that pass the current category + stage + district filter. */
+function collectFilteredRows(){
+  const out = [];
+  if(typeof SECTIONS_RAW === 'undefined' || !SECTIONS_RAW) return out;
+  const catFilter = activeCategoryFilter();
+  const stageFilter = activeStageFilter();
+  const distFilter = currentDistrict || null;
+  const sectionFilter = (currentSection && currentSection !== 'all') ? currentSection : null;
+  for(const sec of Object.keys(SECTIONS_RAW)){
+    if(sectionFilter && sec !== sectionFilter) continue;
+    for(const r of (SECTIONS_RAW[sec]||[])){
+      if(sec === 'hk' && String(r['Тоифаси ўзгаргани (+/-)']||'').trim() === '+') continue;
+      const dist = rowDistrict(sec, r);
+      if(!dist) continue;
+      if(distFilter && dist !== distFilter) continue;
+      if(catFilter && !parcelMatchesCategory(sec, r, catFilter)) continue;
+      if(stageFilter && !rowMatchesStage(sec, r, stageFilter)) continue;
+      out.push({ sec, row:r, dist });
+    }
+  }
+  return out;
+}
+/* Format an output sheet row for leadership use. */
+function buildExportRow(rec){
+  const { sec, row, dist } = rec;
+  const cat = classifyParcel(sec, row);
+  const catLabel = (CATEGORY_META[cat]||{}).label || cat;
+  const stage = rowStageKey(sec, row) || 'in_process';
+  const stageLabel = (STAGE_DEFS.find(d=>d.key===stage)||{}).label || '';
+  return {
+    'Туман / Шаҳар': dist || '',
+    'Бўлим': sectionLabel(sec) || sec,
+    'Категория': catLabel,
+    'Босқич': stageLabel,
+    'МФЙ': rowMfy(sec, row) || '',
+    'Контур': plotContour(row),
+    'Жойлашган участка номи': row['Жойлашган участка номи'] || '',
+    'Лойиҳа номи': row['Лойиҳа номи'] || row['Фойдаланиш мақсади'] || row['Номланиши'] || '',
+    'Ташаббускор / Корхона': row['Лойиҳа ташаббускори'] || row['Ер участкаси ажратилган корхона номи'] || row['Бугунги кунда ердан фойдаланувчи номи'] || '',
+    'Майдон (га)': rowArea(sec, row) || '',
+    'АСОС / Ҳужжат': plotBasis(row),
+    'Координаталари': (row['Координаталари']||'').toString().replace(/\s+/g,' ').trim()
+  };
+}
+async function exportFilteredToExcel(){
+  const rows = collectFilteredRows();
+  if(!rows.length){
+    if(typeof showToast === 'function') showToast('Жорий филтр бўйича участка топилмади');
+    else alert('Жорий филтр бўйича участка топилмади');
+    return;
+  }
+  const btn = document.getElementById('stageExportBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Юкланмоқда…'; }
+  try {
+    const XLSX_ = await ensureXlsxLib();
+    const data = rows.map(buildExportRow);
+    const ws = XLSX_.utils.json_to_sheet(data, {cellDates:false});
+    // Auto-width columns based on content
+    const colKeys = Object.keys(data[0]||{});
+    ws['!cols'] = colKeys.map(k => {
+      const max = Math.max(k.length, ...data.map(r => String(r[k]||'').length));
+      return { wch: Math.min(60, Math.max(10, max+2)) };
+    });
+    const wb = XLSX_.utils.book_new();
+    XLSX_.utils.book_append_sheet(wb, ws, 'Танланган участкалар');
+    const stage = (STAGE_DEFS.find(d=>d.key===STAGE_STATE.selected)||{}).label || 'Барчаси';
+    const cat = (CATEGORY_META[CAT_STATE.selected]||{}).label || 'Барчаси';
+    const dist = currentDistrict || 'Навоий вилояти';
+    const fname = `Раҳбариятга_${dist}_${cat}_${stage}_${new Date().toISOString().slice(0,10)}.xlsx`
+      .replace(/\s+/g,'_').replace(/[\\/:*?"<>|]/g,'');
+    XLSX_.writeFile(wb, fname);
+    if(typeof showToast === 'function') showToast(`${fmt(rows.length)} та участка Excel'га юкланди`);
+  } catch(e){
+    console.error('export', e);
+    alert('Excel яратишда хатолик: ' + (e && e.message ? e.message : e));
+  } finally {
+    if(btn){ btn.disabled = false; btn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Excel рўйхатига чиқариш`; }
+  }
+}
+
 function renderKpis(){
   const host = document.getElementById('kpis');
   if(!host) return;
@@ -2472,7 +2777,8 @@ function renderKpis(){
     </button>`;
   };
   const tier1 = TIER1_CATS.map(k => cell(k, 'cat-t1')).join('');
-  const tier2 = GEOLOGY_SUBS.map(k => cell(k, 'cat-t2')).join('');
+  const tier2Geo = GEOLOGY_SUBS.map(k => cell(k, 'cat-t2 cat-t2-geo')).join('');
+  const tier2Biz = BUSINESS_SUBS.map(k => cell(k, 'cat-t2 cat-t2-biz')).join('');
   host.innerHTML = `
     <div class="cat-tree" data-expanded="${exp||'none'}" data-selected="${sel}">
       <button class="cat cat-hero ${sel==='all'?'is-selected':''} ${exp==='all'?'is-expanded':''}"
@@ -2489,8 +2795,11 @@ function renderKpis(){
       <div class="cat-row cat-row-t1" ${exp==='all'||TIER1_CATS.includes(exp)?'':'hidden'}>
         ${tier1}
       </div>
-      <div class="cat-row cat-row-t2" ${exp==='geology'?'':'hidden'}>
-        ${tier2}
+      <div class="cat-row cat-row-t2 cat-row-t2-geo" ${exp==='geology'?'':'hidden'}>
+        ${tier2Geo}
+      </div>
+      <div class="cat-row cat-row-t2 cat-row-t2-biz" ${exp==='business'?'':'hidden'}>
+        ${tier2Biz}
       </div>
     </div>`;
   host.querySelectorAll('.cat').forEach(el => {
@@ -2527,6 +2836,9 @@ function renderKpis(){
 /* ================= CATEGORY TREE INTERACTION ================= */
 function onCategoryClick(cat){
   if(!CATEGORY_META[cat]) return;
+  // Resolve legacy aliases (bino → zavod, other → ijtimoiy)
+  const aliasOf = CATEGORY_META[cat] && CATEGORY_META[cat].alias;
+  if(aliasOf) cat = aliasOf;
   const meta = CATEGORY_META[cat];
   const prevSel = CAT_STATE.selected;
   const prevExp = CAT_STATE.expanded;
@@ -2536,25 +2848,19 @@ function onCategoryClick(cat){
     CAT_STATE.expanded = (prevExp ? null : 'all');
     CAT_STATE.selected = 'all';
   } else if(meta.tier === 1){
-    if(cat === 'geology'){
-      // Geology: click toggles sub-branch expansion; also selects geology as filter
-      if(prevExp === 'geology' && prevSel === 'geology'){
-        // Collapse back to tier-1 only, deselect
-        CAT_STATE.expanded = 'all';
-        CAT_STATE.selected = 'all';
-      } else {
-        CAT_STATE.expanded = 'geology';
-        CAT_STATE.selected = 'geology';
-      }
-    } else {
-      // Bino / Other: plain leaf selection, keep tier-1 open
+    // Top-level branches (geology / business): click toggles sub-row + selects branch
+    if(prevExp === cat && prevSel === cat){
       CAT_STATE.expanded = 'all';
-      CAT_STATE.selected = (prevSel === cat ? 'all' : cat);
+      CAT_STATE.selected = 'all';
+    } else {
+      CAT_STATE.expanded = cat;
+      CAT_STATE.selected = cat;
     }
   } else if(meta.tier === 2){
-    // Geology sub-branch leaf
-    CAT_STATE.expanded = 'geology';
-    CAT_STATE.selected = (prevSel === cat ? 'geology' : cat);
+    // Tier-2 leaf belongs to its parent branch; keep parent expanded
+    const parent = meta.parent || 'geology';
+    CAT_STATE.expanded = parent;
+    CAT_STATE.selected = (prevSel === cat ? parent : cat);
   }
 
   renderKpis();
@@ -2576,17 +2882,18 @@ function parcelMatchesCategory(sec, row, filter){
   if(!filter) return true;
   const cat = classifyParcel(sec, row);
   if(filter === 'geology') return GEOLOGY_SUBS.includes(cat);
+  if(filter === 'business') return BUSINESS_SUBS.includes(cat);
   return cat === filter;
 }
 /* Best color to render a parcel under the active filter:
-   - 'geology' branch selected → color by its sub-category for visual variety
+   - 'geology' / 'business' branch selected → color by its sub-category for visual variety
    - Leaf selected → uniform category color
    - No filter → null (caller keeps existing color) */
 function parcelCategoryColor(sec, row, filter){
   if(!filter) return null;
   const cat = classifyParcel(sec, row);
-  if(filter === 'geology'){
-    const meta = CATEGORY_META[cat] || CATEGORY_META.geology;
+  if(filter === 'geology' || filter === 'business'){
+    const meta = CATEGORY_META[cat] || CATEGORY_META[filter];
     return meta.color;
   }
   return (CATEGORY_META[filter] || {}).color || null;
@@ -3691,7 +3998,12 @@ function renderPlotPoints(){
   window.__lastPlotItems = [];
   if(!currentDistrict) return;
   plotLayer = L.layerGroup().addTo(map);
-  const items = collectPlotPoints();
+  let items = collectPlotPoints();
+  // Apply stage filter (when active) — drop items whose status doesn't match
+  const stageFilter = (typeof activeStageFilter === 'function') ? activeStageFilter() : null;
+  if(stageFilter){
+    items = items.filter(it => plotItemMatchesStage(it, stageFilter));
+  }
   window.__plotLayer = plotLayer;
   window.__lastPlotItems = items;
 
@@ -6106,7 +6418,9 @@ function saveEditRecord(){
   // Rebuild stats to reflect changes
   try { buildUnifiedStats(); } catch(e){ console.error('rebuild stats',e); }
   try { buildCategoryStats(); } catch(e){ console.error('rebuild cat stats',e); }
+  try { buildStageStats(); } catch(e){ console.error('rebuild stage stats',e); }
   renderKpis();
+  renderStageFilter();
   renderDistrictList();
   renderBubbles();
   restyleMfyLayer();
@@ -6821,7 +7135,9 @@ function boot(){
     buildUnifiedStats();
   } catch(e){ console.error('unified stats', e); }
   try { buildCategoryStats(); } catch(e){ console.error('category stats', e); }
+  try { buildStageStats(); } catch(e){ console.error('stage stats', e); }
   renderKpis();
+  renderStageFilter();
   renderSectionTabs();
   renderYearBar();
   renderDistrictList();
