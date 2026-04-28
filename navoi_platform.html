@@ -1641,18 +1641,23 @@ const PLATFORM_URL = 'navoi_land_platform_search_svod_linked.html';
 
 const SECTIONS = [
   {key:'all',      label:'Барчаси',      color:'#1d4ed8'},
+  // Two main sections — the platform is built around these
   {key:'hk',       label:'Ҳукумат комиссиясига таклифлар', color:'#2563eb'},
   {key:'changed',  label:'Тоифаси ўзгарган', color:'#0ea5e9'},
-  {key:'changed_vm88', label:'ВМ-88',     color:'#06b6d4', parent:'changed'},
-  {key:'geology_changed', label:'Ер қаъри', color:'#14b8a6', parent:'changed'},
-  {key:'auction',  label:'Аукцион',       color:'#10b981', parent:'hk'},
+  // HK children — alternative lenses of the same proposals (decree sub-views)
   {key:'pq12',     label:'ПҚ-58 12-илова', short:'12-илова', color:'#f59e0b', parent:'hk'},
   {key:'pq13',     label:'ПҚ-58 13-илова', short:'13-илова', color:'#ef4444', parent:'hk'},
-  {key:'mining',   label:'Кон',           color:'#8b5cf6'},
-  {key:'strategic',label:'Стратегик',     color:'#ec4899'}
+  {key:'auction',  label:'Аукцион',       color:'#10b981', parent:'hk'},
+  // Changed children — different categorisations of changed parcels
+  {key:'changed_vm88', label:'ВМ-88',     color:'#06b6d4', parent:'changed'},
+  {key:'geology_changed', label:'Ер қаъри', color:'#14b8a6', parent:'changed'},
+  {key:'mining',   label:'Кон',           color:'#8b5cf6', parent:'changed'},
+  {key:'strategic',label:'Стратегик',     color:'#ec4899', parent:'changed'}
 ];
-/* Top-level order for tabs: primary parents + standalones (no children) */
-const SECTION_TOP_ORDER = ['hk','changed','mining','strategic'];
+/* Top-level: only the two main sections.
+   Everything else is a child of either hk or changed and surfaces
+   as a sub-chip when its parent is active. */
+const SECTION_TOP_ORDER = ['hk','changed'];
 function sectionParent(key){ return (SECTIONS.find(s=>s.key===key)||{}).parent || null; }
 function sectionChildren(parentKey){ return SECTIONS.filter(s=>s.parent===parentKey); }
 function sectionTopKey(key){
@@ -2906,7 +2911,9 @@ function renderSectionTabs(){
   const primaryRow = SECTION_TOP_ORDER.map(key=>{
     const s = SECTIONS.find(x=>x.key===key); if(!s) return '';
     const children = sectionChildren(key);
-    const total = sectionTotal(key) + children.reduce((acc,c)=>acc+sectionTotal(c.key),0);
+    // Count only the parent's own rows. Child sections are alternative lenses
+    // of (overlapping) parcels — summing them double-counts.
+    const total = sectionTotal(key);
     const isActive = (currentSection===key) || (children.some(c=>c.key===currentSection));
     const hasKids = children.length>0;
     const badge = sectionBehavior(key).badge ? `<span class="role">${sectionBehavior(key).badge}</span>` : '';
@@ -3032,7 +3039,7 @@ function hexToRgba(hex, a){
   const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
   return `rgba(${r},${g},${b},${a})`;
 }
-function distCountByCategory(distKey, section, catFilter){
+function distCountByCategory(distKey, section, catFilter, stageFilter){
   let count = 0;
   const sections = (section==='all' || !section) ? Object.keys(SECTIONS_RAW) : [section];
   for(const sec of sections){
@@ -3041,7 +3048,8 @@ function distCountByCategory(distKey, section, catFilter){
       if(sec === 'hk' && r['Тоифаси ўзгаргани (+/-)'] === '+') continue;
       const dk = rowDistrict(sec, r);
       if(dk !== distKey) continue;
-      if(!parcelMatchesCategory(sec, r, catFilter)) continue;
+      if(catFilter && !parcelMatchesCategory(sec, r, catFilter)) continue;
+      if(stageFilter && !rowMatchesStage(sec, r, stageFilter)) continue;
       count++;
     }
   }
@@ -3057,19 +3065,23 @@ function renderBubbles(){
   const secMeta = SECTIONS.find(s=>s.key===currentSection) || SECTIONS[0];
   const focused = currentSection !== 'all';
   const catFilter = (typeof activeCategoryFilter === 'function') ? activeCategoryFilter() : null;
+  const stageFilter = (typeof activeStageFilter === 'function') ? activeStageFilter() : null;
   const catColor = catFilter ? ((CATEGORY_META[catFilter]||{}).color || null) : null;
-  const col = catColor || secMeta.color;
+  const stageColor = stageFilter ? ((STAGE_DEFS.find(d=>d.key===stageFilter)||{}).color || null) : null;
+  const col = stageColor || catColor || secMeta.color;
   for(const d of DISTRICTS){
     const c = districtCentroids[d.key];
     if(!c) continue;
-    const count = catFilter ? distCountByCategory(d.key, currentSection, catFilter) : distCount(d.key, currentSection);
-    if((focused || catFilter) && count===0) continue;      // hide empty bubbles when filtered
+    const count = (catFilter || stageFilter)
+      ? distCountByCategory(d.key, currentSection, catFilter, stageFilter)
+      : distCount(d.key, currentSection);
+    if((focused || catFilter || stageFilter) && count===0) continue;
     const size = Math.max(44, Math.min(92, 40 + Math.sqrt(count) * 5));
     const isHi = currentDistrict===d.key;
     // Tint bubble by current section color
     const bgA = isHi
       ? `radial-gradient(circle at 35% 30%,#fda4af 0%,#e11d48 55%,#9f1239 100%)`
-      : (focused || catFilter)
+      : (focused || catFilter || stageFilter)
         ? `radial-gradient(circle at 35% 30%, ${hexToRgba(col,.85)} 0%, ${col} 55%, ${col} 100%)`
         : `radial-gradient(circle at 35% 30%,#6ea6ff 0%,#2563eb 55%,#1d4ed8 100%)`;
     const shadow = isHi
