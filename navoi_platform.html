@@ -1774,30 +1774,57 @@ function __detectBusinessPurpose(blob){
   return null;
 }
 
+/* Look up a row value by header suffix.
+   The new master file concatenates parent-group + child header with " / " — e.g.
+   "Тоғ-кон саноати йўналишлари бўйича / Норуда фойдали қазилма конлари".
+   This matches by either the full key or its last "/"-segment so the classifier
+   doesn't break when the same field gets a different prefix in another sheet. */
+function __findRowValueBySuffix(row, suffix){
+  if(!row) return null;
+  const target = String(suffix).toLowerCase().trim();
+  for(const k of Object.keys(row)){
+    const last = String(k).split('/').pop().toLowerCase().trim();
+    if(last === target || last.includes(target) || String(k).toLowerCase().includes(target)){
+      const v = row[k];
+      if(v == null) continue;
+      const s = String(v).trim();
+      if(s === '' || s === '-' || s === '0' || Number(v) === 0) continue;
+      return v;
+    }
+  }
+  return null;
+}
 /* Some sections (per the new master file) may include explicit boolean columns:
    "Завод қурилиши учун", "Туризм ташкил этиш учун", "Қуёш ёки шамол фотоэлектр…",
    "Электр линияси учун", "Ижтимоий ёки бошқа мақсадлар учун".
    When present (truthy / non-zero), they take precedence over keyword detection. */
 function __detectBusinessExplicit(row){
   if(!row) return null;
-  const tr = (k) => { const v = row[k]; return v != null && String(v).trim() !== '' && Number(v) !== 0 && String(v).trim() !== '-'; };
-  if(tr('Завод қурилиши учун')) return 'zavod';
-  if(tr('Туризм ташкил этиш учун')) return 'turizm';
-  if(tr('Қуёш ёки шамол фотоэлектр станциялари қуриш учун') || tr('Қуёш ёки шамол фотоэлектр станциялари')) return 'energetika';
-  if(tr('Электр линияси учун') || tr('Электр линияси')) return 'elektr';
-  if(tr('Ижтимоий ёки бошқа мақсадлар учун') || tr('Ижтимоий')) return 'ijtimoiy';
+  if(__findRowValueBySuffix(row, 'Завод қурилиши')) return 'zavod';
+  if(__findRowValueBySuffix(row, 'Туризм')) return 'turizm';
+  if(__findRowValueBySuffix(row, 'Қуёш ёки шамол') || __findRowValueBySuffix(row, 'фотоэлектр')) return 'energetika';
+  if(__findRowValueBySuffix(row, 'Электр линияси')) return 'elektr';
+  if(__findRowValueBySuffix(row, 'Ижтимоий ёки бошқа') || __findRowValueBySuffix(row, 'Ижтимоий')) return 'ijtimoiy';
   return null;
 }
-/* Same idea for explicit geology columns in the new master file. */
+/* Same idea for explicit geology columns in the new master file.
+   Tier of priority: Strategic > НКМК > Уран > Сочма олтин > Норуда. */
 function __detectGeologyExplicit(row){
   if(!row) return null;
-  const tr = (k) => { const v = row[k]; return v != null && String(v).trim() !== '' && Number(v) !== 0 && String(v).trim() !== '-'; };
-  if(tr('Стратегик конлар')) return 'strategic';
-  if(tr('НКМК учун ажратиладиган конлар') || tr('НКМК')) return 'nkmk';
-  if(tr('УРАН қазиб олиш учун ажратиладиган конлар') || tr('УРАН')) return 'uran';
-  if(tr('Сочма олтин конлари') || tr('Сочма олтин')) return 'sochma';
-  if(tr('Норуда фойдали қазилма конлари') || tr('Норуда')) return 'noruda';
+  if(__findRowValueBySuffix(row, 'Стратегик кон')) return 'strategic';
+  if(__findRowValueBySuffix(row, 'НКМК')) return 'nkmk';
+  if(__findRowValueBySuffix(row, 'УРАН') || __findRowValueBySuffix(row, 'Уран')) return 'uran';
+  if(__findRowValueBySuffix(row, 'Сочма олтин')) return 'sochma';
+  if(__findRowValueBySuffix(row, 'Норуда')) return 'noruda';
   return null;
+}
+/* Fallback geology signal — recognises geology-related project descriptions
+   that don't carry an explicit sub-type marker (e.g. "геологик қидирув",
+   "ер қаъри", "пардозбоп тошларни қазиб олиш"). */
+function __hasGeologySignal(blob){
+  const t = __catNorm(blob);
+  if(!t) return false;
+  return /геолог|кидирув|разведк|ер\s+ка(ъ|')?ри|недра|казиб\s+оли|пардозбоп|тошларни\s+казиб|конлари|кон\s+участка|кон\s+ма[ий]до/.test(t);
 }
 
 function classifyParcel(sec, row){
@@ -1837,41 +1864,51 @@ function classifyParcel(sec, row){
   // 5) changed has "Бино-иншоот/Кон" marker
   if(sec === 'changed'){
     const kind = __catNorm(row['Бино-иншоот/Кон']);
-    const blob = [row['Ер участкаси ажратилган корхона номи'], row['Фойдаланиш мақсади'], row['Изоҳ']].join(' | ');
+    const blob = [row['Ер участкаси ажратилган корхона номи'], row['Фойдаланиш мақсади'], row['Изоҳ'], row['Коннинг тури (Норуда, Сочма, Стратегик, НКМК, Уран)']].join(' | ');
     if(/кон/.test(kind)) return __detectMineSubtype(blob) || 'noruda';
     if(/бино|иншоот/.test(kind)) return __detectBusinessPurpose(blob) || 'zavod';
-    if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
+    const s = __detectMineSubtype(blob);
+    if(s) return s;
+    if(__hasGeologySignal(blob)) return 'noruda';
     return __detectBusinessPurpose(blob) || 'ijtimoiy';
   }
 
   // 6) changed_vm88 — activity type + purpose (usually investment projects)
   if(sec === 'changed_vm88'){
     const blob = [row['Фаолият тури бўйича'], row['Фойдаланиш мақсади'], row['Ер участкаси ажратилган корхона номи'], row['Инвестиция лойиҳалари']].join(' | ');
-    if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
+    const s = __detectMineSubtype(blob);
+    if(s) return s;
+    if(__hasGeologySignal(blob)) return 'noruda';
     return __detectBusinessPurpose(blob) || 'ijtimoiy';
   }
 
   // 7) pq12 — activity / purpose
   if(sec === 'pq12'){
     const blob = [row['Фаолият тури'], row['Фойдаланиш мақсади'], row['Ердан фойдаланувчи номи']].join(' | ');
-    if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
+    const s = __detectMineSubtype(blob);
+    if(s) return s;
+    if(__hasGeologySignal(blob)) return 'noruda';
     return __detectBusinessPurpose(blob) || 'ijtimoiy';
   }
 
   // 8) auction — "Номланиши" describes what's being auctioned
   if(sec === 'auction'){
     const blob = [row['Номланиши'], row['Юридик ёки жисмоний шахс']].join(' | ');
-    if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
+    const s = __detectMineSubtype(blob);
+    if(s) return s;
+    if(__hasGeologySignal(blob)) return 'noruda';
     return __detectBusinessPurpose(blob) || 'zavod';
   }
 
-  // 9) hk — explicit "Кон ёки бино-иншоот, завод учун бериладиган"
+  // 9) hk — explicit "Кон ёки бино-иншоот, завод учун бериладиган" (legacy schema)
   if(sec === 'hk'){
     const kbi = __catNorm(row['Кон ёки бино-иншоот, завод учун бериладиган']);
-    const blob = [row['Лойиҳа номи'], row['Лойиҳа ташаббускори'], row['Бугунги кунда ердан фойдаланувчи номи'], row['Жойлашган участка номи']].join(' | ');
+    const blob = [row['Лойиҳа номи'], row['Лойиҳа ташаббускори'], row['Бугунги кунда ердан фойдаланувчи номи'], row['Жойлашган участка номи'], row['АСОС'], row['Фойдаланиш мақсади']].join(' | ');
     if(/кон/.test(kbi)) return __detectMineSubtype(blob) || 'noruda';
     if(/бино|иншоот|завод|фабрика/.test(kbi)) return __detectBusinessPurpose(blob) || 'zavod';
-    if(__detectMineSubtype(blob)) return __detectMineSubtype(blob);
+    const sub = __detectMineSubtype(blob);
+    if(sub) return sub;
+    if(__hasGeologySignal(blob)) return 'noruda';
     return __detectBusinessPurpose(blob) || 'ijtimoiy';
   }
 
