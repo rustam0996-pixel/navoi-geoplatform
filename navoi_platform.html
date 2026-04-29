@@ -6111,6 +6111,7 @@ const CHECKBOX_LABELS = {
 const HK_FIELD_LABELS = {
   'Кадастрни хулосасига асосан дастлаб қайси ташкилот балансида бўлган':'Дастлаб қайси ташкилот балансида бўлган',
   'Ташаббускори аниқ/ноаниқ (+/-)':'Лойиҳа ташаббускори ҳолати',
+  // Legacy (+/-) keys — kept so old saved state still maps cleanly
   'Ветеринария/Ўрмонга юборилган (+/-)':'Ветеринария/ўрмонга юборилган',
   'Ветеринария/Ўрмонни жавоб хати':'Ветеринария/ўрмоннинг жавоб хати',
   'Заҳирага қайтаришга розилик (+/-)':'Заҳирага қайтаришга розилик',
@@ -6125,7 +6126,22 @@ const HK_FIELD_LABELS = {
   'шундан / Суғориладиган ерлар, га':'Суғорил.',
   'Лалми ерлар':'Лалми',
   'яйловлар':'Яйлов',
-  'Бошқа ерлар, га':'Бошқа'
+  'Бошқа ерлар, га':'Бошқа',
+  // New master-file keys (value = hectares when action taken, empty when not)
+  'Захирага қайтариш мақсадида Ветеринария ва Ўрмонга мурожаат қилинган':'Ветеринария/Ўрмонга юборилган',
+  'Захирага қайтариш / Ҳокимликдан Ўрмон ёки Ветеринарияга чиққан хат':'Ҳокимликдан чиққан хат',
+  'Шундан розилик олингани':'Заҳирага қайтаришга розилик',
+  'Ҳокимнинг заҳира қарори':'Ҳокимнинг заҳира қарори',
+  'Заҳирага қайтарилган':'Заҳирага қайтарилган',
+  'Даверлойиҳа билан шартнома тузган/тузмаган':'Даверлойиҳа билан шартнома тузилган'
+};
+/* Presence-based fields: empty = action NOT taken, numeric > 0 = action taken with that
+   many hectares. Map: source key → {yes:'Done with N га', no:'Not done'} verbiage. */
+const HK_PRESENCE_FIELDS = {
+  'Захирага қайтариш мақсадида Ветеринария ва Ўрмонга мурожаат қилинган': { yes:'Юборилган', no:'Юборилмаган', unit:'га' },
+  'Шундан розилик олингани':                                              { yes:'Розилик берилган', no:'Розилик берилмаган', unit:'га' },
+  'Заҳирага қайтарилган':                                                 { yes:'Қайтарилган', no:'Қайтарилмаган', unit:'га' },
+  'Даверлойиҳа билан шартнома тузган/тузмаган':                           { yes:'Тузилган', no:'Тузилмаган', unit:'га' }
 };
 
 const HK_BASIC_FIELDS = [
@@ -6138,19 +6154,27 @@ const HK_BASIC_FIELDS = [
 const HK_LAND_TYPE_FIELDS = ['шундан / Суғориладиган ерлар, га','Лалми ерлар','яйловлар','Бошқа ерлар, га'];
 const HK_RESERVE_FIELDS = [
   'АСОС',
+  'Захирага қайтариш / Ҳокимликдан Ўрмон ёки Ветеринарияга чиққан хат',
+  'Захирага қайтариш мақсадида Ветеринария ва Ўрмонга мурожаат қилинган',
+  'Ветеринария/Ўрмонни жавоб хати',
+  'Шундан розилик олингани',
+  'Ҳокимнинг заҳира қарори',
+  'Заҳирага қайтарилган',
+  // Legacy (+/-) keys — left in for backward compat with any older saved data.
+  // hideEmpty in renderHkRecordDetail collapses them when no value is present.
   'Заҳирага қайтариш / Ҳокимликдан Ўрмон ёки Ветеринарияга чиққан хат',
   'Ветеринария/Ўрмонга юборилган (+/-)',
   'Заҳирага қайтаришга розилик (+/-)',
-  'Ветеринария/Ўрмонни жавоб хати',
-  'Ҳокимнинг заҳира қарори',
   'Заҳирага қайтарилган (+/-)'
 ];
 const HK_PROCESS_FIELDS = [
   'Ҳукумат комиссияси баёни/ВМ фармойиши билан тоифасини ўзгартириш / Ҳукумат комиссиясига киритилган расмий хати',
-  'Ҳукумат комиссиясига киритилган (+/-)',
-  'Кон ёки бино-иншоот, завод учун бериладиган',
   'Даверлойиҳа билан шартнома қилади (ҳокимлик/корхона)',
-  'Даверлойиҳа билан шартнома тузган/тузмаган (+/-)'
+  'Даверлойиҳа билан шартнома тузган/тузмаган',
+  // Legacy (+/-) keys — collapsed by hideEmpty when not populated
+  'Ҳукумат комиссиясига киритилган (+/-)',
+  'Даверлойиҳа билан шартнома тузган/тузмаган (+/-)',
+  'Кон ёки бино-иншоот, завод учун бериладиган'
 ];
 const HK_CATEGORY_FIELDS = ['Тоифаси ўзгаргани (+/-)','Ер майдони тоифаси ўзгаргани (протокол рақами)'];
 const HK_DECISION_FIELDS = [
@@ -6586,6 +6610,18 @@ function detailFieldLabel(key, cols=[]){
 }
 function detailFieldValue(key, value, checkbox=false){
   if(checkbox || CHECKBOX_FIELDS.includes(key)) return hkIsChecked(value) ? 'Ҳа' : 'Йўқ';
+  // Presence-as-area fields: empty means action NOT done, numeric > 0 means done
+  if(typeof HK_PRESENCE_FIELDS !== 'undefined' && HK_PRESENCE_FIELDS[key]){
+    const meta = HK_PRESENCE_FIELDS[key];
+    const raw = value == null ? '' : String(value).trim();
+    if(!raw || raw === '-' || Number(raw) === 0) return meta.no;
+    const num = Number(raw);
+    if(Number.isFinite(num) && num > 0){
+      return `${meta.yes} · ${(typeof fmtArea === 'function' ? fmtArea(num) : num)} ${meta.unit||''}`.trim();
+    }
+    // Non-numeric positive value (e.g. text mark "+", "ҳа") — still treat as done
+    return meta.yes;
+  }
   if(DROPDOWN_FIELDS[key]){
     const raw = String(value == null ? '' : value).trim();
     if(raw === '') return '— Киритилмаган —';   // never show "Танланг" in the read-only detail
