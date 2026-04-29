@@ -2713,6 +2713,7 @@ function renderStageFilter(){
       renderStageFilter();
       if(typeof renderBubbles === 'function') renderBubbles();
       if(currentDistrict && typeof renderPlotPoints === 'function') renderPlotPoints();
+      if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
     };
   });
   const btn = document.getElementById('stageExportBtn');
@@ -2931,6 +2932,8 @@ function onCategoryClick(cat){
   renderKpis();
   // Map reactivity: re-color parcels based on selection
   if(typeof renderBubbles === 'function') renderBubbles();
+  // Drawer reactivity: header + stats reflect active filter
+  if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
   updateHomePillState && updateHomePillState();
 }
 
@@ -4333,11 +4336,41 @@ function renderDrawer(key){
   const focArea  = focused ? distArea(key, currentSection) : 0;
   const yearLabel = (currentSection==='changed' && currentYear!=='all') ? ` • ${currentYear} йил` : '';
 
+  // Active category / stage filters — when set, the drawer shows only matching parcels
+  const catFilter = (typeof activeCategoryFilter === 'function') ? activeCategoryFilter() : null;
+  const stageFilter = (typeof activeStageFilter === 'function') ? activeStageFilter() : null;
+  const catMeta = catFilter ? (CATEGORY_META[catFilter] || {}) : null;
+  const stageMeta = stageFilter ? (STAGE_DEFS.find(d=>d.key===stageFilter) || {}) : null;
+  let filtCount = 0, filtArea = 0;
+  if(catFilter || stageFilter){
+    for(const sec of Object.keys(SECTIONS_RAW||{})){
+      if(focused && sec !== currentSection) continue;
+      for(const r of (SECTIONS_RAW[sec]||[])){
+        if(sec === 'hk' && String(r['Тоифаси ўзгаргани (+/-)']||'').trim() === '+') continue;
+        const dk = rowDistrict(sec, r);
+        if(dk !== key) continue;
+        if(catFilter && !parcelMatchesCategory(sec, r, catFilter)) continue;
+        if(stageFilter && !rowMatchesStage(sec, r, stageFilter)) continue;
+        filtCount++;
+        filtArea += rowArea(sec, r) || 0;
+      }
+    }
+  }
+
   document.getElementById('drSmall').textContent = d.type==='city'?'ШАҲАР':'ТУМАН';
   document.getElementById('drTitle').textContent = d.label;
-  document.getElementById('drArea').textContent = focused
-    ? `${secMeta.label}${yearLabel}: ${fmt(focCount)} та • ${fmtArea(focArea)} га`
-    : `Жами ${fmt(total)} та ер участкаси • ${fmtArea(totalArea)} га`;
+  // Title strip — pick the most specific filter for clarity
+  const filterParts = [];
+  if(catMeta) filterParts.push(catMeta.label);
+  if(stageMeta && stageMeta.key !== 'all') filterParts.push(stageMeta.label);
+  if(focused) filterParts.push(secMeta.label + yearLabel);
+  if(filterParts.length){
+    const cnt = (catFilter || stageFilter) ? filtCount : focCount;
+    const ar  = (catFilter || stageFilter) ? filtArea  : focArea;
+    document.getElementById('drArea').textContent = `${filterParts.join(' · ')}: ${fmt(cnt)} та • ${fmtArea(ar)} га`;
+  } else {
+    document.getElementById('drArea').textContent = `Жами ${fmt(total)} та ер участкаси • ${fmtArea(totalArea)} га`;
+  }
 
   const alloc = DISTRICT_ALLOCATION_STATS[d.label] || DISTRICT_ALLOCATION_STATS[key] || {binoAucSoldCount:0,binoAucSoldArea:0,binoDirectCount:0,binoDirectArea:0,konAucSoldCount:0,konAucSoldArea:0,konDirectCount:0,konDirectArea:0};
 
@@ -6555,6 +6588,7 @@ function detailFieldValue(key, value, checkbox=false){
   if(checkbox || CHECKBOX_FIELDS.includes(key)) return hkIsChecked(value) ? 'Ҳа' : 'Йўқ';
   if(DROPDOWN_FIELDS[key]){
     const raw = String(value == null ? '' : value).trim();
+    if(raw === '') return '— Киритилмаган —';   // never show "Танланг" in the read-only detail
     return hkOptionLabel(key, raw);
   }
   if(value == null || String(value).trim() === '') return '—';
@@ -6591,14 +6625,18 @@ function renderHkRecordDetail(row, cols=[]){
     {title:'2. Асос ва заҳирага қайтариш', fields:HK_RESERVE_FIELDS},
     {title:'3. Ҳукумат комиссияси ва кейинги босқич', fields:HK_PROCESS_FIELDS},
     {title:'4. Ташкилотлар хулосалари', checkbox:true, fields:HK_ORG_CHECKS.map(item => item.key)},
-    {title:'5. Қарор / илова / таклифда акс этганлиги', fields:HK_DECISION_FIELDS.map(item => item.key)},
+    // Decision rows: HIDE empty ones — only the actually-relevant decree should appear
+    {title:'5. Қарор / илова / таклифда акс этганлиги', fields:HK_DECISION_FIELDS.map(item => item.key), hideEmpty:true, hideIfNone:true},
     {title:'6. Тоифаси ўзгарди', fields:HK_CATEGORY_FIELDS}
   ];
+  const isPresent = v => v != null && String(v).trim() !== '' && String(v).trim() !== '—' && String(v).trim() !== '-' && Number(v) !== 0;
   return detailGroups.map(group => {
     const fields = (group.fields || []).filter(key => {
       if(key === initiatorNameKey && String(row[initiatorStatusKey] || '').trim() !== '+') return false;
+      if(group.hideEmpty && !isPresent(row[key])) return false;
       return true;
     });
+    if(!fields.length && group.hideIfNone) return '';
     const checked = group.checkbox ? fields.filter(k => hkIsChecked(row[k])).length : null;
     const body = fields.map(key => renderDetailRow(
       detailFieldLabel(key, cols),
