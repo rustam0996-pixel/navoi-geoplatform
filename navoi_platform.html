@@ -5937,6 +5937,11 @@ function __normCoordText(raw){
     .replace(/[\(\)\[\]]/g,' ')
     .replace(/[Сс]/g,'N').replace(/[Юю]/g,'S').replace(/[Вв]/g,'E').replace(/[Зз]/g,'W');
   s = s.replace(/(\d),(\d)/g,'$1.$2');
+  // Some rows substitute the degree mark with literal "0" — e.g.
+  //   "41043'5.5456\""  meaning  "41°43'5.5456\""
+  //   "6601'26.39\""    meaning  "66°01'26.39\""
+  // Reconstruct ° only when followed by a minute prime so plain digits aren't touched.
+  s = s.replace(/(\d{1,3})0(\d{1,2})\s*'/g, "$1°$2'");
   return s.replace(/\s+/g,' ').trim();
 }
 function parseCoordinatePoints(raw){
