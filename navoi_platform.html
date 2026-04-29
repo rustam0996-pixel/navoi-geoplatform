@@ -2587,6 +2587,96 @@ function globalAllocationKpis(){
   return {binoAucSoldCount, binoAucSoldArea, binoDirectCount, binoDirectArea, konAucSoldCount, konAucSoldArea, konDirectCount, konDirectArea, changedCount, changedArea};
 }
 
+/* ================= SOURCE TAGS (read-only) =================
+   STEP 1 of the source-tag rollout. This adds nothing to the UI and does
+   not change any existing count. It only computes which sub-source tags
+   apply to each parcel BASED ON DATA THE PLATFORM ALREADY HAS (no new
+   files merged). UI integration happens in subsequent steps once these
+   numbers are reviewed and confirmed.
+   Tag inventory:
+   - pq12  : the parcel appears in ПҚ-58 12-илова (HK proposals annex)
+   - pq13  : the parcel appears in ПҚ-58 13-илова (mining annex)
+   - vm88  : the parcel was changed under ВМ-88 (Cabinet decree 88)
+   - kon   : the parcel is a mine (Бино-иншоот/Кон == "кон")
+*/
+const SOURCE_TAG_DEFS = [
+  { key:'pq12', label:'ПҚ-58 12-илова', color:'#f59e0b' },
+  { key:'pq13', label:'ПҚ-58 13-илова', color:'#ef4444' },
+  { key:'vm88', label:'ВМ-88 фармойиши',  color:'#06b6d4' },
+  { key:'kon',  label:'Кон ёзуви',         color:'#8b5cf6' }
+];
+function __nonZero(v){
+  if(v == null) return false;
+  const s = String(v).trim();
+  if(s === '' || s === '-' || s === '—') return false;
+  const n = Number(v);
+  if(Number.isFinite(n)) return n > 0;
+  return s.length > 0; // non-numeric, non-empty text counts as a positive marker
+}
+function __findValueByTail(row, regex){
+  if(!row) return null;
+  for(const k of Object.keys(row)){
+    const tail = String(k).split('/').pop().toLowerCase().trim();
+    if(regex.test(tail) && __nonZero(row[k])) return row[k];
+  }
+  return null;
+}
+/* Returns an array of applicable source-tag keys for a single parcel row. */
+function sourceTagsFor(sec, row){
+  if(!row) return [];
+  const tags = [];
+  // pq12: HK file column "ПҚ-58-сонли қарорнинг 12-иловаси" (numeric > 0)
+  //       Changed file rarely carries this — included for safety.
+  if(__findValueByTail(row, /^п[қк]-?58.*12.*илова|^12-?илова/)) tags.push('pq12');
+  // pq13: Changed-file column "ПҚ-58 13-илова бўйича ер (га)" or HK column "ПҚ-58-сонли қарорнинг 13-иловаси"
+  if(__findValueByTail(row, /^п[қк]-?58.*13.*илова|^13-?илова|13-?илова\s+бўйича/)) tags.push('pq13');
+  // vm88: changed-file "Тоифаси ўзгарган Протокол ёки ВМ фармойишга асосан" — text contains "ВМ-88"
+  for(const k of Object.keys(row)){
+    if(/протокол|вм\s*фармойиш/i.test(k) && /\bвм[-\s]?88\b|вилоят\s+88|88-сон/i.test(String(row[k]||''))){
+      tags.push('vm88');
+      break;
+    }
+  }
+  // kon: Changed-file "Бино-иншоот/Кон" == "кон"
+  const binoKon = String(row['Бино-иншоот/Кон']||'').toLowerCase().trim();
+  if(/^кон\b|^kon\b/.test(binoKon)) tags.push('kon');
+  // HK signal: "Кон ёки бино-иншоот, завод учун бериладиган" === "Кон"
+  const kbi = String(row['Кон ёки бино-иншоот, завод учун бериладиган']||'').toLowerCase().trim();
+  if(/^кон\b/.test(kbi) && !tags.includes('kon')) tags.push('kon');
+  return tags;
+}
+/* Aggregator — fills SOURCE_TAG_STATS with {count, area} per tag. */
+const SOURCE_TAG_STATS = {};
+function buildSourceTagStats(){
+  for(const k of Object.keys(SOURCE_TAG_STATS)) delete SOURCE_TAG_STATS[k];
+  for(const def of SOURCE_TAG_DEFS) SOURCE_TAG_STATS[def.key] = {count:0, area:0};
+  if(typeof SECTIONS_RAW === 'undefined' || !SECTIONS_RAW) return;
+  for(const sec of Object.keys(SECTIONS_RAW)){
+    for(const r of (SECTIONS_RAW[sec]||[])){
+      if(sec === 'hk' && String(r['Тоифаси ўзгаргани (+/-)']||'').trim() === '+') continue;
+      const dist = (typeof rowDistrict === 'function') ? rowDistrict(sec, r) : null;
+      if(!dist) continue;
+      const area = (typeof rowArea === 'function') ? (rowArea(sec, r)||0) : 0;
+      const tags = sourceTagsFor(sec, r);
+      for(const t of tags){
+        if(!SOURCE_TAG_STATS[t]) SOURCE_TAG_STATS[t] = {count:0, area:0};
+        SOURCE_TAG_STATS[t].count += 1;
+        SOURCE_TAG_STATS[t].area  += area;
+      }
+    }
+  }
+}
+/* Browser-console audit — exposes a friendly object for verification. */
+window.auditSourceTags = function(){
+  buildSourceTagStats();
+  const out = {};
+  for(const def of SOURCE_TAG_DEFS){
+    const s = SOURCE_TAG_STATS[def.key] || {count:0, area:0};
+    out[def.key] = { label: def.label, count: s.count, area: Number(s.area.toFixed(2)) };
+  }
+  return out;
+};
+
 /* ================= KPI RENDER — category tree (hero + tier-1 + tier-2) ================= */
 /* ================= STAGE FILTER ================= */
 /* High-level stages a parcel can be in. Order = display order in UI.
