@@ -6656,20 +6656,39 @@ function renderDetailSection(title, body, sub=''){
 function renderHkRecordDetail(row, cols=[]){
   const initiatorStatusKey = HK_BASIC_FIELDS.find(k => k.includes('Ташаббускори') && k.includes('(+/-)'));
   const initiatorNameKey = HK_BASIC_FIELDS.find(k => k === 'Лойиҳа ташаббускори');
+  // hideEmpty everywhere — only render fields that carry meaningful information.
+  // Presence-as-area fields are kept even when empty because their "no" verbiage
+  // ("Қайтарилмаган", "Тузилмаган", etc.) is itself meaningful. checkbox section
+  // shows all org rows regardless of value (so the user sees which approvals are
+  // still missing).
   const detailGroups = [
-    {title:'1. Асосий маълумотлар', fields:[...HK_BASIC_FIELDS, ...HK_LAND_TYPE_FIELDS]},
-    {title:'2. Асос ва заҳирага қайтариш', fields:HK_RESERVE_FIELDS},
-    {title:'3. Ҳукумат комиссияси ва кейинги босқич', fields:HK_PROCESS_FIELDS},
-    {title:'4. Ташкилотлар хулосалари', checkbox:true, fields:HK_ORG_CHECKS.map(item => item.key)},
-    // Decision rows: HIDE empty ones — only the actually-relevant decree should appear
-    {title:'5. Қарор / илова / таклифда акс этганлиги', fields:HK_DECISION_FIELDS.map(item => item.key), hideEmpty:true, hideIfNone:true},
-    {title:'6. Тоифаси ўзгарди', fields:HK_CATEGORY_FIELDS}
+    {title:'1. Асосий маълумотлар',                                fields:[...HK_BASIC_FIELDS, ...HK_LAND_TYPE_FIELDS], hideEmpty:true},
+    {title:'2. Асос ва заҳирага қайтариш',                          fields:HK_RESERVE_FIELDS,            hideEmpty:true, hideIfNone:false},
+    {title:'3. Ҳукумат комиссияси ва кейинги босқич',              fields:HK_PROCESS_FIELDS,            hideEmpty:true, hideIfNone:false},
+    {title:'4. Ташкилотлар хулосалари',                            checkbox:true, fields:HK_ORG_CHECKS.map(item => item.key)},
+    {title:'5. Қарор / илова / таклифда акс этганлиги',             fields:HK_DECISION_FIELDS.map(item => item.key), hideEmpty:true, hideIfNone:true},
+    {title:'6. Тоифаси ўзгарди',                                   fields:HK_CATEGORY_FIELDS,           hideEmpty:true, hideIfNone:true}
   ];
-  const isPresent = v => v != null && String(v).trim() !== '' && String(v).trim() !== '—' && String(v).trim() !== '-' && Number(v) !== 0;
+  // A field is "present" if it has a meaningful value OR it's a presence-as-area
+  // field (always rendered with yes/no verbiage) OR it's АСОС (always shown).
+  const isPresent = (key, v) => {
+    if(typeof HK_PRESENCE_FIELDS !== 'undefined' && HK_PRESENCE_FIELDS[key]) return true;
+    if(key === 'АСОС') return true;
+    if(v == null) return false;
+    const s = String(v).trim();
+    if(s === '' || s === '—' || s === '-') return false;
+    return true;
+  };
+  // De-duplicate keys per group (HK_RESERVE_FIELDS / HK_PROCESS_FIELDS may list the
+  // legacy +/- key alongside the new master-file key — render only once).
+  const seenKey = (acc, key) => { acc.add(key); return acc; };
   return detailGroups.map(group => {
+    const seen = new Set();
     const fields = (group.fields || []).filter(key => {
+      if(seen.has(key)) return false;
+      seen.add(key);
       if(key === initiatorNameKey && String(row[initiatorStatusKey] || '').trim() !== '+') return false;
-      if(group.hideEmpty && !isPresent(row[key])) return false;
+      if(group.hideEmpty && !isPresent(key, row[key])) return false;
       return true;
     });
     if(!fields.length && group.hideIfNone) return '';
