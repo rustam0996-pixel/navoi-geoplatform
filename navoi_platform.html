@@ -1774,48 +1774,71 @@ function __detectBusinessPurpose(blob){
   return null;
 }
 
-/* Look up a row value by header suffix.
-   The new master file concatenates parent-group + child header with " / " — e.g.
-   "Тоғ-кон саноати йўналишлари бўйича / Норуда фойдали қазилма конлари".
-   This matches by either the full key or its last "/"-segment so the classifier
-   doesn't break when the same field gets a different prefix in another sheet. */
-function __findRowValueBySuffix(row, suffix){
+/* Strict last-segment match — looks at the last "/"-separated segment of each
+   key and applies a regex only against that segment (avoids false hits where
+   a category word appears inside a longer column NAME that lists options). */
+function __findKeyByTailRegex(row, tailRegex){
   if(!row) return null;
-  const target = String(suffix).toLowerCase().trim();
   for(const k of Object.keys(row)){
-    const last = String(k).split('/').pop().toLowerCase().trim();
-    if(last === target || last.includes(target) || String(k).toLowerCase().includes(target)){
-      const v = row[k];
-      if(v == null) continue;
-      const s = String(v).trim();
-      if(s === '' || s === '-' || s === '0' || Number(v) === 0) continue;
-      return v;
-    }
+    const tail = String(k).split('/').pop().toLowerCase().trim();
+    if(!tailRegex.test(tail)) continue;
+    const v = row[k];
+    if(v == null) continue;
+    const s = String(v).trim();
+    if(s === '' || s === '-' || s === '0' || Number(v) === 0) continue;
+    return v;
   }
   return null;
 }
-/* Some sections (per the new master file) may include explicit boolean columns:
-   "Завод қурилиши учун", "Туризм ташкил этиш учун", "Қуёш ёки шамол фотоэлектр…",
-   "Электр линияси учун", "Ижтимоий ёки бошқа мақсадлар учун".
-   When present (truthy / non-zero), they take precedence over keyword detection. */
-function __detectBusinessExplicit(row){
+/* Schema A: one "purpose" column whose VALUE is the category name.
+   E.g. changed-file column "Инвестиция лойиҳалари учун ёки бошқа мақсадларда
+   (Завод, Туризм, Қуёш ёки шамол фотоэлектр станция, Электр линия,
+   Ижимоий ёки бошқа мақсадлар учун)" — value is "Завод" / "Туризм" etc. */
+function __readPurposeFromValueColumn(row){
   if(!row) return null;
-  if(__findRowValueBySuffix(row, 'Завод қурилиши')) return 'zavod';
-  if(__findRowValueBySuffix(row, 'Туризм')) return 'turizm';
-  if(__findRowValueBySuffix(row, 'Қуёш ёки шамол') || __findRowValueBySuffix(row, 'фотоэлектр')) return 'energetika';
-  if(__findRowValueBySuffix(row, 'Электр линияси')) return 'elektr';
-  if(__findRowValueBySuffix(row, 'Ижтимоий ёки бошқа') || __findRowValueBySuffix(row, 'Ижтимоий')) return 'ijtimoiy';
+  for(const k of Object.keys(row)){
+    if(!/Инвестиция\s+лойи[ҳх]алари\s+учун\s+ёки\s+бошқа|Бино-иншоот\/?Кон/i.test(k)) continue;
+    const v = String(row[k]||'').trim().toLowerCase();
+    if(!v || v==='0' || v==='-') continue;
+    if(/туризм/.test(v)) return 'turizm';
+    if(/завод|фабрик|саноат|комплекс|цех/.test(v)) return 'zavod';
+    if(/қу(ё|е)ш|шамол|фотоэлектр|солнечн|ветер|вэс/.test(v)) return 'energetika';
+    if(/электр\s+лини[яе]/.test(v)) return 'elektr';
+    if(/ижтимоий|ижимоий|социал|бошқа\s+мақсад/.test(v)) return 'ijtimoiy';
+  }
   return null;
 }
-/* Same idea for explicit geology columns in the new master file.
-   Tier of priority: Strategic > НКМК > Уран > Сочма олтин > Норуда. */
+/* Schema B: multiple area-columns where the column NAME is the category
+   and the value is the allocated hectares. Match strictly by tail-prefix
+   so a column whose NAME merely lists categories (option list) doesn't
+   accidentally win. */
+function __detectBusinessExplicit(row){
+  const fromValue = __readPurposeFromValueColumn(row);
+  if(fromValue) return fromValue;
+  if(__findKeyByTailRegex(row, /^завод\s+қурилиши/)) return 'zavod';
+  if(__findKeyByTailRegex(row, /^туризм\s+ташкил/)) return 'turizm';
+  if(__findKeyByTailRegex(row, /^қу(ё|е)ш\s+(ёки\s+)?шамол|^фотоэлектр\s+стан/)) return 'energetika';
+  if(__findKeyByTailRegex(row, /^электр\s+линияси/)) return 'elektr';
+  if(__findKeyByTailRegex(row, /^ижтимоий\s+ёки\s+бошқа|^ижтимоий\s+ёки|^ижтимоий$/)) return 'ijtimoiy';
+  return null;
+}
+/* Geology schema: explicit area columns + free-text "Коннинг тури" column. */
 function __detectGeologyExplicit(row){
   if(!row) return null;
-  if(__findRowValueBySuffix(row, 'Стратегик кон')) return 'strategic';
-  if(__findRowValueBySuffix(row, 'НКМК')) return 'nkmk';
-  if(__findRowValueBySuffix(row, 'УРАН') || __findRowValueBySuffix(row, 'Уран')) return 'uran';
-  if(__findRowValueBySuffix(row, 'Сочма олтин')) return 'sochma';
-  if(__findRowValueBySuffix(row, 'Норуда')) return 'noruda';
+  if(__findKeyByTailRegex(row, /^стратегик\s+кон/)) return 'strategic';
+  if(__findKeyByTailRegex(row, /^нкмк\s+учун/)) return 'nkmk';
+  if(__findKeyByTailRegex(row, /^уран\s+(қазиб|учун)/)) return 'uran';
+  if(__findKeyByTailRegex(row, /^сочма\s+олтин/)) return 'sochma';
+  if(__findKeyByTailRegex(row, /^норуда\s+фойдали/)) return 'noruda';
+  // Free-text "Коннинг тури" column on changed file
+  const koningTuri = String(row['Коннинг тури (Норуда, Сочма, Стратегик, НКМК, Уран)']||'').toLowerCase();
+  if(koningTuri){
+    if(/стратегик/.test(koningTuri)) return 'strategic';
+    if(/нкмк|нгмк/.test(koningTuri)) return 'nkmk';
+    if(/уран/.test(koningTuri)) return 'uran';
+    if(/сочма|placer/.test(koningTuri)) return 'sochma';
+    if(/норуда/.test(koningTuri)) return 'noruda';
+  }
   return null;
 }
 /* Fallback geology signal — recognises geology-related project descriptions
