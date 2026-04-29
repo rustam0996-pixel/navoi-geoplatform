@@ -2637,20 +2637,17 @@ function sourceTagsFor(sec, row){
       break;
     }
   }
-  // kon: this parcel went through the mining/geology workflow.
-  // Changed file marks it via "Бино-иншоот/Кон" with value "Геология" (or "кон").
-  // HK file marks it via "Кон ёки бино-иншоот, завод учун бериладиган" == "Кон".
-  // As a strong fallback: parcel classified into any geology sub-category counts.
+  // kon: parcel was processed via the mining (Кон) pipeline. This is a
+  // workflow source-tag, distinct from the Геология category — a parcel
+  // can be in Геология category via classification but if its "Бино-иншоот/Кон"
+  // column wasn't filled it shouldn't carry the kon source-tag. The
+  // dedicated Кон annex file (when uploaded later) will populate this for
+  // additional parcels.
   const binoKon = String(row['Бино-иншоот/Кон']||'').toLowerCase().trim();
   if(/геолог|^кон\b|^kon\b/.test(binoKon)) tags.push('kon');
   if(!tags.includes('kon')){
     const kbi = String(row['Кон ёки бино-иншоот, завод учун бериладиган']||'').toLowerCase().trim();
     if(/^кон\b/.test(kbi)) tags.push('kon');
-  }
-  if(!tags.includes('kon') && typeof classifyParcel === 'function' && typeof GEOLOGY_SUBS !== 'undefined'){
-    try {
-      if(GEOLOGY_SUBS.includes(classifyParcel(sec, row))) tags.push('kon');
-    } catch(e){}
   }
   return tags;
 }
