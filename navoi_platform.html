@@ -2637,12 +2637,21 @@ function sourceTagsFor(sec, row){
       break;
     }
   }
-  // kon: Changed-file "Бино-иншоот/Кон" == "кон"
+  // kon: this parcel went through the mining/geology workflow.
+  // Changed file marks it via "Бино-иншоот/Кон" with value "Геология" (or "кон").
+  // HK file marks it via "Кон ёки бино-иншоот, завод учун бериладиган" == "Кон".
+  // As a strong fallback: parcel classified into any geology sub-category counts.
   const binoKon = String(row['Бино-иншоот/Кон']||'').toLowerCase().trim();
-  if(/^кон\b|^kon\b/.test(binoKon)) tags.push('kon');
-  // HK signal: "Кон ёки бино-иншоот, завод учун бериладиган" === "Кон"
-  const kbi = String(row['Кон ёки бино-иншоот, завод учун бериладиган']||'').toLowerCase().trim();
-  if(/^кон\b/.test(kbi) && !tags.includes('kon')) tags.push('kon');
+  if(/геолог|^кон\b|^kon\b/.test(binoKon)) tags.push('kon');
+  if(!tags.includes('kon')){
+    const kbi = String(row['Кон ёки бино-иншоот, завод учун бериладиган']||'').toLowerCase().trim();
+    if(/^кон\b/.test(kbi)) tags.push('kon');
+  }
+  if(!tags.includes('kon') && typeof classifyParcel === 'function' && typeof GEOLOGY_SUBS !== 'undefined'){
+    try {
+      if(GEOLOGY_SUBS.includes(classifyParcel(sec, row))) tags.push('kon');
+    } catch(e){}
+  }
   return tags;
 }
 /* Aggregator — fills SOURCE_TAG_STATS with {count, area} per tag. */
