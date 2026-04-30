@@ -662,6 +662,8 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
 .sp-stage-chip.active{background:var(--ch-bg,#1d4ed8);color:#fff;border-color:var(--ch-bg,#1d4ed8);box-shadow:0 2px 6px -2px var(--ch-bg,rgba(29,78,216,.5))}
 .sp-stage-chip.muted{opacity:.45;cursor:not-allowed}
 .sp-stage-chip.muted:hover{border-color:#e2e8f0;color:#475569}
+.sp-stage-chip.is-child{padding-left:6px;font-size:10.4px;background:#f8fafc}
+.sp-stage-arrow{color:#94a3b8;font-weight:700;margin-right:2px}
 .sp-stage-chip i{width:7px;height:7px;border-radius:50%;display:inline-block;background:var(--ch-dot,#64748b);flex-shrink:0}
 .sp-stage-chip.active i{background:#fff}
 .sp-stage-chip .n{margin-left:2px;font-size:9.5px;font-weight:700;opacity:.85}
@@ -2727,10 +2729,23 @@ function __stageFromKind(kind){
     default: return null;
   }
 }
-/* Compute stage of a single SECTION row (used for stats over SECTIONS_RAW). */
+/* Compute the FINEST stage of a single SECTION row.
+   Returns one of: in_process / changed / auction_listed / auction_sold / direct.
+   For a parcel from the Changed master file the stage hierarchy is:
+     changed = умуман тоифаси ўзгарган (parent)
+       └─ auction_listed → аукционга чиқарилган
+       └─ auction_sold   → аукционда сотилган
+       └─ direct         → тўғридан-тўғри ажратилган
+   The "changed" key here is used to mean "категория ўзгариб бўлган, лекин
+   кейинги ҳаракат йўқ" — i.e. the LEAF "плоский" sub-state. The PARENT
+   of all changed-related stages is captured by the constant CHANGED_SUBSET
+   and used by rowMatchesStage when the user picks the broad chip. */
+const CHANGED_SUBSET = ['changed','auction_listed','auction_sold','direct'];
 function rowStageKey(sec, row){
   if(!row) return null;
-  // Match the same order used in candidateStatus → keep platform-wide consistency
+  // hk section parcels are always "in_process" (they're proposed but not yet changed)
+  if(sec === 'hk') return 'in_process';
+  // changed-section parcels: derive sub-state from the engine
   let st = null;
   try {
     const cand = (typeof makePlotCandidate === 'function') ? makePlotCandidate(sec, row) : null;
@@ -2743,13 +2758,8 @@ function rowStageKey(sec, row){
     }
   } catch(e){}
   if(st) return st;
-  // Fallback: explicit hk-style flags
-  if(sec === 'hk'){
-    if(String(row['Тоифаси ўзгаргани (+/-)']||'').trim() === '+') return 'changed';
-    if(String(row['Заҳирага қайтарилган (+/-)']||'').trim() === '+') return 'in_process';
-    if(String(row['Ҳукумат комиссиясига киритилган (+/-)']||'').trim() === '+') return 'in_process';
-    return 'in_process';
-  }
+  // Fallback: anything in the changed file with no further marker is "changed" (broad)
+  if(sec === 'changed') return 'changed';
   return null;
 }
 /* Pre-computed counts by stage (rebuilt alongside CATEGORY_STATS). */
@@ -2766,7 +2776,17 @@ function buildStageStats(){
       const area = (typeof rowArea === 'function') ? (rowArea(sec, r)||0) : 0;
       const st = rowStageKey(sec, r);
       STAGE_STATS.all.count += 1; STAGE_STATS.all.area += area;
+      // Always credit the leaf stage
       if(st && STAGE_STATS[st]){ STAGE_STATS[st].count += 1; STAGE_STATS[st].area += area; }
+      // ALSO credit the broad parent — every changed-section row counts as
+      // «Тоифаси ўзгарган» (parent) even when its leaf is auction_sold / direct / etc.
+      if(sec === 'changed' && st !== 'changed' && CHANGED_SUBSET.includes(st)){
+        STAGE_STATS.changed.count += 1; STAGE_STATS.changed.area += area;
+      }
+      // Bare "changed" file rows that didn't get a leaf — still "changed"
+      if(sec === 'changed' && !st){
+        STAGE_STATS.changed.count += 1; STAGE_STATS.changed.area += area;
+      }
     }
   }
   // Proposals → "Янги таклиф" stage
@@ -2784,14 +2804,21 @@ function activeStageFilter(){
 }
 function rowMatchesStage(sec, row, stageKey){
   if(!stageKey) return true;
-  return rowStageKey(sec, row) === stageKey;
+  const st = rowStageKey(sec, row);
+  // Broad "Тоифаси ўзгарган" parent matches every changed-related leaf
+  if(stageKey === 'changed') return sec === 'changed' || CHANGED_SUBSET.includes(st);
+  return st === stageKey;
 }
 function plotItemMatchesStage(item, stageKey){
   if(!stageKey) return true;
   const status = item && (item.status || (item.candidates ? currentParcelStatus(item.candidates) : null));
   if(!status) return false;
   const k = plotStatusKind(status.label);
-  return __stageFromKind(k.kind) === stageKey;
+  const leaf = __stageFromKind(k.kind);
+  // Same parent-broadening: a sold/listed/direct parcel should still pass the
+  // "Тоифаси ўзгарган" filter so the count matches what the chip advertises.
+  if(stageKey === 'changed') return CHANGED_SUBSET.includes(leaf);
+  return leaf === stageKey;
 }
 
 /* Render the stage chips + Excel export button into #stageFilter */
@@ -2801,12 +2828,19 @@ function renderStageFilter(){
   const sel = STAGE_STATE.selected || 'all';
   const stats = STAGE_STATS || {};
   const total = (stats.all && stats.all.count) || 0;
+  // Visual hierarchy: auction_listed / auction_sold / direct sit under "Тоифаси
+  // ўзгарган" parent. We render them with a subtle indent + arrow prefix so the
+  // user knows they are sub-states (parent count includes them).
+  const CHILDREN_OF_CHANGED = new Set(['auction_listed','auction_sold','direct']);
   const chips = STAGE_DEFS.map(def => {
     const active = sel === def.key;
     const cnt = (stats[def.key] && stats[def.key].count) || 0;
     const dot = `<i style="background:${def.color}"></i>`;
-    return `<button class="sp-stage-chip ${active?'active':''}" data-stage="${def.key}"
-      style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button">${dot}<span>${def.label}</span>${cnt?`<span class="n">${fmt(cnt)}</span>`:''}</button>`;
+    const isChild = CHILDREN_OF_CHANGED.has(def.key);
+    const cls = isChild ? 'sp-stage-chip is-child' : 'sp-stage-chip';
+    const prefix = isChild ? '<span class="sp-stage-arrow">↳</span>' : '';
+    return `<button class="${cls} ${active?'active':''}" data-stage="${def.key}"
+      style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button">${prefix}${dot}<span>${def.label}</span>${cnt?`<span class="n">${fmt(cnt)}</span>`:''}</button>`;
   }).join('');
   const filteredCount = (sel === 'all') ? total : ((stats[sel] && stats[sel].count) || 0);
   // Source-tag chips: pq12 / pq13 / vm88 / kon — single-select like stage.
