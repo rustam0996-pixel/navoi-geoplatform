@@ -1642,6 +1642,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 <script src="leaflet.js"></script>
 <script src="changed_data_v4.js"></script>
 <script src="sections_data.js?v=phaseD-20260427"></script>
+<script src="source_tags_index.js?v=phaseE-20260427"></script>
 <script src="changed_extra.js"></script>
 <script src="navoi_geo.js"></script>
 
@@ -2631,19 +2632,34 @@ function __findValueByTail(row, regex){
   }
   return null;
 }
-/* Returns an array of applicable source-tag keys for a single parcel row. */
+/* Returns an array of applicable source-tag keys for a single parcel row.
+   Two-tier resolution:
+   (a) source_tags_index.js — pre-computed from the dedicated sub-source files
+       (ПҚ-58 12-илова / 13-илова / ВМ-88-Ф). This is the AUTHORITATIVE source
+       for parcels that the data-science script matched.
+   (b) Fallback — column-based detection from row's own data. Used for kon
+       (Бино-иншоот/Кон == "Геология") and any pq12/pq13 explicit columns. */
 function sourceTagsFor(sec, row){
   if(!row) return [];
   const tags = [];
+  // (a) Index lookup
+  if(typeof window !== 'undefined' && window.SOURCE_TAGS_INDEX){
+    const key = `${sec}-${row._row}`;
+    const fromIdx = window.SOURCE_TAGS_INDEX[key];
+    if(Array.isArray(fromIdx)){
+      for(const t of fromIdx){ if(!tags.includes(t)) tags.push(t); }
+    }
+  }
+  const addTag = t => { if(!tags.includes(t)) tags.push(t); };
   // pq12: HK file column "ПҚ-58-сонли қарорнинг 12-иловаси" (numeric > 0)
   //       Changed file rarely carries this — included for safety.
-  if(__findValueByTail(row, /^п[қк]-?58.*12.*илова|^12-?илова/)) tags.push('pq12');
+  if(__findValueByTail(row, /^п[қк]-?58.*12.*илова|^12-?илова/)) addTag('pq12');
   // pq13: Changed-file column "ПҚ-58 13-илова бўйича ер (га)" or HK column "ПҚ-58-сонли қарорнинг 13-иловаси"
-  if(__findValueByTail(row, /^п[қк]-?58.*13.*илова|^13-?илова|13-?илова\s+бўйича/)) tags.push('pq13');
+  if(__findValueByTail(row, /^п[қк]-?58.*13.*илова|^13-?илова|13-?илова\s+бўйича/)) addTag('pq13');
   // vm88: changed-file "Тоифаси ўзгарган Протокол ёки ВМ фармойишга асосан" — text contains "ВМ-88"
   for(const k of Object.keys(row)){
     if(/протокол|вм\s*фармойиш/i.test(k) && /\bвм[-\s]?88\b|вилоят\s+88|88-сон/i.test(String(row[k]||''))){
-      tags.push('vm88');
+      addTag('vm88');
       break;
     }
   }
@@ -2654,10 +2670,10 @@ function sourceTagsFor(sec, row){
   // dedicated Кон annex file (when uploaded later) will populate this for
   // additional parcels.
   const binoKon = String(row['Бино-иншоот/Кон']||'').toLowerCase().trim();
-  if(/геолог|^кон\b|^kon\b/.test(binoKon)) tags.push('kon');
+  if(/геолог|^кон\b|^kon\b/.test(binoKon)) addTag('kon');
   if(!tags.includes('kon')){
     const kbi = String(row['Кон ёки бино-иншоот, завод учун бериладиган']||'').toLowerCase().trim();
-    if(/^кон\b/.test(kbi)) tags.push('kon');
+    if(/^кон\b/.test(kbi)) addTag('kon');
   }
   return tags;
 }
