@@ -3781,6 +3781,18 @@ function collectChangedRawCandidates(){
     const cand = makePlotCandidate('changed', row, raw.kr, raw);
     if(cand) out.push(cand);
   }
+  // Phase D fallback: legacy CHANGED_RAW stream may be empty when data comes
+  // straight from the new master file. Read from SECTIONS_RAW.changed in that
+  // case so plot points still render.
+  if(out.length === 0){
+    const directRows = (typeof SECTIONS_RAW !== 'undefined' && SECTIONS_RAW.changed) ? SECTIONS_RAW.changed : [];
+    for(const row of directRows){
+      const yr = (typeof rowYear === 'function') ? rowYear('changed', row) : '';
+      if(currentYear && currentYear !== 'all' && String(yr) !== currentYear) continue;
+      const cand = makePlotCandidate('changed', row);
+      if(cand) out.push(cand);
+    }
+  }
   // Include PQ-58 12/13-илова parcels whose category has already changed —
   // they co-belong to the 'Тоифаси ўзгарган' bucket per user's requirement.
   // Skip when year filter is active (those rows lack a changed-year field).
