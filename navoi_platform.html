@@ -654,6 +654,8 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
   background:#fff;border:1px solid #e2e8f0;color:#475569;cursor:pointer;transition:all .15s}
 .sp-stage-chip:hover{border-color:#94a3b8;color:#1e293b}
 .sp-stage-chip.active{background:var(--ch-bg,#1d4ed8);color:#fff;border-color:var(--ch-bg,#1d4ed8);box-shadow:0 2px 6px -2px var(--ch-bg,rgba(29,78,216,.5))}
+.sp-stage-chip.muted{opacity:.45;cursor:not-allowed}
+.sp-stage-chip.muted:hover{border-color:#e2e8f0;color:#475569}
 .sp-stage-chip i{width:7px;height:7px;border-radius:50%;display:inline-block;background:var(--ch-dot,#64748b);flex-shrink:0}
 .sp-stage-chip.active i{background:#fff}
 .sp-stage-chip .n{margin-left:2px;font-size:9.5px;font-weight:700;opacity:.85}
@@ -2672,6 +2674,17 @@ function buildSourceTagStats(){
     }
   }
 }
+/* Active source-tag selection (single-select, matches stage UI). */
+const SOURCE_TAG_STATE = { selected: 'all' };
+function activeSourceTagFilter(){
+  const s = (SOURCE_TAG_STATE && SOURCE_TAG_STATE.selected) || 'all';
+  return s === 'all' ? null : s;
+}
+function rowMatchesSourceTag(sec, row, tag){
+  if(!tag) return true;
+  const tags = sourceTagsFor(sec, row);
+  return tags.includes(tag);
+}
 /* Browser-console audit — exposes a friendly object for verification. */
 window.auditSourceTags = function(){
   buildSourceTagStats();
@@ -2790,22 +2803,50 @@ function renderStageFilter(){
       style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button">${dot}<span>${def.label}</span>${cnt?`<span class="n">${fmt(cnt)}</span>`:''}</button>`;
   }).join('');
   const filteredCount = (sel === 'all') ? total : ((stats[sel] && stats[sel].count) || 0);
+  // Source-tag chips: pq12 / pq13 / vm88 / kon — single-select like stage.
+  if(typeof buildSourceTagStats === 'function') buildSourceTagStats();
+  const sourceSel = (typeof SOURCE_TAG_STATE !== 'undefined' && SOURCE_TAG_STATE.selected) || 'all';
+  const sourceStats = (typeof SOURCE_TAG_STATS !== 'undefined') ? SOURCE_TAG_STATS : {};
+  const allSourceCnt = total;
+  const allSourceChip = `<button class="sp-stage-chip ${sourceSel==='all'?'active':''}" data-source="all" style="--ch-bg:#1d4ed8;--ch-dot:#1d4ed8" type="button"><i style="background:#1d4ed8"></i><span>Барчаси</span><span class="n">${fmt(allSourceCnt)}</span></button>`;
+  const sourceChips = (typeof SOURCE_TAG_DEFS !== 'undefined' ? SOURCE_TAG_DEFS : []).map(def => {
+    const active = sourceSel === def.key;
+    const cnt = (sourceStats[def.key] && sourceStats[def.key].count) || 0;
+    const cls = (cnt === 0) ? 'sp-stage-chip muted' : 'sp-stage-chip';
+    return `<button class="${cls} ${active?'active':''}" data-source="${def.key}"
+      style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button" ${cnt===0?'disabled title="Бу манбада ҳозирча парча йўқ"':''}>
+      <i style="background:${def.color}"></i><span>${def.label}</span><span class="n">${fmt(cnt)}</span></button>`;
+  }).join('');
   host.innerHTML = `
     <div class="sp-stage-label">
       <span>Босқич бўйича фильтр</span>
       <span class="sp-stage-count">${fmt(filteredCount)} та / ${fmt(total)}</span>
     </div>
     <div class="sp-stage-chips">${chips}</div>
+    <div class="sp-stage-label" style="margin-top:6px">
+      <span>Манба бўйича фильтр</span>
+    </div>
+    <div class="sp-stage-chips">${allSourceChip}${sourceChips}</div>
     <div class="sp-stage-export">
       <button class="sp-stage-export-btn" id="stageExportBtn" type="button" title="Танланган босқичдаги участкалар Excel'га ёзиб олиш">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Excel рўйхатига чиқариш
       </button>
     </div>
-    <div class="sp-stage-export-hint">Танланган босқич + категория + туман бўйича жорий филтрни юклаб олинг</div>`;
-  host.querySelectorAll('.sp-stage-chip').forEach(el => {
+    <div class="sp-stage-export-hint">Танланган босқич + категория + манба + туман бўйича жорий филтрни юклаб олинг</div>`;
+  host.querySelectorAll('.sp-stage-chip[data-stage]').forEach(el => {
     el.onclick = () => {
       STAGE_STATE.selected = el.dataset.stage;
+      renderStageFilter();
+      if(typeof renderBubbles === 'function') renderBubbles();
+      if(currentDistrict && typeof renderPlotPoints === 'function') renderPlotPoints();
+      if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
+    };
+  });
+  host.querySelectorAll('.sp-stage-chip[data-source]').forEach(el => {
+    el.onclick = () => {
+      if(el.disabled) return;
+      if(typeof SOURCE_TAG_STATE !== 'undefined') SOURCE_TAG_STATE.selected = el.dataset.source;
       renderStageFilter();
       if(typeof renderBubbles === 'function') renderBubbles();
       if(currentDistrict && typeof renderPlotPoints === 'function') renderPlotPoints();
@@ -2831,12 +2872,13 @@ function ensureXlsxLib(){
   });
   return __xlsxLibPromise;
 }
-/* Collect rows that pass the current category + stage + district filter. */
+/* Collect rows that pass the current category + stage + source + district filter. */
 function collectFilteredRows(){
   const out = [];
   if(typeof SECTIONS_RAW === 'undefined' || !SECTIONS_RAW) return out;
   const catFilter = activeCategoryFilter();
   const stageFilter = activeStageFilter();
+  const sourceFilter = (typeof activeSourceTagFilter === 'function') ? activeSourceTagFilter() : null;
   const distFilter = currentDistrict || null;
   const sectionFilter = (currentSection && currentSection !== 'all') ? currentSection : null;
   for(const sec of Object.keys(SECTIONS_RAW)){
@@ -2848,6 +2890,7 @@ function collectFilteredRows(){
       if(distFilter && dist !== distFilter) continue;
       if(catFilter && !parcelMatchesCategory(sec, r, catFilter)) continue;
       if(stageFilter && !rowMatchesStage(sec, r, stageFilter)) continue;
+      if(sourceFilter && !rowMatchesSourceTag(sec, r, sourceFilter)) continue;
       out.push({ sec, row:r, dist });
     }
   }
@@ -2860,11 +2903,14 @@ function buildExportRow(rec){
   const catLabel = (CATEGORY_META[cat]||{}).label || cat;
   const stage = rowStageKey(sec, row) || 'in_process';
   const stageLabel = (STAGE_DEFS.find(d=>d.key===stage)||{}).label || '';
+  const tags = (typeof sourceTagsFor === 'function') ? sourceTagsFor(sec, row) : [];
+  const sourceLabels = tags.map(t => (SOURCE_TAG_DEFS.find(d=>d.key===t)||{}).label || t).join(', ');
   return {
     'Туман / Шаҳар': dist || '',
     'Бўлим': sectionLabel(sec) || sec,
     'Категория': catLabel,
     'Босқич': stageLabel,
+    'Манбалар': sourceLabels,
     'МФЙ': rowMfy(sec, row) || '',
     'Контур': plotContour(row),
     'Жойлашган участка номи': row['Жойлашган участка номи'] || '',
@@ -2898,8 +2944,10 @@ async function exportFilteredToExcel(){
     XLSX_.utils.book_append_sheet(wb, ws, 'Танланган участкалар');
     const stage = (STAGE_DEFS.find(d=>d.key===STAGE_STATE.selected)||{}).label || 'Барчаси';
     const cat = (CATEGORY_META[CAT_STATE.selected]||{}).label || 'Барчаси';
+    const sourceSel = (typeof SOURCE_TAG_STATE !== 'undefined' && SOURCE_TAG_STATE.selected) || 'all';
+    const sourceLabel = sourceSel === 'all' ? '' : ((SOURCE_TAG_DEFS.find(d=>d.key===sourceSel)||{}).label || '');
     const dist = currentDistrict || 'Навоий вилояти';
-    const fname = `Раҳбариятга_${dist}_${cat}_${stage}_${new Date().toISOString().slice(0,10)}.xlsx`
+    const fname = `Раҳбариятга_${dist}_${cat}_${stage}${sourceLabel?'_'+sourceLabel:''}_${new Date().toISOString().slice(0,10)}.xlsx`
       .replace(/\s+/g,'_').replace(/[\\/:*?"<>|]/g,'');
     XLSX_.writeFile(wb, fname);
     if(typeof showToast === 'function') showToast(`${fmt(rows.length)} та участка Excel'га юкланди`);
@@ -3198,7 +3246,7 @@ function hexToRgba(hex, a){
   const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
   return `rgba(${r},${g},${b},${a})`;
 }
-function distCountByCategory(distKey, section, catFilter, stageFilter){
+function distCountByCategory(distKey, section, catFilter, stageFilter, sourceFilter){
   let count = 0;
   const sections = (section==='all' || !section) ? Object.keys(SECTIONS_RAW) : [section];
   for(const sec of sections){
@@ -3209,6 +3257,7 @@ function distCountByCategory(distKey, section, catFilter, stageFilter){
       if(dk !== distKey) continue;
       if(catFilter && !parcelMatchesCategory(sec, r, catFilter)) continue;
       if(stageFilter && !rowMatchesStage(sec, r, stageFilter)) continue;
+      if(sourceFilter && !rowMatchesSourceTag(sec, r, sourceFilter)) continue;
       count++;
     }
   }
@@ -3225,22 +3274,24 @@ function renderBubbles(){
   const focused = currentSection !== 'all';
   const catFilter = (typeof activeCategoryFilter === 'function') ? activeCategoryFilter() : null;
   const stageFilter = (typeof activeStageFilter === 'function') ? activeStageFilter() : null;
+  const sourceFilter = (typeof activeSourceTagFilter === 'function') ? activeSourceTagFilter() : null;
   const catColor = catFilter ? ((CATEGORY_META[catFilter]||{}).color || null) : null;
   const stageColor = stageFilter ? ((STAGE_DEFS.find(d=>d.key===stageFilter)||{}).color || null) : null;
-  const col = stageColor || catColor || secMeta.color;
+  const sourceColor = sourceFilter ? ((SOURCE_TAG_DEFS.find(d=>d.key===sourceFilter)||{}).color || null) : null;
+  const col = sourceColor || stageColor || catColor || secMeta.color;
   for(const d of DISTRICTS){
     const c = districtCentroids[d.key];
     if(!c) continue;
-    const count = (catFilter || stageFilter)
-      ? distCountByCategory(d.key, currentSection, catFilter, stageFilter)
+    const count = (catFilter || stageFilter || sourceFilter)
+      ? distCountByCategory(d.key, currentSection, catFilter, stageFilter, sourceFilter)
       : distCount(d.key, currentSection);
-    if((focused || catFilter || stageFilter) && count===0) continue;
+    if((focused || catFilter || stageFilter || sourceFilter) && count===0) continue;
     const size = Math.max(44, Math.min(92, 40 + Math.sqrt(count) * 5));
     const isHi = currentDistrict===d.key;
     // Tint bubble by current section color
     const bgA = isHi
       ? `radial-gradient(circle at 35% 30%,#fda4af 0%,#e11d48 55%,#9f1239 100%)`
-      : (focused || catFilter || stageFilter)
+      : (focused || catFilter || stageFilter || sourceFilter)
         ? `radial-gradient(circle at 35% 30%, ${hexToRgba(col,.85)} 0%, ${col} 55%, ${col} 100%)`
         : `radial-gradient(circle at 35% 30%,#6ea6ff 0%,#2563eb 55%,#1d4ed8 100%)`;
     const shadow = isHi
@@ -4175,6 +4226,14 @@ function renderPlotPoints(){
   if(stageFilter){
     items = items.filter(it => plotItemMatchesStage(it, stageFilter));
   }
+  // Apply source-tag filter — keep only items whose primary candidate carries the tag
+  const sourceFilter = (typeof activeSourceTagFilter === 'function') ? activeSourceTagFilter() : null;
+  if(sourceFilter){
+    items = items.filter(it => {
+      const cands = it.candidates || (it.primary ? [it.primary] : []);
+      return cands.some(c => rowMatchesSourceTag(c.section, c.row, sourceFilter));
+    });
+  }
   window.__plotLayer = plotLayer;
   window.__lastPlotItems = items;
 
@@ -4432,13 +4491,15 @@ function renderDrawer(key){
   const focArea  = focused ? distArea(key, currentSection) : 0;
   const yearLabel = (currentSection==='changed' && currentYear!=='all') ? ` • ${currentYear} йил` : '';
 
-  // Active category / stage filters — when set, the drawer shows only matching parcels
+  // Active category / stage / source filters — drawer shows only matching parcels
   const catFilter = (typeof activeCategoryFilter === 'function') ? activeCategoryFilter() : null;
   const stageFilter = (typeof activeStageFilter === 'function') ? activeStageFilter() : null;
+  const sourceFilter = (typeof activeSourceTagFilter === 'function') ? activeSourceTagFilter() : null;
   const catMeta = catFilter ? (CATEGORY_META[catFilter] || {}) : null;
   const stageMeta = stageFilter ? (STAGE_DEFS.find(d=>d.key===stageFilter) || {}) : null;
+  const sourceMeta = sourceFilter ? (SOURCE_TAG_DEFS.find(d=>d.key===sourceFilter) || {}) : null;
   let filtCount = 0, filtArea = 0;
-  if(catFilter || stageFilter){
+  if(catFilter || stageFilter || sourceFilter){
     for(const sec of Object.keys(SECTIONS_RAW||{})){
       if(focused && sec !== currentSection) continue;
       for(const r of (SECTIONS_RAW[sec]||[])){
@@ -4447,6 +4508,7 @@ function renderDrawer(key){
         if(dk !== key) continue;
         if(catFilter && !parcelMatchesCategory(sec, r, catFilter)) continue;
         if(stageFilter && !rowMatchesStage(sec, r, stageFilter)) continue;
+        if(sourceFilter && !rowMatchesSourceTag(sec, r, sourceFilter)) continue;
         filtCount++;
         filtArea += rowArea(sec, r) || 0;
       }
@@ -4455,14 +4517,15 @@ function renderDrawer(key){
 
   document.getElementById('drSmall').textContent = d.type==='city'?'ШАҲАР':'ТУМАН';
   document.getElementById('drTitle').textContent = d.label;
-  // Title strip — pick the most specific filter for clarity
+  // Title strip — list each active filter for clarity
   const filterParts = [];
   if(catMeta) filterParts.push(catMeta.label);
   if(stageMeta && stageMeta.key !== 'all') filterParts.push(stageMeta.label);
+  if(sourceMeta) filterParts.push(sourceMeta.label);
   if(focused) filterParts.push(secMeta.label + yearLabel);
   if(filterParts.length){
-    const cnt = (catFilter || stageFilter) ? filtCount : focCount;
-    const ar  = (catFilter || stageFilter) ? filtArea  : focArea;
+    const cnt = (catFilter || stageFilter || sourceFilter) ? filtCount : focCount;
+    const ar  = (catFilter || stageFilter || sourceFilter) ? filtArea  : focArea;
     document.getElementById('drArea').textContent = `${filterParts.join(' · ')}: ${fmt(cnt)} та • ${fmtArea(ar)} га`;
   } else {
     document.getElementById('drArea').textContent = `Жами ${fmt(total)} та ер участкаси • ${fmtArea(totalArea)} га`;
@@ -6682,6 +6745,7 @@ function saveEditRecord(){
   try { buildUnifiedStats(); } catch(e){ console.error('rebuild stats',e); }
   try { buildCategoryStats(); } catch(e){ console.error('rebuild cat stats',e); }
   try { buildStageStats(); } catch(e){ console.error('rebuild stage stats',e); }
+  try { buildSourceTagStats(); } catch(e){ console.error('rebuild source stats',e); }
   renderKpis();
   renderStageFilter();
   renderDistrictList();
