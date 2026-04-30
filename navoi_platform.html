@@ -542,6 +542,12 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
 .pcv2-cat-tag{padding:3px 8px;border-radius:999px;background:#eef6ff;color:#1d4ed8;font-size:10.5px;font-weight:800;border:1px solid #dbeafe}
 .pcv2-cat-proj{padding:3px 8px;border-radius:999px;background:#f1f5f9;color:#334155;font-size:10.5px;font-weight:700;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pcv2-foot{padding:7px 14px;font-size:10px;color:#6b7a99;font-weight:650;text-align:right;background:#f8fafc}
+/* Manba (source) pills inside the plot card */
+.pcv2-sources{padding:8px 14px 10px;background:#fff;border-bottom:1px solid #eef2f9}
+.pcv2-sources-l{font-size:9.5px;color:#6b7a99;font-weight:850;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.pcv2-sources-row{display:flex;flex-wrap:wrap;gap:5px}
+.pcv2-source-pill{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:10.5px;font-weight:800;
+  background:var(--src-soft,#eef3fb);color:var(--src-color,#1d4ed8);border:1px solid var(--src-border,rgba(29,78,216,.3))}
 /* ===== Status badge inside plot card v2 ===== */
 .pcv2-status{padding:10px 14px;background:#fff;border-bottom:1px solid #eef2f9;display:flex;flex-direction:column;gap:5px}
 .pcv2-status-row{display:flex;align-items:center;gap:8px}
@@ -3955,6 +3961,17 @@ function plotTooltipHtml(item, opts){
   const status = item.status || (item.candidates ? currentParcelStatus(item.candidates) : null);
   const kindInfo = status ? plotStatusKind(status.label) : null;
   const proposalMatch = plotMatchingProposals(item);
+  // Aggregate source tags across all candidates of this geographic parcel
+  const sourceTags = (() => {
+    if(typeof sourceTagsFor !== 'function' || typeof SOURCE_TAG_DEFS === 'undefined') return [];
+    const seen = new Set();
+    const cands = item.candidates || (item.primary ? [item.primary] : []);
+    for(const c of cands){
+      for(const t of (sourceTagsFor(c.section, c.row) || [])) seen.add(t);
+    }
+    // Preserve canonical order from SOURCE_TAG_DEFS
+    return SOURCE_TAG_DEFS.filter(d => seen.has(d.key));
+  })();
   const metaChips = [];
   if(contour) metaChips.push(`Контур: ${escHtml(contour)}`);
   if(area) metaChips.push(`${fmtArea(area)} га`);
@@ -4003,6 +4020,12 @@ function plotTooltipHtml(item, opts){
     ${(category||project)?`<div class="pcv2-cat">
       ${category?`<span class="pcv2-cat-tag">${escHtml(category)}</span>`:''}
       ${project?`<span class="pcv2-cat-proj">${escHtml(project)}</span>`:''}
+    </div>`:''}
+    ${sourceTags.length ? `<div class="pcv2-sources">
+      <div class="pcv2-sources-l">Манбалар</div>
+      <div class="pcv2-sources-row">
+        ${sourceTags.map(t => `<span class="pcv2-source-pill" style="--src-color:${t.color};--src-soft:${t.color}1a;--src-border:${t.color}55">${escHtml(t.label)}</span>`).join('')}
+      </div>
     </div>`:''}
     ${footer}
   </div>`;
@@ -6932,6 +6955,18 @@ function showRowDetail(section, rowIdx){
   let detailHtml = section === 'hk'
     ? renderHkRecordDetail(row, cols)
     : renderGenericRecordDetail(section, row, cols, displayKeys);
+  // Source-tag pills banner — shows the parcel's workflow sources (pq12 / pq13 / vm88 / kon)
+  if(typeof sourceTagsFor === 'function' && typeof SOURCE_TAG_DEFS !== 'undefined'){
+    const tagKeys = sourceTagsFor(section, row) || [];
+    const tags = SOURCE_TAG_DEFS.filter(d => tagKeys.includes(d.key));
+    if(tags.length){
+      const pills = tags.map(t => `<span style="display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;background:${t.color}1a;color:${t.color};border:1px solid ${t.color}55;margin-right:5px;margin-bottom:4px">${escHtml(t.label)}</span>`).join('');
+      detailHtml = `<div style="margin-bottom:10px;padding:9px 12px;border:1px solid #e0e9f6;background:#fbfdff;border-radius:10px">
+        <div style="font-size:9.5px;color:#1d4ed8;font-weight:900;text-transform:uppercase;letter-spacing:.45px;margin-bottom:6px">Манбалар</div>
+        <div>${pills}</div>
+      </div>` + detailHtml;
+    }
+  }
   if(isPrimarySection(section)){
     detailHtml += renderRelatedInfoDetail(section, row);
   }
