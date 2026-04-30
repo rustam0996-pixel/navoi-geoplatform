@@ -1398,10 +1398,14 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
   <!-- Tab: Districts (default) -->
   <div class="sp-tab-pane active" data-tab-pane="districts">
     <div class="sp-head">
-      <div class="t"><span class="dot"></span>Маълумотлар кесими</div>
-      <div class="d">Бўлимни танланг ва туман устига босинг</div>
+      <div class="t"><span class="dot"></span>Туманлар бўйича таҳлил</div>
+      <div class="d">Туман устига босинг ёки пастдаги фильтрлардан фойдаланинг</div>
     </div>
-    <div class="sp-tabs" id="spTabs"></div>
+    <!-- Section selector + year filter were removed: their roles are covered
+         by the Stage filter («Тоифаси ўзгариш жараёнида» / «Тоифаси ўзгарган»)
+         and Source filter chips below. The hidden hosts stay so the existing
+         render functions remain no-op safe. -->
+    <div class="sp-tabs" id="spTabs" style="display:none"></div>
     <div class="sp-years" id="spYears" style="display:none"></div>
     <div class="sp-body">
       <div class="dlist-title" id="dlistTitle">Туманлар / шаҳарлар</div>
