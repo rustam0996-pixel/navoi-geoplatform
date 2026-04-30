@@ -3183,20 +3183,10 @@ function renderSectionTabs(){
     const caret = hasKids ? `<span class="caret">▾</span>` : '';
     return `<button class="chip primary ${isActive?'active':''} ${hasKids?'has-kids':''}" data-sec="${key}" data-top="${key}">${s.label}<span class="n">${fmt(total)}</span>${badge}${caret}</button>`;
   }).join('');
-  // Children row: only for currently-selected top parent that has kids
-  const activeParent = SECTIONS.find(s=>s.key===topActiveKey);
-  const kids = activeParent ? sectionChildren(topActiveKey) : [];
-  let childrenRow = '';
-  if(kids.length){
-    const parentChip = `<button class="chip child parent-self ${currentSection===topActiveKey?'active':''}" data-sec="${topActiveKey}">Фақат «${activeParent.label}» ёзувлари<span class="n">${fmt(sectionTotal(topActiveKey))}</span></button>`;
-    const kidChips = kids.map(c=>{
-      const cnt = sectionTotal(c.key);
-      const role = sectionBehavior(c.key).badge ? `<span class="role">${sectionBehavior(c.key).badge}</span>` : '';
-      return `<button class="chip child ${c.key===currentSection?'active':''}" data-sec="${c.key}" style="--child-color:${c.color}">${c.label}<span class="n">${fmt(cnt)}</span>${role}</button>`;
-    }).join('');
-    childrenRow = `<div class="sp-tabs-kids" data-parent="${topActiveKey}"><div class="sp-kids-label">${activeParent.label} ичида</div><div class="sp-kids-chips">${parentChip}${kidChips}</div></div>`;
-  }
-  el.innerHTML = `<div class="sp-tabs-primary">${primaryRow}</div>${childrenRow}`;
+  // Children row removed: the same information is exposed via the
+  // "Босқич бўйича фильтр" and "Манба бўйича фильтр" panels below the
+  // section selector, so showing it twice is duplicated noise.
+  el.innerHTML = `<div class="sp-tabs-primary">${primaryRow}</div>`;
   el.querySelectorAll('.chip').forEach(c=>{
     c.onclick = ()=>{
       currentSection = c.dataset.sec;
@@ -3331,6 +3321,15 @@ function renderBubbles(){
   const catFilter = (typeof activeCategoryFilter === 'function') ? activeCategoryFilter() : null;
   const stageFilter = (typeof activeStageFilter === 'function') ? activeStageFilter() : null;
   const sourceFilter = (typeof activeSourceTagFilter === 'function') ? activeSourceTagFilter() : null;
+  // FILTER-ONLY MODE: when no district is selected but the user has chosen
+  // a category / stage / source filter, draw the actual matching parcels as
+  // pins across the whole viewport instead of district bubbles. This way
+  // clicking a stage chip ("Аукционда сотилган") or source chip ("ВМ-88")
+  // shows the participating parcels directly on the map.
+  if(catFilter || stageFilter || sourceFilter){
+    renderPlotPoints();
+    return;
+  }
   const catColor = catFilter ? ((CATEGORY_META[catFilter]||{}).color || null) : null;
   const stageColor = stageFilter ? ((STAGE_DEFS.find(d=>d.key===stageFilter)||{}).color || null) : null;
   const sourceColor = sourceFilter ? ((SOURCE_TAG_DEFS.find(d=>d.key===sourceFilter)||{}).color || null) : null;
@@ -4225,7 +4224,12 @@ function previewParcelOnMap(section, rowIdx){
 }
 window.previewParcelOnMap = previewParcelOnMap;
 function collectPlotPoints(){
-  if(!currentDistrict) return [];
+  // Filter-only mode (no district selected, but a category/stage/source filter is active):
+  // gather candidates ACROSS all districts so the matching parcels render as pins.
+  const filterActive = (typeof activeCategoryFilter === 'function' && activeCategoryFilter())
+                    || (typeof activeStageFilter === 'function' && activeStageFilter())
+                    || (typeof activeSourceTagFilter === 'function' && activeSourceTagFilter());
+  if(!currentDistrict && !filterActive) return [];
   let candidates = [];
 
   if(currentSection === 'all'){
@@ -4291,7 +4295,11 @@ function renderPlotPoints(){
   }
   window.__plotLayer = null;
   window.__lastPlotItems = [];
-  if(!currentDistrict) return;
+  // Allow filter-only mode (no district but a category/stage/source filter active)
+  const filterActive = (typeof activeCategoryFilter === 'function' && activeCategoryFilter())
+                    || (typeof activeStageFilter === 'function' && activeStageFilter())
+                    || (typeof activeSourceTagFilter === 'function' && activeSourceTagFilter());
+  if(!currentDistrict && !filterActive) return;
   plotLayer = L.layerGroup().addTo(map);
   let items = collectPlotPoints();
   // Apply stage filter (when active) — drop items whose status doesn't match
