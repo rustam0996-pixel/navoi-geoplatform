@@ -1383,38 +1383,26 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 
 <!-- SIDE PANEL -->
 <aside class="sidepanel collapsed" id="sidepanel">
-  <!-- Master tabs: Туманлар / Қидирув -->
-  <div class="sp-master-tabs" role="tablist">
-    <button class="sp-mt active" data-mtab="districts" role="tab">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s-8-6-8-13a8 8 0 1 1 16 0c0 7-8 13-8 13z"/><circle cx="12" cy="9" r="3"/></svg>
-      <span>Туманлар</span>
-    </button>
-    <button class="sp-mt" data-mtab="search" role="tab">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <span>Қидирув</span>
-    </button>
+  <!-- Districts tab + master tabs row removed: the same district info
+       lives on the map (district bubbles + counts), so the side-panel
+       focuses on Search + Filters + Excel + Янги таклиф only.
+       Hidden hosts kept so existing renderSectionTabs / renderYearBar /
+       renderDistrictList stay no-op safe. -->
+  <div class="sp-master-tabs" role="tablist" style="display:none">
+    <button class="sp-mt" data-mtab="districts" role="tab" style="display:none"></button>
+    <button class="sp-mt active" data-mtab="search" role="tab" style="display:none"></button>
   </div>
-
-  <!-- Tab: Districts (default) -->
-  <div class="sp-tab-pane active" data-tab-pane="districts">
-    <div class="sp-head">
-      <div class="t"><span class="dot"></span>Туманлар бўйича таҳлил</div>
-      <div class="d">Туман устига босинг ёки пастдаги фильтрлардан фойдаланинг</div>
-    </div>
-    <!-- Section selector + year filter were removed: their roles are covered
-         by the Stage filter («Тоифаси ўзгариш жараёнида» / «Тоифаси ўзгарган»)
-         and Source filter chips below. The hidden hosts stay so the existing
-         render functions remain no-op safe. -->
+  <div class="sp-tab-pane" data-tab-pane="districts" style="display:none">
     <div class="sp-tabs" id="spTabs" style="display:none"></div>
     <div class="sp-years" id="spYears" style="display:none"></div>
     <div class="sp-body">
-      <div class="dlist-title" id="dlistTitle">Туманлар / шаҳарлар</div>
-      <div id="dlist"></div>
+      <div class="dlist-title" id="dlistTitle" style="display:none"></div>
+      <div id="dlist" style="display:none"></div>
     </div>
   </div>
 
-  <!-- Tab: Search (inline, never floats) -->
-  <div class="sp-tab-pane" data-tab-pane="search">
+  <!-- Tab: Search (now always-visible — only sidebar mode) -->
+  <div class="sp-tab-pane active" data-tab-pane="search">
     <div class="sp-head">
       <div class="t">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -2956,8 +2944,20 @@ function collectFilteredRows(){
   }
   return out;
 }
+/* Read first non-empty value among multiple candidate keys. */
+function __pickField(row, keys){
+  if(!row) return '';
+  for(const k of keys){
+    const v = row[k];
+    if(v != null){
+      const s = String(v).trim();
+      if(s && s !== '—' && s !== '-') return v;
+    }
+  }
+  return '';
+}
 /* Format an output sheet row for leadership use. */
-function buildExportRow(rec){
+function buildExportRow(rec, idx){
   const { sec, row, dist } = rec;
   const cat = classifyParcel(sec, row);
   const catLabel = (CATEGORY_META[cat]||{}).label || cat;
@@ -2965,22 +2965,100 @@ function buildExportRow(rec){
   const stageLabel = (STAGE_DEFS.find(d=>d.key===stage)||{}).label || '';
   const tags = (typeof sourceTagsFor === 'function') ? sourceTagsFor(sec, row) : [];
   const sourceLabels = tags.map(t => (SOURCE_TAG_DEFS.find(d=>d.key===t)||{}).label || t).join(', ');
+  const projectName = __pickField(row, ['Лойиҳа номи','Фойдаланиш мақсади','Номланиши']);
+  const initiator   = __pickField(row, ['Лойиҳа ташаббускори','Ер участкаси ажратилган корхона номи','Бугунги кунда ердан фойдаланувчи номи']);
+  const area        = rowArea(sec, row) || 0;
+  const investment  = __pickField(row, ['Лойиҳа қиймати (млн. долл.)','Лойиҳа қиймати (млн.долл)','Лойиҳа қиймати']);
+  const jobs        = __pickField(row, ['Иш ўрни (нафар)','Иш ўрни']);
+  const year        = __pickField(row, ['Тоифаси ўзгарган йили (2019,2020, 2021,2022, 2023,2024,2025)','Тоифаси ўзгарган йили']);
+  const protocol    = __pickField(row, ['Тоифаси ўзгарган Протокол ёки ВМ фармойишга асосан','Протокол рақами']);
+  const aucSold     = __pickField(row, ['Бино-иншоот аукцион савдоларида сотилган ер майдони (га)','Ер қаъри аукционда сотилган (га)']);
+  const aucPut      = __pickField(row, ['Бино-иншоот аукцион савдоларига чиқарилган (га)','Ер қаъри аукционга чиқарилган (га)']);
+  const direct      = __pickField(row, ['Доимий фойдаланишга ажратилган бино-иншоот (га)','Ер қаъри участкаларини корхоналарга тўғридан-тўғри келишув асосида Ажратилган (га)']);
   return {
+    '№': idx + 1,
     'Туман / Шаҳар': dist || '',
-    'Бўлим': sectionLabel(sec) || sec,
+    'МФЙ': rowMfy(sec, row) || '',
+    'Жойлашган участка номи': row['Жойлашган участка номи'] || '',
+    'Лойиҳа номи / Фойдаланиш мақсади': projectName,
+    'Ташаббускор / Корхона': initiator,
     'Категория': catLabel,
     'Босқич': stageLabel,
     'Манбалар': sourceLabels,
-    'МФЙ': rowMfy(sec, row) || '',
-    'Контур': plotContour(row),
-    'Жойлашган участка номи': row['Жойлашган участка номи'] || '',
-    'Лойиҳа номи': row['Лойиҳа номи'] || row['Фойдаланиш мақсади'] || row['Номланиши'] || '',
-    'Ташаббускор / Корхона': row['Лойиҳа ташаббускори'] || row['Ер участкаси ажратилган корхона номи'] || row['Бугунги кунда ердан фойдаланувчи номи'] || '',
-    'Майдон (га)': rowArea(sec, row) || '',
+    'Майдон (га)': area,
+    'Лойиҳа қиймати (млн. долл.)': investment,
+    'Иш ўрни (нафар)': jobs,
+    'Тоифа ўзгарган йил': year,
+    'Протокол / Қарор': protocol,
+    'Аукционга чиқарилган (га)': aucPut,
+    'Аукционда сотилган (га)': aucSold,
+    'Тўғридан-тўғри (га)': direct,
     'АСОС / Ҳужжат': plotBasis(row),
-    'Координаталари': (row['Координаталари']||'').toString().replace(/\s+/g,' ').trim()
+    'Контур': plotContour(row),
+    'Координаталари': (row['Координаталари']||row['Координата рақами']||'').toString().replace(/\s+/g,' ').trim(),
+    'Бўлим': sectionLabel(sec) || sec
   };
 }
+
+/* Build a context-aware "Хулоса" (summary) sheet — what filters were active,
+   counts and area broken down per district / per category / per stage. */
+function buildExportSummary(rows){
+  const totalArea = rows.reduce((s,r) => s + (rowArea(r.sec, r.row)||0), 0);
+  const byDist = {}, byCat = {}, byStage = {};
+  for(const r of rows){
+    const d = r.dist || '—'; byDist[d] = byDist[d] || {count:0, area:0};
+    byDist[d].count++; byDist[d].area += rowArea(r.sec, r.row) || 0;
+    const c = classifyParcel(r.sec, r.row);
+    byCat[c] = byCat[c] || {count:0, area:0};
+    byCat[c].count++; byCat[c].area += rowArea(r.sec, r.row) || 0;
+    const st = rowStageKey(r.sec, r.row) || 'in_process';
+    byStage[st] = byStage[st] || {count:0, area:0};
+    byStage[st].count++; byStage[st].area += rowArea(r.sec, r.row) || 0;
+  }
+  const filterDesc = [];
+  const catSel = CAT_STATE.selected || 'all';
+  if(catSel !== 'all') filterDesc.push(`Категория: ${(CATEGORY_META[catSel]||{}).label||catSel}`);
+  const stageSel = STAGE_STATE.selected || 'all';
+  if(stageSel !== 'all') filterDesc.push(`Босқич: ${(STAGE_DEFS.find(d=>d.key===stageSel)||{}).label||stageSel}`);
+  const sourceSel = (typeof SOURCE_TAG_STATE !== 'undefined' && SOURCE_TAG_STATE.selected) || 'all';
+  if(sourceSel !== 'all') filterDesc.push(`Манба: ${(SOURCE_TAG_DEFS.find(d=>d.key===sourceSel)||{}).label||sourceSel}`);
+  if(currentDistrict) filterDesc.push(`Туман: ${(distByKey[currentDistrict]||{}).label||currentDistrict}`);
+  if(currentSection && currentSection !== 'all') filterDesc.push(`Бўлим: ${sectionLabel(currentSection)}`);
+
+  const sheet = [];
+  sheet.push(['НАВОИЙ ВИЛОЯТИ — ЕР УЧАСТКАЛАРИ ҲИСОБОТИ']);
+  sheet.push([`Ҳужжат тузилган сана: ${new Date().toLocaleDateString('ru-RU')} ${new Date().toLocaleTimeString('uz-Latn-UZ')}`]);
+  sheet.push([`Жорий фильтрлар: ${filterDesc.length ? filterDesc.join(' · ') : 'Барча участкалар (фильтрсиз)'}`]);
+  sheet.push([]);
+  sheet.push(['1. УМУМИЙ ҚИСМ']);
+  sheet.push(['Жами участкалар сони', rows.length, 'та']);
+  sheet.push(['Жами ер майдони', Number(totalArea.toFixed(2)), 'га']);
+  sheet.push([]);
+  sheet.push(['2. КАТЕГОРИЯ КЕСИМИДА']);
+  sheet.push(['Категория','Сони','Майдони (га)','% (сон)']);
+  for(const k of Object.keys(byCat).sort((a,b)=>byCat[b].count-byCat[a].count)){
+    const meta = CATEGORY_META[k] || {label:k};
+    sheet.push([meta.label, byCat[k].count, Number(byCat[k].area.toFixed(2)),
+      rows.length ? `${(byCat[k].count*100/rows.length).toFixed(1)}%` : '']);
+  }
+  sheet.push([]);
+  sheet.push(['3. БОСҚИЧ КЕСИМИДА']);
+  sheet.push(['Босқич','Сони','Майдони (га)','% (сон)']);
+  for(const k of Object.keys(byStage).sort((a,b)=>byStage[b].count-byStage[a].count)){
+    const def = STAGE_DEFS.find(d=>d.key===k) || {label:k};
+    sheet.push([def.label, byStage[k].count, Number(byStage[k].area.toFixed(2)),
+      rows.length ? `${(byStage[k].count*100/rows.length).toFixed(1)}%` : '']);
+  }
+  sheet.push([]);
+  sheet.push(['4. ТУМАН КЕСИМИДА']);
+  sheet.push(['Туман / Шаҳар','Сони','Майдони (га)','% (сон)']);
+  for(const d of Object.keys(byDist).sort((a,b)=>byDist[b].count-byDist[a].count)){
+    sheet.push([d, byDist[d].count, Number(byDist[d].area.toFixed(2)),
+      rows.length ? `${(byDist[d].count*100/rows.length).toFixed(1)}%` : '']);
+  }
+  return sheet;
+}
+
 async function exportFilteredToExcel(){
   const rows = collectFilteredRows();
   if(!rows.length){
@@ -2992,25 +3070,76 @@ async function exportFilteredToExcel(){
   if(btn){ btn.disabled = true; btn.textContent = 'Юкланмоқда…'; }
   try {
     const XLSX_ = await ensureXlsxLib();
-    const data = rows.map(buildExportRow);
-    const ws = XLSX_.utils.json_to_sheet(data, {cellDates:false});
-    // Auto-width columns based on content
+
+    // Sheet 1 — «Хулоса» (Summary aoa)
+    const summaryAoa = buildExportSummary(rows);
+    const wsSummary = XLSX_.utils.aoa_to_sheet(summaryAoa);
+    wsSummary['!cols'] = [{wch:38},{wch:14},{wch:14},{wch:10}];
+    // Merge title + meta rows across 4 cols for visual prominence
+    wsSummary['!merges'] = [
+      {s:{r:0,c:0}, e:{r:0,c:3}},
+      {s:{r:1,c:0}, e:{r:1,c:3}},
+      {s:{r:2,c:0}, e:{r:2,c:3}}
+    ];
+
+    // Sheet 2 — «Тўлиқ рўйхат»
+    const data = rows.map((r,i) => buildExportRow(r,i));
+    const wsList = XLSX_.utils.json_to_sheet(data, {cellDates:false});
     const colKeys = Object.keys(data[0]||{});
-    ws['!cols'] = colKeys.map(k => {
+    wsList['!cols'] = colKeys.map(k => {
       const max = Math.max(k.length, ...data.map(r => String(r[k]||'').length));
-      return { wch: Math.min(60, Math.max(10, max+2)) };
+      return { wch: Math.min(60, Math.max(8, max+2)) };
     });
+    wsList['!freeze'] = { xSplit: 0, ySplit: 1 };
+
+    // Sheet 3 — «Туман бўйича гуруҳлаш» (one block per district)
+    const byDistGroups = {};
+    for(let i=0;i<rows.length;i++){
+      const d = rows[i].dist || '—';
+      if(!byDistGroups[d]) byDistGroups[d] = [];
+      byDistGroups[d].push({ rec: rows[i], sourceIdx: i });
+    }
+    const distAoa = [];
+    distAoa.push(['Туман','Сони','Майдон (га)']);
+    for(const d of Object.keys(byDistGroups).sort()){
+      const items = byDistGroups[d];
+      const total = items.reduce((s,it)=>s+(rowArea(it.rec.sec, it.rec.row)||0),0);
+      distAoa.push([d, items.length, Number(total.toFixed(2))]);
+    }
+    distAoa.push([]);
+    distAoa.push(['№','Туман','Лойиҳа номи','Ташаббускор','Категория','Босқич','Майдон (га)']);
+    let rowNum = 0;
+    for(const d of Object.keys(byDistGroups).sort()){
+      for(const it of byDistGroups[d]){
+        rowNum++;
+        const r = it.rec.row;
+        distAoa.push([
+          rowNum, d,
+          __pickField(r, ['Лойиҳа номи','Фойдаланиш мақсади','Номланиши']) || '',
+          __pickField(r, ['Лойиҳа ташаббускори','Ер участкаси ажратилган корхона номи','Бугунги кунда ердан фойдаланувчи номи']) || '',
+          (CATEGORY_META[classifyParcel(it.rec.sec, r)]||{}).label||'',
+          (STAGE_DEFS.find(s=>s.key===rowStageKey(it.rec.sec, r))||{}).label||'',
+          rowArea(it.rec.sec, r) || 0
+        ]);
+      }
+    }
+    const wsDist = XLSX_.utils.aoa_to_sheet(distAoa);
+    wsDist['!cols'] = [{wch:6},{wch:22},{wch:42},{wch:32},{wch:22},{wch:24},{wch:14}];
+
     const wb = XLSX_.utils.book_new();
-    XLSX_.utils.book_append_sheet(wb, ws, 'Танланган участкалар');
-    const stage = (STAGE_DEFS.find(d=>d.key===STAGE_STATE.selected)||{}).label || 'Барчаси';
-    const cat = (CATEGORY_META[CAT_STATE.selected]||{}).label || 'Барчаси';
+    XLSX_.utils.book_append_sheet(wb, wsSummary, 'Хулоса');
+    XLSX_.utils.book_append_sheet(wb, wsList, 'Тўлиқ рўйхат');
+    XLSX_.utils.book_append_sheet(wb, wsDist, 'Туман бўйича');
+
+    const stageS = STAGE_STATE.selected === 'all' ? 'Барчаси' : (STAGE_DEFS.find(d=>d.key===STAGE_STATE.selected)||{}).label;
+    const catS   = CAT_STATE.selected === 'all' ? 'Барчаси' : (CATEGORY_META[CAT_STATE.selected]||{}).label;
     const sourceSel = (typeof SOURCE_TAG_STATE !== 'undefined' && SOURCE_TAG_STATE.selected) || 'all';
     const sourceLabel = sourceSel === 'all' ? '' : ((SOURCE_TAG_DEFS.find(d=>d.key===sourceSel)||{}).label || '');
-    const dist = currentDistrict || 'Навоий вилояти';
-    const fname = `Раҳбариятга_${dist}_${cat}_${stage}${sourceLabel?'_'+sourceLabel:''}_${new Date().toISOString().slice(0,10)}.xlsx`
-      .replace(/\s+/g,'_').replace(/[\\/:*?"<>|]/g,'');
+    const dist = currentDistrict ? ((distByKey[currentDistrict]||{}).label||currentDistrict) : 'Навоий_вилояти';
+    const fname = `Раҳбариятга_${dist}_${catS}_${stageS}${sourceLabel?'_'+sourceLabel:''}_${new Date().toISOString().slice(0,10)}.xlsx`
+      .replace(/\s+/g,'_').replace(/[\\/:*?"<>|]/g,'').replace(/_+/g,'_');
     XLSX_.writeFile(wb, fname);
-    if(typeof showToast === 'function') showToast(`${fmt(rows.length)} та участка Excel'га юкланди`);
+    if(typeof showToast === 'function') showToast(`${fmt(rows.length)} та участка ҳисоботи Excel'га юкланди`);
   } catch(e){
     console.error('export', e);
     alert('Excel яратишда хатолик: ' + (e && e.message ? e.message : e));
