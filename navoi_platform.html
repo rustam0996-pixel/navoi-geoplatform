@@ -2903,6 +2903,8 @@ function renderStageFilter(){
   });
   const btn = document.getElementById('stageExportBtn');
   if(btn) btn.onclick = () => exportFilteredToExcel();
+  // Animate stage + source chip counts once per key
+  if(typeof __animateCountersIn === 'function') __animateCountersIn(host, 'filter');
 }
 
 /* ================= EXCEL EXPORT ================= */
@@ -3150,6 +3152,54 @@ async function exportFilteredToExcel(){
   }
 }
 
+/* ================= COUNTER ANIMATION =================
+   Plays a smooth count-up on a number element the first time it's seen
+   (per stable key). Subsequent renders show the number instantly.
+   Easing: easeOutCubic for a natural finish; default duration 1100 ms. */
+const __animatedKeys = new Set();
+function __animateOnce(key, el, target, formatter, durationMs){
+  if(!el) return;
+  const fmtFn = formatter || (v => String(v));
+  const dur = durationMs || 1100;
+  if(__animatedKeys.has(key)){ el.textContent = fmtFn(target); return; }
+  __animatedKeys.add(key);
+  // If target is 0 just show "0" — no animation needed
+  if(!Number.isFinite(target) || target <= 0){ el.textContent = fmtFn(target||0); return; }
+  const start = performance.now();
+  function tick(now){
+    const t = Math.min(1, (now - start) / dur);
+    const e = 1 - Math.pow(1 - t, 3);  // easeOutCubic
+    const v = Math.round(target * e);
+    el.textContent = fmtFn(v);
+    if(t < 1) requestAnimationFrame(tick);
+    else el.textContent = fmtFn(target);
+  }
+  requestAnimationFrame(tick);
+}
+/* Walk all rendered count elements inside a host and animate each.
+   target value is read from the rendered text (digits only). */
+function __animateCountersIn(host, keyPrefix){
+  if(!host) return;
+  // Category tiles: <b> inside .cat-nums or .cat-hero-nums
+  host.querySelectorAll('.cat[data-cat]').forEach(catEl => {
+    const k = catEl.dataset.cat;
+    const b = catEl.querySelector('.cat-nums b, .cat-hero-nums b');
+    if(b){
+      const target = parseInt(String(b.textContent||'').replace(/\D/g,''), 10) || 0;
+      __animateOnce(`${keyPrefix||'cat'}-${k}`, b, target, v => fmt(v));
+    }
+  });
+  // Stage / source chips: .n span
+  host.querySelectorAll('.sp-stage-chip').forEach(chip => {
+    const k = chip.dataset.stage || chip.dataset.source || 'x';
+    const n = chip.querySelector('.n');
+    if(n){
+      const target = parseInt(String(n.textContent||'').replace(/\D/g,''), 10) || 0;
+      __animateOnce(`chip-${chip.dataset.stage?'stage':'source'}-${k}`, n, target, v => fmt(v));
+    }
+  });
+}
+
 function renderKpis(){
   const host = document.getElementById('kpis');
   if(!host) return;
@@ -3230,6 +3280,8 @@ function renderKpis(){
     const btn = document.getElementById('proposeActionBtn');
     if(btn) btn.onclick = () => openProposalsPanel();
   }
+  // Animate counters once per stable key (hero + tier-1 + tier-2)
+  if(typeof __animateCountersIn === 'function') __animateCountersIn(host, 'kpi');
 }
 
 /* ================= CATEGORY TREE INTERACTION ================= */
