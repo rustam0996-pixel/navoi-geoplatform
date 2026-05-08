@@ -2603,10 +2603,17 @@ function globalAllocationKpis(){
    - kon   : the parcel is a mine (Бино-иншоот/Кон == "кон")
 */
 const SOURCE_TAG_DEFS = [
-  { key:'pq12', label:'ПҚ-58 12-илова', color:'#f59e0b' },
-  { key:'pq13', label:'ПҚ-58 13-илова', color:'#ef4444' },
-  { key:'vm88', label:'ВМ-88 фармойиши',  color:'#06b6d4' },
-  { key:'kon',  label:'Кон ёзуви',         color:'#8b5cf6' }
+  // displayCount = the user-facing source-file row count (the
+  // authoritative figure from the original ПҚ-58 ва ВМ-88 ф.xlsm).
+  // The CHIP shows this number; the FILTER click maps to whichever
+  // master parcels the index/columns mark with the tag.
+  { key:'pq12', label:'ПҚ-58 12-илова',   color:'#f59e0b', displayCount: 80 },
+  { key:'pq13', label:'ПҚ-58 13-илова',   color:'#ef4444', displayCount: 42 },
+  { key:'vm88', label:'ВМ-88 фармойиши',  color:'#06b6d4', displayCount: 47 },
+  // 'kon' tag remains in the data model (cards may still show it as a
+  // pill) but the chip is hidden from the filter row — clicking it gave
+  // no useful information beyond what the Геология category already does.
+  { key:'kon',  label:'Кон ёзуви',         color:'#8b5cf6', hidden: true }
 ];
 function __nonZero(v){
   if(v == null) return false;
@@ -2857,14 +2864,23 @@ function renderStageFilter(){
   const sourceStats = (typeof SOURCE_TAG_STATS !== 'undefined') ? SOURCE_TAG_STATS : {};
   const allSourceCnt = total;
   const allSourceChip = `<button class="sp-stage-chip ${sourceSel==='all'?'active':''}" data-source="all" style="--ch-bg:#1d4ed8;--ch-dot:#1d4ed8" type="button"><i style="background:#1d4ed8"></i><span>Барчаси</span><span class="n">${fmt(allSourceCnt)}</span></button>`;
-  const sourceChips = (typeof SOURCE_TAG_DEFS !== 'undefined' ? SOURCE_TAG_DEFS : []).map(def => {
-    const active = sourceSel === def.key;
-    const cnt = (sourceStats[def.key] && sourceStats[def.key].count) || 0;
-    const cls = (cnt === 0) ? 'sp-stage-chip muted' : 'sp-stage-chip';
-    return `<button class="${cls} ${active?'active':''}" data-source="${def.key}"
-      style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button" ${cnt===0?'disabled title="Бу манбада ҳозирча парча йўқ"':''}>
-      <i style="background:${def.color}"></i><span>${def.label}</span><span class="n">${fmt(cnt)}</span></button>`;
-  }).join('');
+  const sourceChips = (typeof SOURCE_TAG_DEFS !== 'undefined' ? SOURCE_TAG_DEFS : [])
+    .filter(def => !def.hidden)
+    .map(def => {
+      const active = sourceSel === def.key;
+      const matched = (sourceStats[def.key] && sourceStats[def.key].count) || 0;
+      // Prefer the user-facing displayCount (source-file row count) over the
+      // matched-master-parcels count. The two differ when a source row is a
+      // sub-plot (1→N split) of a Changed parcel.
+      const cnt = (def.displayCount != null) ? def.displayCount : matched;
+      const cls = (cnt === 0) ? 'sp-stage-chip muted' : 'sp-stage-chip';
+      const tip = (def.displayCount != null && matched !== def.displayCount)
+        ? `${def.displayCount} та манба қатори · ${matched} та парчага мос`
+        : (cnt === 0 ? 'Бу манбада ҳозирча парча йўқ' : '');
+      return `<button class="${cls} ${active?'active':''}" data-source="${def.key}"
+        style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button"${tip?` title="${tip}"`:''} ${cnt===0?'disabled':''}>
+        <i style="background:${def.color}"></i><span>${def.label}</span><span class="n">${fmt(cnt)}</span></button>`;
+    }).join('');
   host.innerHTML = `
     <div class="sp-stage-label">
       <span>Босқич бўйича фильтр</span>
