@@ -358,6 +358,23 @@ body.has-selection .home-pill{display:inline-flex}
 .tb-btn.primary:hover{transform:translateY(-1px);box-shadow:0 10px 20px -8px rgba(29,78,216,.6)}
 .tb-btn svg{width:13px;height:13px;opacity:.85}
 .tb-btn.primary svg{opacity:1}
+/* Excel ҳисобот тугмаси — топбарда, ҳар доим кўринади */
+.tb-btn.excel-tb{background:linear-gradient(135deg,#16a34a,#0e7c3a);color:#fff;border-color:transparent;font-weight:750;box-shadow:0 4px 10px -3px rgba(22,163,74,.4)}
+.tb-btn.excel-tb:hover{transform:translateY(-1px);box-shadow:0 8px 16px -4px rgba(22,163,74,.5);color:#fff}
+.tb-btn.excel-tb svg{opacity:1}
+.tb-btn.excel-tb .excel-tb-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:18px;padding:0 5px;border-radius:9px;background:rgba(255,255,255,.22);color:#fff;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;margin-left:2px}
+.tb-btn.excel-tb:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* Танланган контекст крамби — фильтрлар актив бўлганда харита устида қатор */
+.filter-crumb{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:7px 18px;background:linear-gradient(180deg,#f0f9ff,#e0f2fe);border-bottom:1px solid #bae6fd;font-size:11.5px;font-weight:700;color:#0c4a6e}
+.filter-crumb[hidden]{display:none}
+.filter-crumb .fc-label{font-size:9.5px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:#0369a1;margin-right:2px}
+.filter-crumb .fc-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 4px 3px 9px;background:#fff;border:1px solid var(--fc-color,#0284c7);color:var(--fc-color,#0c4a6e);border-radius:999px;font-size:11px;font-weight:800;line-height:1.2}
+.filter-crumb .fc-pill b{font-weight:900}
+.filter-crumb .fc-pill .fc-x{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#e0f2fe;color:var(--fc-color,#0284c7);font-size:13px;line-height:1;cursor:pointer;font-weight:700;border:0;padding:0}
+.filter-crumb .fc-pill .fc-x:hover{background:var(--fc-color,#0284c7);color:#fff}
+.filter-crumb .fc-clear{margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:7px;font-size:10.5px;font-weight:800;cursor:pointer}
+.filter-crumb .fc-clear:hover{background:#1e293b;color:#fff;border-color:#1e293b}
 
 body.sidepanel-open .topbar{left:380px;grid-template-columns:minmax(0,1fr) max-content}
 body.sidepanel-open .brand{display:none}
@@ -1345,6 +1362,11 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
       <span id="langBtnLabel">Ўзбек</span>
     </button>
+    <button class="tb-btn excel-tb" id="topbarExportBtn" type="button" title="Жорий фильтр бўйича Excel ҳисобот юклаш">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Ҳисобот</span>
+      <span class="excel-tb-count" id="topbarExportCount">744</span>
+    </button>
     <button class="tb-btn primary" id="openPlatform">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
       Платформага ўтиш
@@ -1365,6 +1387,9 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
   <span class="sep">›</span>
   <span class="cur" id="bcCur">Навоий вилояти</span>
 </div>
+
+<!-- ACTIVE FILTER CRUMB — appears only when at least one filter is set -->
+<div class="filter-crumb" id="filterCrumb" hidden></div>
 
 <!-- MAP -->
 <div id="mapWrap"><div id="map"></div></div>
@@ -2875,8 +2900,8 @@ function renderStageFilter(){
       const cnt = (def.displayCount != null) ? def.displayCount : matched;
       const cls = (cnt === 0) ? 'sp-stage-chip muted' : 'sp-stage-chip';
       const tip = (def.displayCount != null && matched !== def.displayCount)
-        ? `${def.displayCount} та манба қатори · ${matched} та парчага мос`
-        : (cnt === 0 ? 'Бу манбада ҳозирча парча йўқ' : '');
+        ? `${def.label}да ${def.displayCount} та участка кўрсатилган. Платформада улар ${matched} та ёзувда учрайди (бир участка бир неча ёзувда қайтариши мумкин).`
+        : (cnt === 0 ? 'Бу манбада ҳозирча парча йўқ' : `${def.label} бўйича участкалар`);
       return `<button class="${cls} ${active?'active':''}" data-source="${def.key}"
         style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button"${tip?` title="${tip}"`:''} ${cnt===0?'disabled':''}>
         <i style="background:${def.color}"></i><span>${def.label}</span><span class="n">${fmt(cnt)}</span></button>`;
@@ -2905,6 +2930,8 @@ function renderStageFilter(){
       if(typeof renderBubbles === 'function') renderBubbles();
       if(currentDistrict && typeof renderPlotPoints === 'function') renderPlotPoints();
       if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
+      if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
+      if(typeof refreshExportBtn === 'function') refreshExportBtn();
     };
   });
   host.querySelectorAll('.sp-stage-chip[data-source]').forEach(el => {
@@ -2915,6 +2942,8 @@ function renderStageFilter(){
       if(typeof renderBubbles === 'function') renderBubbles();
       if(currentDistrict && typeof renderPlotPoints === 'function') renderPlotPoints();
       if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
+      if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
+      if(typeof refreshExportBtn === 'function') refreshExportBtn();
     };
   });
   const btn = document.getElementById('stageExportBtn');
@@ -3168,6 +3197,89 @@ async function exportFilteredToExcel(){
   }
 }
 
+/* ================= ACTIVE FILTER CRUMB =================
+   Sticky line above the map. Shows every active filter (district,
+   category, stage, source) as a removable pill so the user can see
+   exactly what they've selected and clear individual filters with × . */
+function renderFilterCrumb(){
+  const host = document.getElementById('filterCrumb');
+  if(!host) return;
+  const pills = [];
+  // District
+  if(currentDistrict){
+    const meta = distByKey[currentDistrict] || {};
+    pills.push({ key:'district', label: meta.label || currentDistrict, color:'#dc2626' });
+  }
+  // Category (skip "all")
+  const catSel = (typeof CAT_STATE !== 'undefined' && CAT_STATE.selected) || 'all';
+  if(catSel && catSel !== 'all'){
+    const meta = CATEGORY_META[catSel] || {};
+    pills.push({ key:'category', label: meta.label || catSel, color: meta.color || '#1d4ed8' });
+  }
+  // Stage (skip "all")
+  const stageSel = (typeof STAGE_STATE !== 'undefined' && STAGE_STATE.selected) || 'all';
+  if(stageSel && stageSel !== 'all'){
+    const def = STAGE_DEFS.find(d => d.key === stageSel) || {};
+    pills.push({ key:'stage', label: def.label || stageSel, color: def.color || '#1d4ed8' });
+  }
+  // Source (skip "all")
+  const sourceSel = (typeof SOURCE_TAG_STATE !== 'undefined' && SOURCE_TAG_STATE.selected) || 'all';
+  if(sourceSel && sourceSel !== 'all'){
+    const def = SOURCE_TAG_DEFS.find(d => d.key === sourceSel) || {};
+    pills.push({ key:'source', label: def.label || sourceSel, color: def.color || '#1d4ed8' });
+  }
+  if(!pills.length){
+    host.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
+  host.hidden = false;
+  const html = `<span class="fc-label">Танланган:</span>` + pills.map(p => `
+    <span class="fc-pill" style="--fc-color:${p.color}">
+      <b>${escHtml(p.label)}</b>
+      <button class="fc-x" type="button" data-clear="${p.key}" aria-label="Тозалаш">×</button>
+    </span>`).join('') + `
+    <button class="fc-clear" type="button" data-clear="all">Барчасини тозалаш</button>`;
+  host.innerHTML = html;
+  host.querySelectorAll('[data-clear]').forEach(btn => {
+    btn.onclick = () => clearFilter(btn.dataset.clear);
+  });
+}
+function clearFilter(key){
+  if(key === 'district'){
+    if(typeof goHome === 'function') goHome();
+    else currentDistrict = null;
+  } else if(key === 'category'){
+    if(typeof CAT_STATE !== 'undefined'){ CAT_STATE.selected = 'all'; }
+  } else if(key === 'stage'){
+    if(typeof STAGE_STATE !== 'undefined'){ STAGE_STATE.selected = 'all'; }
+  } else if(key === 'source'){
+    if(typeof SOURCE_TAG_STATE !== 'undefined'){ SOURCE_TAG_STATE.selected = 'all'; }
+  } else if(key === 'all'){
+    if(typeof CAT_STATE !== 'undefined'){ CAT_STATE.selected = 'all'; CAT_STATE.expanded = null; }
+    if(typeof STAGE_STATE !== 'undefined'){ STAGE_STATE.selected = 'all'; }
+    if(typeof SOURCE_TAG_STATE !== 'undefined'){ SOURCE_TAG_STATE.selected = 'all'; }
+    if(typeof goHome === 'function') goHome();
+  }
+  // Re-render everything that depends on filter state
+  if(typeof renderKpis === 'function') renderKpis();
+  if(typeof renderStageFilter === 'function') renderStageFilter();
+  if(typeof renderBubbles === 'function') renderBubbles();
+  if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
+  renderFilterCrumb();
+  refreshExportBtn();
+}
+/* Topbar Excel button — keeps its count in sync with the current filter. */
+function refreshExportBtn(){
+  const btn = document.getElementById('topbarExportBtn');
+  const cnt = document.getElementById('topbarExportCount');
+  if(!btn || !cnt) return;
+  let n = (typeof collectFilteredRows === 'function') ? collectFilteredRows().length : 0;
+  cnt.textContent = (typeof fmt === 'function') ? fmt(n) : String(n);
+  btn.disabled = n === 0;
+  btn.onclick = () => { if(typeof exportFilteredToExcel === 'function') exportFilteredToExcel(); };
+}
+
 /* ================= COUNTER ANIMATION =================
    Plays a smooth count-up on a number element the first time it's seen
    (per stable key). Subsequent renders show the number instantly.
@@ -3335,6 +3447,8 @@ function onCategoryClick(cat){
   if(typeof renderBubbles === 'function') renderBubbles();
   // Drawer reactivity: header + stats reflect active filter
   if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
+  if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
+  if(typeof refreshExportBtn === 'function') refreshExportBtn();
   updateHomePillState && updateHomePillState();
 }
 
@@ -4741,6 +4855,8 @@ function selectDistrict(key){
   updateLayoutState();
   updateHomePillState();
   closeResultsPanel();
+  if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
+  if(typeof refreshExportBtn === 'function') refreshExportBtn();
   const bc = document.getElementById('bcCur');
   const dLabel = (distByKey[key]||{label:key}).label;
   bc.textContent = `Навоий вилояти › ${dLabel}`;
@@ -5147,6 +5263,8 @@ function goHome(){
       if(all.isValid()) map.flyToBounds(all, {padding:[40,40], duration:0.6});
     }
   } catch(e){}
+  if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
+  if(typeof refreshExportBtn === 'function') refreshExportBtn();
   updateLayoutState();
 }
 /* Wire brand-home click, home-pill click, and Esc-key shortcut */
@@ -7813,6 +7931,9 @@ function boot(){
   initMap();
   wireEvents();
   updateLayoutState();
+  // Active-filter crumb + topbar Excel count (P1 simplification)
+  if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
+  if(typeof refreshExportBtn === 'function') refreshExportBtn();
   setTimeout(()=>document.getElementById('loader').classList.add('hidden'), 500);
 }
 
