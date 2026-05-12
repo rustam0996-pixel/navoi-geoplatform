@@ -7257,6 +7257,32 @@ function openEditModal(section, rowIdx){
     row['Координаталари'] = row['Координаталари'] || '';
     allKeys.push('Координаталари');
   }
+  // Changed-section allocation fields — always ensure these keys exist so
+  // the user can record auction/direct status updates even when the
+  // original row didn't carry the field.
+  const CHANGED_ALLOC_FIELDS = (section === 'changed') ? [
+    // Building / facility allocation
+    'Доимий фойдаланишга ажратилган бино-иншоот (га)',
+    'Бино-иншоот аукцион савдоларига чиқарилган (га)',
+    'Бино-иншоот аукцион савдоларида сотилган ер майдони (га)',
+    'Бино-иншоот аукцион савдоларида аммо сотилмаган',
+    'Бино-иншоот қолдиқ (га)',
+    // Subsoil / mining allocation
+    'Ер қаърига доимий фойдаланишга ажратилган (га)',
+    'Ер қаъри участкаларини корхоналарга тўғридан-тўғри келишув асосида Ажратилган (га)',
+    'Ер қаъри аукционга  чиқарилган (га)',
+    'Ер қаъри аукционда сотилган (га)',
+    'Ер қаъри аукционга чиқарилиб сотилмаган (га)',
+    'Ер қаърига доимий фойдаланишга ажратилмаган (га)',
+    'Бўш ер қаъри участкаси қолдиқ (га)',
+    'Ер қаърига доимий фойдаланишга ажратиш учун кадастр билан шартнома қилинган'
+  ] : [];
+  // Exclude allocation fields from the generic block so the dedicated
+  // grouped section can render them properly.
+  if(CHANGED_ALLOC_FIELDS.length){
+    for(const f of CHANGED_ALLOC_FIELDS){ if(row[f] === undefined) row[f] = ''; }
+    allKeys = allKeys.filter(k => !CHANGED_ALLOC_FIELDS.includes(k));
+  }
   const secLabel = (SECTIONS.find(s=>s.key===section)||{label:section}).label;
   const modalEl = document.querySelector('#editModalWrap .edit-modal');
   if(modalEl) modalEl.classList.toggle('hk-edit', section === 'hk');
@@ -7279,6 +7305,37 @@ function openEditModal(section, rowIdx){
         }).join('')}
       </div>
     </div>`;
+    // Dedicated allocation section for changed parcels
+    if(CHANGED_ALLOC_FIELDS.length){
+      const BUILDING_FIELDS = CHANGED_ALLOC_FIELDS.filter(f => f.includes('Бино-иншоот'));
+      const SUBSOIL_FIELDS  = CHANGED_ALLOC_FIELDS.filter(f => f.startsWith('Ер қаъри') || f.startsWith('Бўш ер қаъри'));
+      const fieldCell = (k) => {
+        const label = (cols.find(c=>c.key===k)||{}).label || k;
+        return `<div><div style="font-size:10.5px;font-weight:700;color:#6b7a99;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">${escHtml(label)}</div>${renderEditField(k, row[k], row, {placeholder:'0'})}</div>`;
+      };
+      grid.innerHTML += `<div class="full" style="grid-column:1/-1;margin-top:6px">
+        <div style="background:linear-gradient(135deg,#0ea5e9,#06b6d4);color:#fff;padding:10px 14px;border-radius:10px 10px 0 0;font-weight:800;font-size:12px;letter-spacing:.3px">
+          АЖРАТИШ ҲОЛАТИ (ҲАММА МАЙДОН — ГЕКТАРДА)
+        </div>
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-top:0;border-radius:0 0 10px 10px;padding:14px">
+          <div style="font-size:11px;color:#075985;font-weight:700;margin-bottom:8px;padding:6px 10px;background:#e0f2fe;border-radius:6px">
+            🏢 Бино-иншоот ажратиши
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:14px">
+            ${BUILDING_FIELDS.map(fieldCell).join('')}
+          </div>
+          <div style="font-size:11px;color:#075985;font-weight:700;margin-bottom:8px;padding:6px 10px;background:#e0f2fe;border-radius:6px">
+            ⛏ Ер қаъри (кон) ажратиши
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px">
+            ${SUBSOIL_FIELDS.map(fieldCell).join('')}
+          </div>
+          <div style="margin-top:10px;padding:8px 11px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#78350f;font-weight:600;line-height:1.45">
+            💡 Маслаҳат: фақат тегишли бўлган майдонларни тўлдиринг. Бўш қолганлари «амалга оширилмаган» ҳисобланади. Тоифа автоматик равишда ўзгаради (Аукционга чиқарилган → Сотилган → Тўғридан-тўғри).
+          </div>
+        </div>
+      </div>`;
+    }
   }
   // Add KML section if coordinates exist
   const coordText = getCoordinateText(row);
