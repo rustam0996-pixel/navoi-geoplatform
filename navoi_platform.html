@@ -428,6 +428,31 @@ body.has-selection .home-pill{display:inline-flex}
 .filter-crumb .fc-clear{margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:7px;font-size:10.5px;font-weight:800;cursor:pointer}
 .filter-crumb .fc-clear:hover{background:#1e293b;color:#fff;border-color:#1e293b}
 
+/* ========== ONBOARDING OVERLAY ========== */
+.onb-overlay{position:fixed;inset:0;z-index:6000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(15,26,54,.55);backdrop-filter:blur(4px);animation:onbFadeIn .3s ease-out}
+.onb-overlay[hidden]{display:none}
+@keyframes onbFadeIn{from{opacity:0}to{opacity:1}}
+.onb-card{position:relative;width:min(640px,96vw);max-height:88vh;overflow-y:auto;background:#fff;border-radius:18px;padding:24px 26px 22px;box-shadow:0 32px 64px -20px rgba(15,26,54,.45),0 12px 28px -8px rgba(15,26,54,.22);animation:onbSlide .35s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes onbSlide{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.onb-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:10px;background:#f2f5fa;border:0;font-size:20px;color:#6b7a99;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.onb-close:hover{background:#e2e8f0;color:#0f1a36}
+.onb-kicker{font-size:11px;font-weight:800;color:#1d4ed8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.onb-title{font-size:20px;font-weight:850;line-height:1.25;color:#0f1a36;margin-bottom:8px;padding-right:38px}
+.onb-sub{font-size:12.5px;color:#52627c;line-height:1.5;margin-bottom:18px}
+.onb-steps{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:14px}
+@media (min-width:560px){ .onb-steps{grid-template-columns:repeat(3,1fr)} }
+.onb-step{padding:14px 14px 12px;border:1px solid #e0e9f6;border-radius:14px;background:#fbfdff;display:flex;flex-direction:column;gap:6px}
+.onb-step-n{width:30px;height:30px;border-radius:50%;background:var(--s-color,#1d4ed8);color:#fff;font-weight:850;font-size:14px;display:flex;align-items:center;justify-content:center;line-height:1}
+.onb-step-h{font-size:13.5px;font-weight:850;color:#0f1a36}
+.onb-step-p{font-size:11.5px;color:#475569;font-weight:600;line-height:1.45}
+.onb-step-p b{color:#1d4ed8;font-weight:800}
+.onb-tip{padding:9px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;font-size:11.5px;color:#78350f;line-height:1.45;margin-bottom:16px;font-weight:600}
+.onb-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.onb-noshow{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-weight:650;cursor:pointer;user-select:none}
+.onb-noshow input{accent-color:#1d4ed8;cursor:pointer}
+.onb-go{padding:10px 18px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;border:0;border-radius:10px;font-size:12.5px;font-weight:800;cursor:pointer;box-shadow:0 6px 14px -4px rgba(29,78,216,.4);transition:all .15s}
+.onb-go:hover{transform:translateY(-1px);box-shadow:0 10px 20px -6px rgba(29,78,216,.5)}
+
 body.sidepanel-open .topbar{left:380px;grid-template-columns:minmax(0,1fr) max-content}
 body.sidepanel-open .brand{display:none}
 body.sidepanel-open:not(.drawer-open) .kpis{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:6px}
@@ -1414,6 +1439,10 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
       <span id="langBtnLabel">Ўзбек</span>
     </button>
+    <button class="tb-btn" id="topbarHelpBtn" type="button" title="Қандай ишлайди">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Қўлланма</span>
+    </button>
     <button class="tb-btn excel-tb" id="topbarExportBtn" type="button" title="Жорий фильтр бўйича Excel ҳисобот юклаш">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <span>Ҳисобот</span>
@@ -1442,6 +1471,38 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 
 <!-- ACTIVE FILTER CRUMB — appears only when at least one filter is set -->
 <div class="filter-crumb" id="filterCrumb" hidden></div>
+
+<!-- ONBOARDING — first-time welcome / explanation -->
+<div class="onb-overlay" id="onbOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="onbTitle">
+  <div class="onb-card">
+    <button class="onb-close" id="onbClose" type="button" aria-label="Ёпиш">×</button>
+    <div class="onb-kicker">Хуш келибсиз</div>
+    <div class="onb-title" id="onbTitle">Навоий вилояти — ер ресурслари геоплатформаси</div>
+    <div class="onb-sub">Платформа учала мустақил ўлчам бирга ишлайди. Қуйида қисқача йўриқнома:</div>
+    <div class="onb-steps">
+      <div class="onb-step">
+        <div class="onb-step-n" style="--s-color:#1d4ed8">1</div>
+        <div class="onb-step-h">Йўналиш</div>
+        <div class="onb-step-p">Юқорида <b>Геология</b> ёки <b>Тадбиркорлик</b> йўналишини танланг — улар ўз ичида кичик кенгашаларга бўлинади (НКМК, Уран, Завод, Туризм ва ҳ.к.).</div>
+      </div>
+      <div class="onb-step">
+        <div class="onb-step-n" style="--s-color:#06b6d4">2</div>
+        <div class="onb-step-h">Босқич ва Манба</div>
+        <div class="onb-step-p">Чап панелда <b>Босқич</b> (Тоифаси ўзгариш жараёнида, Аукционга чиқарилган, ...) ва <b>Манба</b> (ПҚ-58 12, 13-илова, ВМ-88) фильтрларидан фойдаланиш мумкин.</div>
+      </div>
+      <div class="onb-step">
+        <div class="onb-step-n" style="--s-color:#16a34a">3</div>
+        <div class="onb-step-h">Ҳисобот юклаш</div>
+        <div class="onb-step-p">Юқори ўнг бурчакдаги яшил <b>«Ҳисобот»</b> тугмаси орқали жорий фильтр бўйича раҳбариятга тайёр Excel ҳужжатини юклаб олинг.</div>
+      </div>
+    </div>
+    <div class="onb-tip">💡 Истагингизча фильтрлар бирга ишлайди. Танлаганингиз харита тепасида «Танланган: ...» қатори орқали кўриниб туради.</div>
+    <div class="onb-actions">
+      <label class="onb-noshow"><input type="checkbox" id="onbNoShow" checked> Бошқа кўрсатилмасин</label>
+      <button class="onb-go" id="onbGo" type="button">Тушундим, бошлаймиз</button>
+    </div>
+  </div>
+</div>
 
 <!-- MAP -->
 <div id="mapWrap"><div id="map"></div></div>
@@ -3248,6 +3309,60 @@ async function exportFilteredToExcel(){
       Excel рўйхатига чиқариш`; }
   }
 }
+
+/* ================= ONBOARDING =================
+   First-time welcome card. Shown automatically on first visit; user can
+   suppress with «Бошқа кўрсатилмасин». The Қўлланма button in the
+   topbar opens it any time. */
+const ONB_KEY = 'navoi_onb_v1_seen';
+function showOnboarding(){
+  const overlay = document.getElementById('onbOverlay');
+  if(!overlay) return;
+  overlay.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+function hideOnboarding(persist){
+  const overlay = document.getElementById('onbOverlay');
+  if(!overlay) return;
+  overlay.hidden = true;
+  document.body.style.overflow = '';
+  if(persist){
+    try { localStorage.setItem(ONB_KEY, '1'); } catch(e){}
+  }
+}
+(function wireOnboarding(){
+  function bind(){
+    const overlay = document.getElementById('onbOverlay');
+    if(!overlay) return;
+    const closeBtn = document.getElementById('onbClose');
+    const goBtn    = document.getElementById('onbGo');
+    const noShow   = document.getElementById('onbNoShow');
+    if(closeBtn && !closeBtn._wired){
+      closeBtn._wired = true;
+      closeBtn.addEventListener('click', () => hideOnboarding(noShow && noShow.checked));
+    }
+    if(goBtn && !goBtn._wired){
+      goBtn._wired = true;
+      goBtn.addEventListener('click', () => hideOnboarding(!noShow || noShow.checked));
+    }
+    // Esc closes (without persisting)
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape' && !overlay.hidden) hideOnboarding(false);
+    });
+    // Clicking the backdrop (outside the card) closes too
+    overlay.addEventListener('click', (e) => {
+      if(e.target === overlay) hideOnboarding(false);
+    });
+    // Wire the topbar «Қўлланма» button
+    const help = document.getElementById('topbarHelpBtn');
+    if(help && !help._wired){
+      help._wired = true;
+      help.addEventListener('click', () => showOnboarding());
+    }
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+})();
 
 /* ================= ACTIVE FILTER CRUMB =================
    Sticky line above the map. Shows every active filter (district,
@@ -7987,6 +8102,13 @@ function boot(){
   if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
   if(typeof refreshExportBtn === 'function') refreshExportBtn();
   setTimeout(()=>document.getElementById('loader').classList.add('hidden'), 500);
+  // Onboarding — show once on first visit (after a short delay so the
+  // map can settle behind the overlay)
+  try {
+    if(!localStorage.getItem(ONB_KEY)){
+      setTimeout(()=>{ if(typeof showOnboarding === 'function') showOnboarding(); }, 900);
+    }
+  } catch(e){}
 }
 
 if(document.readyState === 'loading'){
