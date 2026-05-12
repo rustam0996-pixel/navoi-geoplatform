@@ -235,6 +235,58 @@ body.has-selection .home-pill{display:inline-flex}
   .cat-hero-nums b{font-size:16px}
 }
 
+/* ========== P2 — COMPACT KPI ROW ==========
+   Hero stays as the dominant tile but on a single short line.
+   Tier-1 (geology / business) sits beside it on the same row.
+   Tier-2 appears as a compact strip just below — only when expanded. */
+.cat-tree{
+  flex-direction:row;
+  flex-wrap:wrap;
+  align-items:stretch;
+  gap:8px;
+}
+.cat-tree .cat-hero{
+  flex:0 0 auto;
+  min-height:46px;
+  padding:7px 14px;
+  gap:9px;
+  max-width:260px;
+}
+.cat-tree .cat-hero-icon{width:26px;height:26px;border-radius:8px}
+.cat-tree .cat-hero-icon svg{width:13px;height:13px}
+.cat-tree .cat-hero-label{font-size:9.5px;letter-spacing:.3px}
+.cat-tree .cat-hero-nums{font-size:12.5px;line-height:1.15;margin-top:1px}
+.cat-tree .cat-hero-nums b{font-size:14px}
+.cat-tree .cat-hero-caret{width:16px;height:16px;font-size:12px}
+.cat-tree .cat-row-t1:not([hidden]){
+  flex:1 1 auto;
+  display:flex !important;
+  gap:6px;
+  align-items:stretch;
+  grid-template-columns:none;
+  min-width:0;
+}
+.cat-tree .cat-row-t1 .cat-t1{flex:1 1 0;min-height:46px;padding:6px 10px}
+.cat-tree .cat-row-t2:not([hidden]){
+  flex:0 0 100%;
+  display:flex !important;
+  gap:6px;
+  align-items:stretch;
+  grid-template-columns:none;
+  padding-left:18px;
+  flex-wrap:wrap;
+  margin-top:2px;
+}
+.cat-tree .cat-row-t2 .cat-t2{flex:1 1 130px;min-height:38px;padding:5px 9px}
+@media (max-width:1180px){
+  .cat-tree{flex-wrap:wrap}
+  .cat-tree .cat-row-t1{flex-basis:100%}
+}
+@media (max-width:720px){
+  .cat-tree .cat-hero{max-width:none;flex:1 1 100%}
+  .cat-tree .cat-row-t2 .cat-t2{flex:1 1 100px}
+}
+
 /* ========== PROPOSAL PANEL ========== */
 .prop-overlay{position:fixed;inset:0;z-index:1400;display:flex;align-items:stretch;justify-content:flex-end}
 .prop-backdrop{position:absolute;inset:0;background:rgba(15,26,54,.42);backdrop-filter:blur(2px)}
