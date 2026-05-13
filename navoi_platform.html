@@ -953,20 +953,22 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
   font-size:18px;font-weight:700;transition:all .15s;
 }
 .dr-head .x:hover{background:rgba(255,255,255,.28)}
-/* «Ортга» бadge — Бўлим/филтр танлангандагина drawer'нинг юқорида кўринади */
+/* «Ортга» — × тугмасининг чап ёнидаги кичик икон-стрелка */
 .dr-back{
-  position:absolute;top:14px;left:14px;
-  display:inline-flex;align-items:center;gap:6px;
-  padding:5px 11px 5px 9px;
-  border-radius:8px;
-  background:rgba(255,255,255,.18);
-  border:1px solid rgba(255,255,255,.28);
-  color:#fff;font-size:11px;font-weight:800;letter-spacing:.2px;
+  position:absolute;top:14px;right:54px;
+  width:28px;height:28px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:7px;
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.22);
+  color:#fff;
   cursor:pointer;transition:all .15s ease;
+  padding:0;
 }
 .dr-back[hidden]{display:none}
-.dr-back:hover{background:rgba(255,255,255,.32);transform:translateX(-2px)}
-.dr-back svg{flex-shrink:0}
+.dr-back:hover{background:rgba(255,255,255,.28);transform:translateX(-1px)}
+.dr-back svg{width:13px;height:13px;flex-shrink:0}
+.dr-back span{display:none}    /* Faqat strelka — text yashirin */
 .dr-head .small{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;opacity:.85}
 .dr-head .title{font-size:20px;font-weight:800;margin-top:4px;position:relative}
 .dr-head .area{font-size:12px;opacity:.85;margin-top:4px;position:relative}
