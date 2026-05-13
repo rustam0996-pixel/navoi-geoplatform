@@ -3250,6 +3250,80 @@ function __numCell(n, fmtStr){
   const v = Number(n) || 0;
   return { v: v, t: 'n', z: fmtStr || '#,##0.00' };
 }
+/* «Туман бўйича Сводний жадвал» — leadership-grade summary pivot.
+   Each district row carries 9 informational columns that reflect the
+   actual parcel lifecycle the management asks for:
+     • Жами участка / Жами майдон
+     • Категория тақсимоти (Геология / Тадбиркорлик)
+     • Ҳолат тақсимоти:
+         ҲК таклиф (жараёнда)
+         Доимий фойдаланишга ажратилган
+         Аукционга чиқарилган
+         Аукционда сотилган
+         Тоифаси ўзгарган-қолдиқ (бирор ажратиш қилинмаган)
+   Footer note explains the NKMK/Uran exception (no auction). */
+function buildPivotDistrictSummary(rows){
+  const acc = {};
+  const distOrder = [];
+  for(const r of rows){
+    const d = r.dist || '—';
+    if(!(d in acc)){
+      acc[d] = { total:0, area:0, geo:0, biz:0, in_process:0, direct:0, auction_listed:0, auction_sold:0, changed_remaining:0 };
+      distOrder.push(d);
+    }
+    const a = rowArea(r.sec, r.row) || 0;
+    acc[d].total++;
+    acc[d].area += a;
+    const cat = classifyParcel(r.sec, r.row);
+    if(GEOLOGY_SUBS.includes(cat)) acc[d].geo++;
+    else if(BUSINESS_SUBS.includes(cat)) acc[d].biz++;
+    const st = rowStageKey(r.sec, r.row) || 'in_process';
+    if(st === 'in_process') acc[d].in_process++;
+    else if(st === 'direct') acc[d].direct++;
+    else if(st === 'auction_listed') acc[d].auction_listed++;
+    else if(st === 'auction_sold') acc[d].auction_sold++;
+    else acc[d].changed_remaining++;
+  }
+  distOrder.sort();
+  const aoa = [];
+  aoa.push([
+    '№','ТУМАН / ШАҲАР',
+    'Жами участка','Жами майдон (га)',
+    'Геология','Тадбиркорлик',
+    'ҲК таклиф (жараёнда)',
+    'Доимий ажратилган',
+    'Аукционга чиқарилган',
+    'Аукционда сотилган',
+    'Ўзгарган - қолдиқ'
+  ]);
+  let i = 0;
+  const T = { total:0, area:0, geo:0, biz:0, in_process:0, direct:0, auction_listed:0, auction_sold:0, changed_remaining:0 };
+  for(const d of distOrder){
+    i++;
+    const x = acc[d];
+    aoa.push([
+      i, d,
+      x.total,
+      __numCell(x.area, '#,##0.0'),
+      x.geo, x.biz,
+      x.in_process, x.direct, x.auction_listed, x.auction_sold, x.changed_remaining
+    ]);
+    for(const k of Object.keys(T)) T[k] += x[k];
+  }
+  aoa.push([
+    '', 'ЖАМИ (вилоят бўйича)',
+    T.total, __numCell(T.area, '#,##0.0'),
+    T.geo, T.biz,
+    T.in_process, T.direct, T.auction_listed, T.auction_sold, T.changed_remaining
+  ]);
+  // Footer notes
+  aoa.push([]);
+  aoa.push(['Эслатма: НКМК ва Уран категориясидаги участкалар аукционга чиқарилмайди — улар фақат «Доимий фойдаланишга ажратиш» йўли билан ажратилади (Президент фармойиши асосида).']);
+  aoa.push(['Кон ажратиши «Ер қаъридан фойдаланиш маркази» ҳамда «Лицензия» тизими орқали амалга оширилади.']);
+  aoa.push(['«Ўзгарган - қолдиқ» қатори — тоифаси ўзгарган, лекин ҳозирча ҳеч қайси ажратиш йўли билан корхонага берилмаган участкалар.']);
+  return { aoa, colCount: 11 };
+}
+
 /* «Туман × Босқич» pivot — districts as rows, stage chips as columns.
    Each cell contains both count and area in a single string for readability.
    Returns AOA (array-of-arrays). */
@@ -3519,33 +3593,44 @@ async function exportFilteredToExcel(){
     }
     __applyPrintLayout(wsTitle, 2);
 
-    // — Sheet 2 — «Туман × Босқич»
-    const pivStage = buildPivotDistrictByStage(rows);
-    const wsPivStage = XLSX_.utils.aoa_to_sheet(pivStage.aoa);
-    const stageColCnt = pivStage.colCount; // = 14
-    const stageRowCnt = pivStage.aoa.length; // header + districts + total
-    wsPivStage['!cols'] = [
-      {wch:5}, {wch:24},
-      ...Array.from({length:5}).flatMap(()=>[{wch:11},{wch:12}]),
-      {wch:11},{wch:13}
+    // — Sheet 2 — «Туман бўйича Сводний жадвал»
+    const pivSummary = buildPivotDistrictSummary(rows);
+    const wsPivSummary = XLSX_.utils.aoa_to_sheet(pivSummary.aoa);
+    const summaryColCnt = pivSummary.colCount; // = 11
+    // Identify totals-row index: last non-empty data row before the empty + 3 footer-note rows
+    const summaryFooterStart = pivSummary.aoa.findIndex((row, idx) => idx>0 && row.length === 0);
+    const totalRowIdx = summaryFooterStart - 1; // ЖАМИ row sits right before the empty separator
+    const summaryAllRows = pivSummary.aoa.length;
+    wsPivSummary['!cols'] = [
+      {wch:5}, {wch:22},
+      {wch:11}, {wch:14},
+      {wch:11}, {wch:13},
+      {wch:18}, {wch:18}, {wch:20}, {wch:18}, {wch:18}
     ];
-    wsPivStage['!rows'] = [{hpt:32}];   // tall header row for wrapped text
-    wsPivStage['!freeze'] = { xSplit: 2, ySplit: 1 };
-    // Style header row
-    __styleRange(wsPivStage, 0, 0, 0, stageColCnt-1, XLS_STYLE.tableH);
-    // Style data body
-    for(let r=1; r<stageRowCnt-1; r++){
-      __setCellStyle(wsPivStage, XLSX_.utils.encode_cell({r,c:0}), XLS_STYLE.dataCenter);
-      __setCellStyle(wsPivStage, XLSX_.utils.encode_cell({r,c:1}), Object.assign({}, XLS_STYLE.dataText, {font:{bold:true,sz:10,name:'Arial',color:{rgb:'0F1A36'}}}));
-      for(let c=2; c<stageColCnt; c++){
-        __setCellStyle(wsPivStage, XLSX_.utils.encode_cell({r,c}), XLS_STYLE.dataNum);
+    wsPivSummary['!rows'] = [{hpt:42}];   // tall header row for wrapped text
+    wsPivSummary['!freeze'] = { xSplit: 2, ySplit: 1 };
+    // Header row
+    __styleRange(wsPivSummary, 0, 0, 0, summaryColCnt-1, XLS_STYLE.tableH);
+    // Data body (districts)
+    for(let r=1; r<totalRowIdx; r++){
+      __setCellStyle(wsPivSummary, XLSX_.utils.encode_cell({r,c:0}), XLS_STYLE.dataCenter);
+      __setCellStyle(wsPivSummary, XLSX_.utils.encode_cell({r,c:1}), Object.assign({}, XLS_STYLE.dataText, {font:{bold:true,sz:10,name:'Arial',color:{rgb:'0F1A36'}}}));
+      for(let c=2; c<summaryColCnt; c++){
+        __setCellStyle(wsPivSummary, XLSX_.utils.encode_cell({r,c}), XLS_STYLE.dataNum);
       }
     }
-    // Total row
-    __styleRange(wsPivStage, stageRowCnt-1, 0, stageRowCnt-1, 1, XLS_STYLE.totalLabel);
-    __styleRange(wsPivStage, stageRowCnt-1, 2, stageRowCnt-1, stageColCnt-1, XLS_STYLE.total);
-    __applyZebra(wsPivStage, 1, stageRowCnt-2, 0, stageColCnt-1);
-    __applyPrintLayout(wsPivStage, stageColCnt-1, {repeatHeader:true});
+    // ЖАМИ row
+    __styleRange(wsPivSummary, totalRowIdx, 0, totalRowIdx, 1, XLS_STYLE.totalLabel);
+    __styleRange(wsPivSummary, totalRowIdx, 2, totalRowIdx, summaryColCnt-1, XLS_STYLE.total);
+    __applyZebra(wsPivSummary, 1, totalRowIdx-1, 0, summaryColCnt-1);
+    // Footer notes (rows after empty separator)
+    for(let r=summaryFooterStart+1; r<summaryAllRows; r++){
+      __setCellStyle(wsPivSummary, XLSX_.utils.encode_cell({r,c:0}), XLS_STYLE.note);
+      // Merge note across the whole row width for clean printing
+      wsPivSummary['!merges'] = wsPivSummary['!merges'] || [];
+      wsPivSummary['!merges'].push({ s:{r,c:0}, e:{r,c:summaryColCnt-1} });
+    }
+    __applyPrintLayout(wsPivSummary, summaryColCnt-1, {repeatHeader:true});
 
     // — Sheet 3 — «Туман × Категория»
     const pivCat = buildPivotDistrictByCategory(rows);
@@ -3595,10 +3680,10 @@ async function exportFilteredToExcel(){
     __applyPrintLayout(wsList, colKeys.length-1, {repeatHeader:true});
 
     const wb = XLSX_.utils.book_new();
-    XLSX_.utils.book_append_sheet(wb, wsTitle,    'Титул');
-    XLSX_.utils.book_append_sheet(wb, wsPivStage, 'Туман × Босқич');
-    XLSX_.utils.book_append_sheet(wb, wsPivCat,   'Туман × Категория');
-    XLSX_.utils.book_append_sheet(wb, wsList,     'Номма-ном рўйхат');
+    XLSX_.utils.book_append_sheet(wb, wsTitle,      'Титул');
+    XLSX_.utils.book_append_sheet(wb, wsPivSummary, 'Сводний жадвал');
+    XLSX_.utils.book_append_sheet(wb, wsPivCat,     'Туман × Категория');
+    XLSX_.utils.book_append_sheet(wb, wsList,       'Номма-ном рўйхат');
 
     const stageS = STAGE_STATE.selected === 'all' ? 'Барчаси' : (STAGE_DEFS.find(d=>d.key===STAGE_STATE.selected)||{}).label;
     const catS   = CAT_STATE.selected === 'all' ? 'Барчаси' : (CATEGORY_META[CAT_STATE.selected]||{}).label;
