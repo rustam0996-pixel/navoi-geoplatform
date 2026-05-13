@@ -3170,6 +3170,172 @@ function buildExportRow(rec, idx){
   };
 }
 
+/* ===== Crosstab helpers — used by the leadership pivot sheets ===== */
+/* Cell-format helper: write {v, t, z} so XLSX applies thousand separator. */
+function __numCell(n, fmtStr){
+  const v = Number(n) || 0;
+  return { v: v, t: 'n', z: fmtStr || '#,##0.00' };
+}
+/* «Туман × Босқич» pivot — districts as rows, stage chips as columns.
+   Each cell contains both count and area in a single string for readability.
+   Returns AOA (array-of-arrays). */
+function buildPivotDistrictByStage(rows){
+  const STAGE_COL_KEYS = ['in_process','changed','auction_listed','auction_sold','direct'];
+  const STAGE_COL_LABELS = STAGE_COL_KEYS.map(k => (STAGE_DEFS.find(d=>d.key===k)||{}).label || k);
+  // accumulate per district per stage
+  const acc = {};
+  const distOrder = [];
+  for(const r of rows){
+    const d = r.dist || '—';
+    if(!(d in acc)){ acc[d] = {}; distOrder.push(d); for(const k of STAGE_COL_KEYS) acc[d][k] = {count:0, area:0}; }
+    const st = rowStageKey(r.sec, r.row) || 'in_process';
+    if(!acc[d][st]) acc[d][st] = {count:0, area:0};
+    acc[d][st].count++;
+    acc[d][st].area += rowArea(r.sec, r.row) || 0;
+  }
+  distOrder.sort();
+  const aoa = [];
+  // Header rows: two-line headers — («Босқич» / count / area)
+  aoa.push(['№','ТУМАН / ШАҲАР', ...STAGE_COL_LABELS.flatMap(l => [l + ' (сони)', l + ' (га)']), 'ЖАМИ (сони)','ЖАМИ (га)']);
+  let i = 0;
+  const colTotals = STAGE_COL_KEYS.map(() => ({count:0, area:0}));
+  let grandCount = 0, grandArea = 0;
+  for(const d of distOrder){
+    i++;
+    const cells = [i, d];
+    let rowCount = 0, rowArea_ = 0;
+    STAGE_COL_KEYS.forEach((k, idx) => {
+      const cell = acc[d][k] || {count:0, area:0};
+      cells.push(cell.count, __numCell(cell.area, '#,##0.0'));
+      colTotals[idx].count += cell.count;
+      colTotals[idx].area  += cell.area;
+      rowCount += cell.count;
+      rowArea_ += cell.area;
+    });
+    cells.push(rowCount, __numCell(rowArea_, '#,##0.0'));
+    grandCount += rowCount;
+    grandArea  += rowArea_;
+    aoa.push(cells);
+  }
+  // Totals row
+  const totalRow = ['', 'ЖАМИ (вилоят бўйича)'];
+  STAGE_COL_KEYS.forEach((k, idx) => {
+    totalRow.push(colTotals[idx].count, __numCell(colTotals[idx].area, '#,##0.0'));
+  });
+  totalRow.push(grandCount, __numCell(grandArea, '#,##0.0'));
+  aoa.push(totalRow);
+  return { aoa, colCount: 2 + STAGE_COL_KEYS.length * 2 + 2 };
+}
+
+/* «Туман × Категория» pivot — districts as rows, all 10 tier-2 categories
+   plus a grand-total column. */
+function buildPivotDistrictByCategory(rows){
+  const CAT_KEYS = [...GEOLOGY_SUBS, ...BUSINESS_SUBS];
+  const CAT_LABELS = CAT_KEYS.map(k => (CATEGORY_META[k]||{}).label || k);
+  const acc = {};
+  const distOrder = [];
+  for(const r of rows){
+    const d = r.dist || '—';
+    if(!(d in acc)){ acc[d] = {}; distOrder.push(d); for(const k of CAT_KEYS) acc[d][k] = {count:0, area:0}; }
+    const cat = classifyParcel(r.sec, r.row);
+    if(!acc[d][cat]) acc[d][cat] = {count:0, area:0};
+    acc[d][cat].count++;
+    acc[d][cat].area += rowArea(r.sec, r.row) || 0;
+  }
+  distOrder.sort();
+  const aoa = [];
+  // First top header — group banners (Геология / Тадбиркорлик)
+  const topHeader = ['', '', ...GEOLOGY_SUBS.flatMap(()=>['ГЕОЛОГИЯ ЙЎНАЛИШИ','']), ...BUSINESS_SUBS.flatMap(()=>['ТАДБИРКОРЛИК','']), '',''];
+  aoa.push(['№','ТУМАН / ШАҲАР', ...CAT_LABELS.flatMap(l => [l + ' (сони)', l + ' (га)']), 'ЖАМИ (сони)','ЖАМИ (га)']);
+  let i = 0;
+  const colTotals = CAT_KEYS.map(() => ({count:0, area:0}));
+  let grandCount = 0, grandArea = 0;
+  for(const d of distOrder){
+    i++;
+    const cells = [i, d];
+    let rowCount = 0, rowArea_ = 0;
+    CAT_KEYS.forEach((k, idx) => {
+      const cell = acc[d][k] || {count:0, area:0};
+      cells.push(cell.count, __numCell(cell.area, '#,##0.0'));
+      colTotals[idx].count += cell.count;
+      colTotals[idx].area  += cell.area;
+      rowCount += cell.count;
+      rowArea_ += cell.area;
+    });
+    cells.push(rowCount, __numCell(rowArea_, '#,##0.0'));
+    grandCount += rowCount;
+    grandArea  += rowArea_;
+    aoa.push(cells);
+  }
+  const totalRow = ['', 'ЖАМИ (вилоят бўйича)'];
+  CAT_KEYS.forEach((k, idx) => {
+    totalRow.push(colTotals[idx].count, __numCell(colTotals[idx].area, '#,##0.0'));
+  });
+  totalRow.push(grandCount, __numCell(grandArea, '#,##0.0'));
+  aoa.push(totalRow);
+  return { aoa, colCount: 2 + CAT_KEYS.length * 2 + 2 };
+}
+
+/* Title-sheet builder — formal cover page. */
+function buildTitleSheet(rows){
+  const totalArea = rows.reduce((s,r)=>s+(rowArea(r.sec, r.row)||0),0);
+  const totalInvest = rows.reduce((s,r)=>{
+    const v = Number(r.row['Лойиҳа қиймати (млн. долл.)'] || r.row['Лойиҳа қиймати (млн.долл)'] || 0);
+    return s + (Number.isFinite(v) ? v : 0);
+  }, 0);
+  const totalJobs = rows.reduce((s,r)=>{
+    const v = Number(r.row['Иш ўрни (нафар)'] || r.row['Иш ўрни'] || 0);
+    return s + (Number.isFinite(v) ? v : 0);
+  }, 0);
+  const distinct = (key) => new Set(rows.map(r => {
+    if(key==='dist') return r.dist;
+    if(key==='mfy')  return rowMfy(r.sec, r.row) || '';
+    return null;
+  }).filter(Boolean)).size;
+
+  const filterParts = [];
+  const catSel = CAT_STATE.selected || 'all';
+  if(catSel !== 'all') filterParts.push(['Йўналиш:', (CATEGORY_META[catSel]||{}).label||catSel]);
+  const stageSel = STAGE_STATE.selected || 'all';
+  if(stageSel !== 'all') filterParts.push(['Босқич:', (STAGE_DEFS.find(d=>d.key===stageSel)||{}).label||stageSel]);
+  const sourceSel = (typeof SOURCE_TAG_STATE !== 'undefined' && SOURCE_TAG_STATE.selected) || 'all';
+  if(sourceSel !== 'all') filterParts.push(['Манба:', (SOURCE_TAG_DEFS.find(d=>d.key===sourceSel)||{}).label||sourceSel]);
+  if(currentDistrict) filterParts.push(['Туман / Шаҳар:', (distByKey[currentDistrict]||{}).label||currentDistrict]);
+  if(currentSection && currentSection !== 'all') filterParts.push(['Бўлим:', sectionLabel(currentSection)]);
+
+  const now = new Date();
+  const dateStr = `${String(now.getDate()).padStart(2,'0')}.${String(now.getMonth()+1).padStart(2,'0')}.${now.getFullYear()}`;
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  const aoa = [];
+  aoa.push(['НАВОИЙ ВИЛОЯТИ']);
+  aoa.push(['ЕР РЕСУРСЛАРИ — РАҲБАРИЯТ ҲИСОБОТИ']);
+  aoa.push([]);
+  aoa.push(['Ҳужжат тузилган сана:', `${dateStr}   ${timeStr}`]);
+  aoa.push([]);
+  aoa.push(['ҲИСОБОТ КОНТЕКСТИ']);
+  if(filterParts.length){
+    for(const [k,v] of filterParts) aoa.push([k, v]);
+  } else {
+    aoa.push(['Танлов:', 'Барча участкалар (умумий ҳисобот, фильтрсиз)']);
+  }
+  aoa.push([]);
+  aoa.push(['АСОСИЙ КЎРСАТКИЧЛАР']);
+  aoa.push(['Жами участка сони:',     rows.length, 'та']);
+  aoa.push(['Жами ер майдони:',       __numCell(totalArea, '#,##0.0'), 'га']);
+  if(totalInvest > 0) aoa.push(['Лойиҳа қиймати:', __numCell(totalInvest, '#,##0.0'), 'млн. долл.']);
+  if(totalJobs   > 0) aoa.push(['Иш ўринлари:',    __numCell(totalJobs, '#,##0'),    'нафар']);
+  aoa.push(['Қамраб олинган туманлар:', distinct('dist'), 'та']);
+  aoa.push(['Қамраб олинган МФЙ лар:',  distinct('mfy'),  'та']);
+  aoa.push([]);
+  aoa.push(['Ҳисоботни тузди:', '_______________________________']);
+  aoa.push(['Имзо:', '_______________________________']);
+  aoa.push([]);
+  aoa.push(['Эслатма: Ушбу ҳисобот «Навоий вилояти ер ресурслари геоплатформаси»дан жорий филтр бўйича автоматик яратилди.']);
+  aoa.push(['Тўлиқ маълумотлар «Туман × Босқич», «Туман × Категория» ва «Номма-ном рўйхат» варақларида.']);
+  return aoa;
+}
+
 /* Build a context-aware "Хулоса" (summary) sheet — what filters were active,
    counts and area broken down per district / per category / per stage. */
 function buildExportSummary(rows){
@@ -3241,18 +3407,47 @@ async function exportFilteredToExcel(){
   try {
     const XLSX_ = await ensureXlsxLib();
 
-    // Sheet 1 — «Хулоса» (Summary aoa)
-    const summaryAoa = buildExportSummary(rows);
-    const wsSummary = XLSX_.utils.aoa_to_sheet(summaryAoa);
-    wsSummary['!cols'] = [{wch:38},{wch:14},{wch:14},{wch:10}];
-    // Merge title + meta rows across 4 cols for visual prominence
-    wsSummary['!merges'] = [
-      {s:{r:0,c:0}, e:{r:0,c:3}},
-      {s:{r:1,c:0}, e:{r:1,c:3}},
-      {s:{r:2,c:0}, e:{r:2,c:3}}
+    // ============================================================
+    // НАВОИЙ — РАҲБАРИЯТ ҲИСОБОТИ — 4 ВАРАҚЛИ ТУЗИЛМА
+    //   1) Титул — рисмий cover + asosiy ko'rsatkichlar + imzo joyi
+    //   2) Туман × Босқич — eng muhim yig'ma jadval (rahbariyatga kerakli)
+    //   3) Туман × Категория — kategoriya kesimida yig'ma
+    //   4) Номма-ном рўйхат — alohida har bir parcel
+    // ============================================================
+
+    // — Sheet 1 — «Титул»
+    const titleAoa = buildTitleSheet(rows);
+    const wsTitle = XLSX_.utils.aoa_to_sheet(titleAoa);
+    wsTitle['!cols'] = [{wch:32},{wch:38},{wch:14}];
+    // Merge title + subtitle rows for prominence
+    wsTitle['!merges'] = [
+      {s:{r:0,c:0}, e:{r:0,c:2}},  // НАВОИЙ ВИЛОЯТИ
+      {s:{r:1,c:0}, e:{r:1,c:2}}   // ЕР РЕСУРСЛАРИ ...
     ];
 
-    // Sheet 2 — «Тўлиқ рўйхат»
+    // — Sheet 2 — «Туман × Босқич»
+    const pivStage = buildPivotDistrictByStage(rows);
+    const wsPivStage = XLSX_.utils.aoa_to_sheet(pivStage.aoa);
+    // 2 fixed (№, Туман) + 5 stages × 2 (count, area) + 2 totals = 14 cols
+    wsPivStage['!cols'] = [
+      {wch:5}, {wch:22},
+      ...Array.from({length:5}).flatMap(()=>[{wch:13},{wch:13}]),
+      {wch:11},{wch:13}
+    ];
+    wsPivStage['!freeze'] = { xSplit: 2, ySplit: 1 };
+
+    // — Sheet 3 — «Туман × Категория»
+    const pivCat = buildPivotDistrictByCategory(rows);
+    const wsPivCat = XLSX_.utils.aoa_to_sheet(pivCat.aoa);
+    // 2 fixed + 10 categories × 2 + 2 totals = 24 cols
+    wsPivCat['!cols'] = [
+      {wch:5}, {wch:22},
+      ...Array.from({length:10}).flatMap(()=>[{wch:11},{wch:11}]),
+      {wch:11},{wch:13}
+    ];
+    wsPivCat['!freeze'] = { xSplit: 2, ySplit: 1 };
+
+    // — Sheet 4 — «Номма-ном рўйхат»
     const data = rows.map((r,i) => buildExportRow(r,i));
     const wsList = XLSX_.utils.json_to_sheet(data, {cellDates:false});
     const colKeys = Object.keys(data[0]||{});
@@ -3262,44 +3457,11 @@ async function exportFilteredToExcel(){
     });
     wsList['!freeze'] = { xSplit: 0, ySplit: 1 };
 
-    // Sheet 3 — «Туман бўйича гуруҳлаш» (one block per district)
-    const byDistGroups = {};
-    for(let i=0;i<rows.length;i++){
-      const d = rows[i].dist || '—';
-      if(!byDistGroups[d]) byDistGroups[d] = [];
-      byDistGroups[d].push({ rec: rows[i], sourceIdx: i });
-    }
-    const distAoa = [];
-    distAoa.push(['Туман','Сони','Майдон (га)']);
-    for(const d of Object.keys(byDistGroups).sort()){
-      const items = byDistGroups[d];
-      const total = items.reduce((s,it)=>s+(rowArea(it.rec.sec, it.rec.row)||0),0);
-      distAoa.push([d, items.length, Number(total.toFixed(2))]);
-    }
-    distAoa.push([]);
-    distAoa.push(['№','Туман','Лойиҳа номи','Ташаббускор','Категория','Босқич','Майдон (га)']);
-    let rowNum = 0;
-    for(const d of Object.keys(byDistGroups).sort()){
-      for(const it of byDistGroups[d]){
-        rowNum++;
-        const r = it.rec.row;
-        distAoa.push([
-          rowNum, d,
-          __pickField(r, ['Лойиҳа номи','Фойдаланиш мақсади','Номланиши']) || '',
-          __pickField(r, ['Лойиҳа ташаббускори','Ер участкаси ажратилган корхона номи','Бугунги кунда ердан фойдаланувчи номи']) || '',
-          (CATEGORY_META[classifyParcel(it.rec.sec, r)]||{}).label||'',
-          (STAGE_DEFS.find(s=>s.key===rowStageKey(it.rec.sec, r))||{}).label||'',
-          rowArea(it.rec.sec, r) || 0
-        ]);
-      }
-    }
-    const wsDist = XLSX_.utils.aoa_to_sheet(distAoa);
-    wsDist['!cols'] = [{wch:6},{wch:22},{wch:42},{wch:32},{wch:22},{wch:24},{wch:14}];
-
     const wb = XLSX_.utils.book_new();
-    XLSX_.utils.book_append_sheet(wb, wsSummary, 'Хулоса');
-    XLSX_.utils.book_append_sheet(wb, wsList, 'Тўлиқ рўйхат');
-    XLSX_.utils.book_append_sheet(wb, wsDist, 'Туман бўйича');
+    XLSX_.utils.book_append_sheet(wb, wsTitle,    'Титул');
+    XLSX_.utils.book_append_sheet(wb, wsPivStage, 'Туман × Босқич');
+    XLSX_.utils.book_append_sheet(wb, wsPivCat,   'Туман × Категория');
+    XLSX_.utils.book_append_sheet(wb, wsList,     'Номма-ном рўйхат');
 
     const stageS = STAGE_STATE.selected === 'all' ? 'Барчаси' : (STAGE_DEFS.find(d=>d.key===STAGE_STATE.selected)||{}).label;
     const catS   = CAT_STATE.selected === 'all' ? 'Барчаси' : (CATEGORY_META[CAT_STATE.selected]||{}).label;
