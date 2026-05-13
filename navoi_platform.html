@@ -7192,6 +7192,21 @@ function __normCoordText(raw){
   s = s.replace(/(\d{1,3})0(\d{1,2})\s*'/g, "$1°$2'");
   return s.replace(/\s+/g,' ').trim();
 }
+/* Apply Navoi/Uzbekistan range guard to a list of points. For each point:
+   - If (lat,lon) falls inside the region → keep as-is
+   - Else if SWAPPED (lon,lat) falls inside → quietly correct (source data
+     sometimes carries С/В or N/E labels in reversed order)
+   - Otherwise → drop. */
+function __navoiRangeFilter(points){
+  const out = [];
+  for(const p of points){
+    if(p.lat >= 35 && p.lat <= 47 && p.lon >= 55 && p.lon <= 73){ out.push(p); continue; }
+    if(p.lon >= 35 && p.lon <= 47 && p.lat >= 55 && p.lat <= 73){
+      out.push({lat: p.lon, lon: p.lat}); continue;
+    }
+  }
+  return out;
+}
 function parseCoordinatePoints(raw){
   const text = __normCoordText(raw);
   if(!text) return [];
@@ -7209,7 +7224,11 @@ function parseCoordinatePoints(raw){
       i++;
     }
   }
-  if(points.length) return points;
+  if(points.length){
+    const fixed = __navoiRangeFilter(points);
+    if(fixed.length) return fixed;
+    points.length = 0; // wipe — was all out-of-region; try the next strategy
+  }
   const dmsBare = [...text.matchAll(/(\d{1,3})\s*[°]\s*(\d{1,2})?\s*['′]?\s*(\d{1,2}(?:\.\d+)?)?/g)]
     .map(m=>Number(m[1]) + ((Number(m[2])||0)/60) + ((Number(m[3])||0)/3600))
     .filter(n=>Number.isFinite(n) && n > 0);
