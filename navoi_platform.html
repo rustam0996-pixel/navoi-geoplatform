@@ -555,8 +555,10 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
 .tabbar{ top: 78px !important; padding: 4px !important }
 .tab{ padding: 7px 13px !important; font-size: 12px !important }
 
-/* Breadcrumb — мини, tabbar билан бир сатрда туради */
-.breadcrumb{ font-size: 11.5px !important; padding: 5px 11px !important; top: 78px !important; min-height: 28px }
+/* Breadcrumb — олиб ташланди (керак эмас, тагбар + bош-саҳифа тугмаси етарли) */
+.breadcrumb{ display: none !important }
+/* Тил тугмаси (Ўзбек) — локализация керак эмас, фойдаланувчи талаби бўйича яширилди */
+#langBtn{ display: none !important }
 
 /* ===== TAB BAR ===== */
 .tabbar{
@@ -7230,7 +7232,21 @@ function parseCoordinatePoints(raw){
       }
     }
   }
-  if(points.length) return points;
+  if(points.length){
+    // Navoi/Uzbekistan range guard — lat 37-46, lon 55-73. If the parsed
+    // result is outside but the SWAPPED values fall inside (source data has
+    // С/В labels accidentally swapped), correct silently. Otherwise discard.
+    const fixed = [];
+    for(const p of points){
+      if(p.lat >= 35 && p.lat <= 47 && p.lon >= 55 && p.lon <= 73){ fixed.push(p); continue; }
+      if(p.lon >= 35 && p.lon <= 47 && p.lat >= 55 && p.lat <= 73){
+        fixed.push({lat: p.lon, lon: p.lat}); continue;
+      }
+      // Out-of-region — drop
+    }
+    if(fixed.length) return fixed;
+    // If every point was rejected, fall through to the next strategy
+  }
   for(const m of text.matchAll(/(-?\d{1,2}\.\d{2,})\s*[,;\s]\s*(-?\d{1,3}\.\d{2,})/g)){
     const a = Number(m[1]), b = Number(m[2]);
     if(!Number.isFinite(a) || !Number.isFinite(b)) continue;
