@@ -2778,7 +2778,7 @@ function __findValueByTail(row, regex){
        (Бино-иншоот/Кон == "Геология") and any pq12/pq13 explicit columns. */
 function sourceTagsFor(sec, row){
   if(!row) return [];
-  const tags = [];
+  let tags = [];
   // (a) Index lookup
   if(typeof window !== 'undefined' && window.SOURCE_TAGS_INDEX){
     const key = `${sec}-${row._row}`;
@@ -2811,6 +2811,16 @@ function sourceTagsFor(sec, row){
   if(!tags.includes('kon')){
     const kbi = String(row['Кон ёки бино-иншоот, завод учун бериладиган']||'').toLowerCase().trim();
     if(/^кон\b/.test(kbi)) addTag('kon');
+  }
+  // SECTION CONSTRAINT — decree-level annexes only apply to changed parcels.
+  // HK parcels are still proposals (in_process), so by definition they
+  // cannot be «under VM-88» (which IS the category-change order itself)
+  // nor be «in ПҚ-58 13-илова» (which lists already-approved geology
+  // allocations). PQ-58 12-илова is an investment-projects annex that
+  // legitimately lists both proposed (HK) and approved (changed) parcels —
+  // it stays multi-section.
+  if(sec === 'hk'){
+    tags = tags.filter(t => t !== 'vm88' && t !== 'pq13');
   }
   return tags;
 }
