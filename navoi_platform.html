@@ -3076,16 +3076,18 @@ function renderStageFilter(){
 }
 
 /* ================= EXCEL EXPORT ================= */
-/* Lazily load SheetJS (xlsx) library from CDN. */
+/* Lazily load xlsx-js-style (SheetJS fork with full cell styling) from CDN.
+   Same API as plain SheetJS — adds .s style property support so we can
+   colour headers / totals / borders, set print area, page margins, etc. */
 let __xlsxLibPromise = null;
 function ensureXlsxLib(){
   if(typeof XLSX !== 'undefined') return Promise.resolve(XLSX);
   if(__xlsxLibPromise) return __xlsxLibPromise;
   __xlsxLibPromise = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
     s.onload = () => resolve(XLSX);
-    s.onerror = () => reject(new Error('xlsx library load failed'));
+    s.onerror = () => reject(new Error('xlsx-js-style library load failed'));
     document.head.appendChild(s);
   });
   return __xlsxLibPromise;
@@ -3168,6 +3170,78 @@ function buildExportRow(rec, idx){
     'Координаталари': (row['Координаталари']||row['Координата рақами']||'').toString().replace(/\s+/g,' ').trim(),
     'Бўлим': sectionLabel(sec) || sec
   };
+}
+
+/* ===== Excel-style helpers (xlsx-js-style cell styling) ===== */
+const XLS_STYLE = {
+  // Title banner — large dark-blue bg, white bold centered
+  title:  { fill:{fgColor:{rgb:'1D4ED8'}}, font:{color:{rgb:'FFFFFF'},bold:true,sz:16,name:'Times New Roman'}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border: __xlsBorder('FFFFFF') },
+  subtitle: { fill:{fgColor:{rgb:'3B82F6'}}, font:{color:{rgb:'FFFFFF'},bold:true,sz:13,name:'Times New Roman'}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border: __xlsBorder('FFFFFF') },
+  sectionH: { fill:{fgColor:{rgb:'EFF6FF'}}, font:{color:{rgb:'1D4ED8'},bold:true,sz:11,name:'Arial'}, alignment:{horizontal:'left',vertical:'center'}, border: __xlsBorder('CBD5E1') },
+  // Pivot header row — blue bg, white text
+  tableH: { fill:{fgColor:{rgb:'1E40AF'}}, font:{color:{rgb:'FFFFFF'},bold:true,sz:10,name:'Arial'}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border: __xlsBorder('FFFFFF') },
+  // Total row — bold, light gray bg
+  total:  { fill:{fgColor:{rgb:'E2E8F0'}}, font:{bold:true,sz:10.5,name:'Arial',color:{rgb:'0F1A36'}}, alignment:{horizontal:'right',vertical:'center'}, border: __xlsBorder('94A3B8') },
+  totalLabel: { fill:{fgColor:{rgb:'E2E8F0'}}, font:{bold:true,sz:10.5,name:'Arial',color:{rgb:'0F1A36'}}, alignment:{horizontal:'left',vertical:'center'}, border: __xlsBorder('94A3B8') },
+  // Data cells — alignment differs for text vs number columns
+  dataText:{ font:{sz:10,name:'Arial',color:{rgb:'0F1A36'}}, alignment:{horizontal:'left',vertical:'center',wrapText:true}, border: __xlsBorder('CBD5E1') },
+  dataNum: { font:{sz:10,name:'Arial',color:{rgb:'0F1A36'}}, alignment:{horizontal:'right',vertical:'center'}, border: __xlsBorder('CBD5E1') },
+  dataCenter:{ font:{sz:10,name:'Arial',color:{rgb:'0F1A36'}}, alignment:{horizontal:'center',vertical:'center'}, border: __xlsBorder('CBD5E1') },
+  // Zebra-striped row
+  zebra:  { fill:{fgColor:{rgb:'F8FAFC'}} },
+  // Light yellow tip / note
+  note:   { fill:{fgColor:{rgb:'FEF3C7'}}, font:{italic:true,sz:9.5,name:'Arial',color:{rgb:'78350F'}}, alignment:{horizontal:'left',vertical:'center',wrapText:true} }
+};
+function __xlsBorder(rgb){
+  const b = { style:'thin', color:{rgb: rgb || 'CBD5E1'} };
+  return { top:b, bottom:b, left:b, right:b };
+}
+/* Apply style object to a single cell. Creates the cell with empty value
+   if it doesn't exist yet — defensive against gaps in AOA tables. */
+function __setCellStyle(ws, ref, style){
+  if(!ws[ref]) ws[ref] = { v: '', t: 's' };
+  ws[ref].s = Object.assign({}, ws[ref].s || {}, style);
+}
+/* Style every cell within a rectangle defined by inclusive col / row range. */
+function __styleRange(ws, r0, c0, r1, c1, style){
+  for(let r=r0; r<=r1; r++){
+    for(let c=c0; c<=c1; c++){
+      const ref = XLSX.utils.encode_cell({r:r, c:c});
+      __setCellStyle(ws, ref, style);
+    }
+  }
+}
+/* Apply zebra striping to data rows — alternating light-gray background. */
+function __applyZebra(ws, r0, r1, c0, c1){
+  for(let r=r0; r<=r1; r++){
+    if(((r - r0) % 2) === 1){
+      for(let c=c0; c<=c1; c++){
+        const ref = XLSX.utils.encode_cell({r,c});
+        if(!ws[ref]) ws[ref] = { v: '', t: 's' };
+        ws[ref].s = Object.assign({}, ws[ref].s || {}, { fill:{fgColor:{rgb:'F8FAFC'}} });
+      }
+    }
+  }
+}
+/* Set landscape print orientation + fit-to-width + margins so the sheet
+   prints cleanly on A4 without manual setup. */
+function __applyPrintLayout(ws, lastCol, opts){
+  opts = opts || {};
+  ws['!margins'] = { left:0.4, right:0.4, top:0.6, bottom:0.5, header:0.3, footer:0.3 };
+  ws['!pageSetup'] = {
+    orientation: 'landscape',
+    paperSize: 9,             // A4
+    fitToWidth: 1,
+    fitToHeight: 0,
+    scale: 100,
+    horizontalDpi: 300,
+    verticalDpi: 300
+  };
+  ws['!printOptions'] = { horizontalCentered: true, gridLines: false };
+  // Repeat first row on every printed page (header)
+  if(opts.repeatHeader){
+    ws['!printTitles'] = { top: '1:1' };
+  }
 }
 
 /* ===== Crosstab helpers — used by the leadership pivot sheets ===== */
@@ -3418,34 +3492,85 @@ async function exportFilteredToExcel(){
     // — Sheet 1 — «Титул»
     const titleAoa = buildTitleSheet(rows);
     const wsTitle = XLSX_.utils.aoa_to_sheet(titleAoa);
-    wsTitle['!cols'] = [{wch:32},{wch:38},{wch:14}];
+    wsTitle['!cols'] = [{wch:32},{wch:42},{wch:16}];
     // Merge title + subtitle rows for prominence
     wsTitle['!merges'] = [
       {s:{r:0,c:0}, e:{r:0,c:2}},  // НАВОИЙ ВИЛОЯТИ
       {s:{r:1,c:0}, e:{r:1,c:2}}   // ЕР РЕСУРСЛАРИ ...
     ];
+    // Row heights — emphasise the title block
+    wsTitle['!rows'] = [{hpt:28},{hpt:22}];
+    // Style: title block, section banners, KPI rows, signature, footer note
+    __styleRange(wsTitle, 0, 0, 0, 2, XLS_STYLE.title);
+    __styleRange(wsTitle, 1, 0, 1, 2, XLS_STYLE.subtitle);
+    // Walk subsequent rows and tag section-headers / data / notes
+    for(let r=3; r<titleAoa.length; r++){
+      const first = titleAoa[r][0];
+      const second = titleAoa[r][1];
+      if(typeof first === 'string' && /^[А-ЯҲҒҚЎ]{3,}/.test(first) && (!second || second === undefined)){
+        __styleRange(wsTitle, r, 0, r, 2, XLS_STYLE.sectionH);
+      } else if(first && typeof first === 'string' && /Эслатма|варақларида|автоматик яратилди/.test(first)){
+        __styleRange(wsTitle, r, 0, r, 2, XLS_STYLE.note);
+      } else if(first){
+        __setCellStyle(wsTitle, XLSX_.utils.encode_cell({r,c:0}), Object.assign({}, XLS_STYLE.dataText, {font:{bold:true,sz:10.5,name:'Arial'}}));
+        __setCellStyle(wsTitle, XLSX_.utils.encode_cell({r,c:1}), XLS_STYLE.dataText);
+        __setCellStyle(wsTitle, XLSX_.utils.encode_cell({r,c:2}), XLS_STYLE.dataCenter);
+      }
+    }
+    __applyPrintLayout(wsTitle, 2);
 
     // — Sheet 2 — «Туман × Босқич»
     const pivStage = buildPivotDistrictByStage(rows);
     const wsPivStage = XLSX_.utils.aoa_to_sheet(pivStage.aoa);
-    // 2 fixed (№, Туман) + 5 stages × 2 (count, area) + 2 totals = 14 cols
+    const stageColCnt = pivStage.colCount; // = 14
+    const stageRowCnt = pivStage.aoa.length; // header + districts + total
     wsPivStage['!cols'] = [
-      {wch:5}, {wch:22},
-      ...Array.from({length:5}).flatMap(()=>[{wch:13},{wch:13}]),
+      {wch:5}, {wch:24},
+      ...Array.from({length:5}).flatMap(()=>[{wch:11},{wch:12}]),
       {wch:11},{wch:13}
     ];
+    wsPivStage['!rows'] = [{hpt:32}];   // tall header row for wrapped text
     wsPivStage['!freeze'] = { xSplit: 2, ySplit: 1 };
+    // Style header row
+    __styleRange(wsPivStage, 0, 0, 0, stageColCnt-1, XLS_STYLE.tableH);
+    // Style data body
+    for(let r=1; r<stageRowCnt-1; r++){
+      __setCellStyle(wsPivStage, XLSX_.utils.encode_cell({r,c:0}), XLS_STYLE.dataCenter);
+      __setCellStyle(wsPivStage, XLSX_.utils.encode_cell({r,c:1}), Object.assign({}, XLS_STYLE.dataText, {font:{bold:true,sz:10,name:'Arial',color:{rgb:'0F1A36'}}}));
+      for(let c=2; c<stageColCnt; c++){
+        __setCellStyle(wsPivStage, XLSX_.utils.encode_cell({r,c}), XLS_STYLE.dataNum);
+      }
+    }
+    // Total row
+    __styleRange(wsPivStage, stageRowCnt-1, 0, stageRowCnt-1, 1, XLS_STYLE.totalLabel);
+    __styleRange(wsPivStage, stageRowCnt-1, 2, stageRowCnt-1, stageColCnt-1, XLS_STYLE.total);
+    __applyZebra(wsPivStage, 1, stageRowCnt-2, 0, stageColCnt-1);
+    __applyPrintLayout(wsPivStage, stageColCnt-1, {repeatHeader:true});
 
     // — Sheet 3 — «Туман × Категория»
     const pivCat = buildPivotDistrictByCategory(rows);
     const wsPivCat = XLSX_.utils.aoa_to_sheet(pivCat.aoa);
-    // 2 fixed + 10 categories × 2 + 2 totals = 24 cols
+    const catColCnt = pivCat.colCount; // = 24
+    const catRowCnt = pivCat.aoa.length;
     wsPivCat['!cols'] = [
-      {wch:5}, {wch:22},
-      ...Array.from({length:10}).flatMap(()=>[{wch:11},{wch:11}]),
+      {wch:5}, {wch:24},
+      ...Array.from({length:10}).flatMap(()=>[{wch:10},{wch:11}]),
       {wch:11},{wch:13}
     ];
+    wsPivCat['!rows'] = [{hpt:32}];
     wsPivCat['!freeze'] = { xSplit: 2, ySplit: 1 };
+    __styleRange(wsPivCat, 0, 0, 0, catColCnt-1, XLS_STYLE.tableH);
+    for(let r=1; r<catRowCnt-1; r++){
+      __setCellStyle(wsPivCat, XLSX_.utils.encode_cell({r,c:0}), XLS_STYLE.dataCenter);
+      __setCellStyle(wsPivCat, XLSX_.utils.encode_cell({r,c:1}), Object.assign({}, XLS_STYLE.dataText, {font:{bold:true,sz:10,name:'Arial',color:{rgb:'0F1A36'}}}));
+      for(let c=2; c<catColCnt; c++){
+        __setCellStyle(wsPivCat, XLSX_.utils.encode_cell({r,c}), XLS_STYLE.dataNum);
+      }
+    }
+    __styleRange(wsPivCat, catRowCnt-1, 0, catRowCnt-1, 1, XLS_STYLE.totalLabel);
+    __styleRange(wsPivCat, catRowCnt-1, 2, catRowCnt-1, catColCnt-1, XLS_STYLE.total);
+    __applyZebra(wsPivCat, 1, catRowCnt-2, 0, catColCnt-1);
+    __applyPrintLayout(wsPivCat, catColCnt-1, {repeatHeader:true});
 
     // — Sheet 4 — «Номма-ном рўйхат»
     const data = rows.map((r,i) => buildExportRow(r,i));
@@ -3453,9 +3578,21 @@ async function exportFilteredToExcel(){
     const colKeys = Object.keys(data[0]||{});
     wsList['!cols'] = colKeys.map(k => {
       const max = Math.max(k.length, ...data.map(r => String(r[k]||'').length));
-      return { wch: Math.min(60, Math.max(8, max+2)) };
+      return { wch: Math.min(50, Math.max(8, max+2)) };
     });
+    wsList['!rows'] = [{hpt:30}];
     wsList['!freeze'] = { xSplit: 0, ySplit: 1 };
+    // Header row
+    __styleRange(wsList, 0, 0, 0, colKeys.length-1, XLS_STYLE.tableH);
+    // Data rows
+    for(let r=1; r<=data.length; r++){
+      for(let c=0; c<colKeys.length; c++){
+        const isNumericCol = ['№','Майдон (га)','Лойиҳа қиймати (млн. долл.)','Иш ўрни (нафар)','Аукционга чиқарилган (га)','Аукционда сотилган (га)','Тўғридан-тўғри (га)'].includes(colKeys[c]);
+        __setCellStyle(wsList, XLSX_.utils.encode_cell({r,c}), isNumericCol ? XLS_STYLE.dataNum : XLS_STYLE.dataText);
+      }
+    }
+    __applyZebra(wsList, 1, data.length, 0, colKeys.length-1);
+    __applyPrintLayout(wsList, colKeys.length-1, {repeatHeader:true});
 
     const wb = XLSX_.utils.book_new();
     XLSX_.utils.book_append_sheet(wb, wsTitle,    'Титул');
