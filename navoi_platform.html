@@ -953,6 +953,20 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
   font-size:18px;font-weight:700;transition:all .15s;
 }
 .dr-head .x:hover{background:rgba(255,255,255,.28)}
+/* «Ортга» бadge — Бўлим/филтр танлангандагина drawer'нинг юқорида кўринади */
+.dr-back{
+  position:absolute;top:14px;left:14px;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px 5px 9px;
+  border-radius:8px;
+  background:rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.28);
+  color:#fff;font-size:11px;font-weight:800;letter-spacing:.2px;
+  cursor:pointer;transition:all .15s ease;
+}
+.dr-back[hidden]{display:none}
+.dr-back:hover{background:rgba(255,255,255,.32);transform:translateX(-2px)}
+.dr-back svg{flex-shrink:0}
 .dr-head .small{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;opacity:.85}
 .dr-head .title{font-size:20px;font-weight:800;margin-top:4px;position:relative}
 .dr-head .area{font-size:12px;opacity:.85;margin-top:4px;position:relative}
@@ -1608,6 +1622,12 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 <aside class="drawer" id="drawer">
   <div class="dr-head">
     <button class="x" id="drClose">×</button>
+    <!-- «Ортга» кнопка — фақат бўлим/филтр танлангандагина пайдо бўлади.
+         Туман саҳифасига қайтаради (туман очиқ қолади) -->
+    <button class="dr-back" id="drBack" type="button" title="Туман умумий маълумотига қайтиш" hidden>
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span>Орт­га</span>
+    </button>
     <div class="small" id="drSmall">ТУМАН / ШАҲАР</div>
     <div class="title" id="drTitle">—</div>
     <div class="area" id="drArea">—</div>
@@ -5530,6 +5550,30 @@ function renderDrawer(key){
 
   document.getElementById('drSmall').textContent = d.type==='city'?'ШАҲАР':'ТУМАН';
   document.getElementById('drTitle').textContent = d.label;
+  // «Ортга» тугмаси — қачон бирор бўлим ёки филтр актив бўлса кўринади
+  const backBtn = document.getElementById('drBack');
+  if(backBtn){
+    const anyDrill = focused || catFilter || stageFilter || sourceFilter || (currentYear && currentYear !== 'all');
+    backBtn.hidden = !anyDrill;
+    backBtn.onclick = () => {
+      currentSection = 'all';
+      currentYear = 'all';
+      if(typeof CAT_STATE !== 'undefined'){ CAT_STATE.selected = 'all'; CAT_STATE.expanded = null; }
+      if(typeof STAGE_STATE !== 'undefined'){ STAGE_STATE.selected = 'all'; }
+      if(typeof SOURCE_TAG_STATE !== 'undefined'){ SOURCE_TAG_STATE.selected = 'all'; }
+      if(typeof renderKpis === 'function') renderKpis();
+      if(typeof renderStageFilter === 'function') renderStageFilter();
+      if(typeof renderSectionTabs === 'function') renderSectionTabs();
+      if(typeof renderYearBar === 'function') renderYearBar();
+      if(typeof renderDistrictList === 'function') renderDistrictList();
+      if(typeof renderBubbles === 'function') renderBubbles();
+      if(typeof restyleMfyLayer === 'function') restyleMfyLayer();
+      if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
+      if(typeof refreshExportBtn === 'function') refreshExportBtn();
+      // Re-render the drawer for this district in clean state
+      renderDrawer(key);
+    };
+  }
   // Title strip — list each active filter for clarity
   const filterParts = [];
   if(catMeta) filterParts.push(catMeta.label);
