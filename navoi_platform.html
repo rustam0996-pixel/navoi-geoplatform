@@ -6960,10 +6960,15 @@ function openResultsPanel(sectionOverride){
   // Overview mode: all sections summary
   if(sec==='all'){
     if(!currentDistrict){
-      // Global overview: show sections breakdown for the whole region
-      const globalSections = SECTIONS.filter(s=>s.key!=='all').map(s=>({
-        key:s.key, label:s.label, color:s.color, count:sectionTotal(s.key)
-      })).sort((a,b)=>b.count-a.count);
+      // Global overview: show sections breakdown for the whole region —
+      // ONLY sections that actually contain rows. Empty placeholders
+      // (Ер қаъри, Стратегик, Кон, Аукцион, ПҚ-58 12 / 13-илова, ВМ-88)
+      // were confusing users with all-zero rows; they're filtered out.
+      const globalSections = SECTIONS
+        .filter(s => s.key !== 'all')
+        .map(s => ({ key:s.key, label:s.label, color:s.color, count:sectionTotal(s.key) }))
+        .filter(s => s.count > 0)
+        .sort((a,b) => b.count - a.count);
       const rowsHtml = globalSections.map(x=>`<tr>
         <td><div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:${x.color};display:inline-block"></span><strong>${x.label}</strong></div></td>
         <td class="num"><span class="rs-chip count">${fmt(x.count)}</span></td>
