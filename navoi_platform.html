@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
+  /* Кундузги (default) */
   --bg:#f4f7fb;
   --panel:#ffffff;
   --panel-2:#fbfcfe;
@@ -30,7 +31,71 @@
   --radius:14px;
   --radius-sm:10px;
   --map-bg:#e8eef7;
+  --map-filter:none;
+  --transition-theme:background .35s ease, color .35s ease, border-color .35s ease;
 }
+
+/* ===== ТУНГИ (Dark mode) — кеч / тун ишлаш учун ===== */
+body[data-theme="dark"]{
+  --bg:#0b1224;
+  --panel:#162039;
+  --panel-2:#1e2a4a;
+  --ink:#e8eefa;
+  --ink-2:#c8d4ee;
+  --muted:#8095bd;
+  --line:#283452;
+  --map-bg:#0a1024;
+  --map-filter: brightness(.78) saturate(.85) hue-rotate(-8deg);
+  --shadow-lg:0 18px 40px -16px rgba(0,0,0,.6), 0 8px 22px -10px rgba(0,0,0,.4);
+  --shadow-md:0 6px 18px -8px rgba(0,0,0,.45);
+  --shadow-sm:0 2px 6px -2px rgba(0,0,0,.35);
+}
+/* Dark mode quick fixes for hardcoded #fff backgrounds */
+body[data-theme="dark"] .map-attrib,
+body[data-theme="dark"] .leaflet-control-zoom a{ background:var(--panel)!important; color:var(--ink)!important; border-color:var(--line)!important }
+
+/* ===== ШОМ (Sepia / Twilight) — кўз чарчоғи учун илиқ ===== */
+body[data-theme="sepia"]{
+  --bg:#f4eadb;
+  --panel:#faf3e3;
+  --panel-2:#f7edd0;
+  --ink:#3a2c10;
+  --ink-2:#5a4419;
+  --muted:#8a7148;
+  --line:#e0d3b3;
+  --map-bg:#e9dec1;
+  --map-filter: sepia(.25) hue-rotate(-8deg) saturate(.85);
+}
+
+/* ===== ХАРИТАЛИК (Map-only) — паneллар яширин, фақат харита ===== */
+body[data-theme="map-only"] .topbar,
+body[data-theme="map-only"] .tabbar,
+body[data-theme="map-only"] .sidepanel,
+body[data-theme="map-only"] .sp-toggle,
+body[data-theme="map-only"] .filter-crumb,
+body[data-theme="map-only"] .drawer{
+  display:none!important;
+}
+body[data-theme="map-only"] #mapWrap{
+  position:fixed!important;inset:0!important;
+}
+body[data-theme="map-only"] #map{ height:100vh!important }
+/* «Чиқиш» tugmasi (Map-only режимдан) — экран ўнг-юқори бурчагида */
+body[data-theme="map-only"] .theme-exit-mapmode{
+  position:fixed;top:14px;right:14px;z-index:9999;
+  padding:8px 14px;border-radius:10px;background:#1e293b;color:#fff;
+  font-size:12px;font-weight:800;cursor:pointer;border:0;
+  box-shadow:0 8px 18px -6px rgba(0,0,0,.4);display:inline-flex;align-items:center;gap:6px;
+}
+body[data-theme="map-only"] .theme-exit-mapmode:hover{background:#0f172a}
+body:not([data-theme="map-only"]) .theme-exit-mapmode{display:none}
+
+/* Smooth global transition between themes */
+body, .topbar, .sidepanel, .drawer, .filter-crumb, .tabbar, .sp-stage, .sp-propose, .kpi, .cat-tree, .cat, .sp-stage-chip{
+  transition: var(--transition-theme);
+}
+/* Apply colour filter to the Leaflet tile layer for dark / sepia */
+.leaflet-layer{ filter: var(--map-filter, none); transition: filter .4s ease }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%;font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer;border:0;background:transparent}
@@ -1497,6 +1562,10 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
       <span id="langBtnLabel">Ўзбек</span>
     </button>
+    <button class="tb-btn" id="themeToggle" type="button" title="Режимни ўзгартириш: Кундузги · Тунги · Шом · Хариталик">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" id="themeIcon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <span id="themeLabel">Кундузги</span>
+    </button>
     <button class="tb-btn" id="topbarHelpBtn" type="button" title="Қандай ишлайди">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       <span>Қўлланма</span>
@@ -1564,6 +1633,12 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 
 <!-- MAP -->
 <div id="mapWrap"><div id="map"></div></div>
+
+<!-- Map-only режимдан чиқиш тугмаси (фақат шу режимда кўринади) -->
+<button class="theme-exit-mapmode" id="themeExitMapBtn" type="button" title="Хариталик режимдан чиқиш">
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+  <span>Хариталик режимдан чиқиш</span>
+</button>
 
 <!-- BOTTOM MODE SWITCH: Харита / Рўйхат -->
 <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Кўриниш режими">
@@ -3767,6 +3842,65 @@ async function exportFilteredToExcel(){
       Excel рўйхатига чиқариш`; }
   }
 }
+
+/* ================= THEME SWITCHER =================
+   4 режим — Кундузги (light, default) · Тунги (dark) · Шом (sepia) ·
+   Хариталик (map-only). Топбардаги «Режим» тугмаси циклда ўтади. */
+const THEME_ORDER = ['light', 'dark', 'sepia', 'map-only'];
+const THEME_META = {
+  'light':    { label:'Кундузги',  iconPath:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>' },
+  'dark':     { label:'Тунги',     iconPath:'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>' },
+  'sepia':    { label:'Шом',       iconPath:'<path d="M2 12h6M12 2v6M16.24 7.76l4.24-4.24M22 12h-6M12 22v-6M7.76 16.24l-4.24 4.24M16.24 16.24l4.24 4.24M7.76 7.76L3.52 3.52"/><circle cx="12" cy="12" r="3"/>' },
+  'map-only': { label:'Хариталик', iconPath:'<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>' }
+};
+const THEME_KEY = 'navoi_theme_v1';
+function applyTheme(theme){
+  if(!THEME_META[theme]) theme = 'light';
+  if(theme === 'light'){
+    document.body.removeAttribute('data-theme');
+  } else {
+    document.body.setAttribute('data-theme', theme);
+  }
+  // Update toggle button label + icon
+  const lbl = document.getElementById('themeLabel');
+  const icn = document.getElementById('themeIcon');
+  if(lbl) lbl.textContent = THEME_META[theme].label;
+  if(icn) icn.innerHTML = THEME_META[theme].iconPath;
+  // Map-only special: invalidate Leaflet size since panels around the map changed
+  if(typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function'){
+    setTimeout(()=>map.invalidateSize(true), 320);
+  }
+  try { localStorage.setItem(THEME_KEY, theme); } catch(e){}
+}
+function nextTheme(){
+  const cur = document.body.getAttribute('data-theme') || 'light';
+  const idx = THEME_ORDER.indexOf(cur);
+  const next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+  applyTheme(next);
+}
+/* Restore theme on load, wire the toggle button */
+(function wireThemeSwitcher(){
+  function bind(){
+    // Restore stored choice
+    let stored = 'light';
+    try { stored = localStorage.getItem(THEME_KEY) || 'light'; } catch(e){}
+    applyTheme(stored);
+    // Top-bar toggle
+    const btn = document.getElementById('themeToggle');
+    if(btn && !btn._wired){
+      btn._wired = true;
+      btn.addEventListener('click', () => nextTheme());
+    }
+    // «Хариталик» режидан чиқиш тугмаси — Кундузги'га қайтади
+    const exitBtn = document.getElementById('themeExitMapBtn');
+    if(exitBtn && !exitBtn._wired){
+      exitBtn._wired = true;
+      exitBtn.addEventListener('click', () => applyTheme('light'));
+    }
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+})();
 
 /* ================= ONBOARDING =================
    First-time welcome card. Shown automatically on first visit; user can
