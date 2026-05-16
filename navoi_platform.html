@@ -1163,6 +1163,13 @@ body.results-open .mode-switch{bottom:calc(var(--results-gap, 0px) + 14px)}
 .leaflet-interactive{outline:none}
 
 /* Color legend for districts */
+/* Leaflet topright controls (zoom +/−) — пастроққа сурилади, токи
+   «Платформага ўтиш» тугмаси билан тўқнашмасин. Topbar(~74) + tabbar
+   (~28) дан кейин ~14px бўш жой. */
+.leaflet-top.leaflet-right{ margin-top:118px; }
+.leaflet-top.leaflet-right .leaflet-control{ margin-right:14px; }
+/* map-only режимда бошқарувлар тепага қайтади (топбар йўқ) */
+body[data-theme="map-only"] .leaflet-top.leaflet-right{ margin-top:14px; }
 .leaflet-control-custom{
   background:var(--panel);border:1px solid var(--line);border-radius:12px;
   padding:10px 12px;box-shadow:var(--shadow-md);font-size:11px;
