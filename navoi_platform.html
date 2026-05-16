@@ -462,6 +462,18 @@ body.has-selection .home-pill{display:inline-flex}
 }
 .pf-group input:focus,.pf-group textarea:focus,.pf-group select:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.18)}
 .pf-group textarea{resize:vertical;font-family:inherit;line-height:1.45}
+/* Расмий хат файлини бириктириш */
+.pf-file{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pf-file-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+  background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;font-size:12px;font-weight:800;
+  cursor:pointer;border:0;transition:transform .12s,box-shadow .15s;box-shadow:0 4px 10px -3px rgba(29,78,216,.4)}
+.pf-file-btn:hover{transform:translateY(-1px);box-shadow:0 7px 14px -4px rgba(29,78,216,.5)}
+.pf-file-name{font-size:12px;font-weight:650;color:var(--ink-2);word-break:break-all}
+.pf-file-name.ok{color:#047857}
+.pf-file-name.ok::before{content:"📎 "}
+.pf-file-hint{font-size:10.5px;color:var(--muted);font-weight:600;margin-top:4px}
+.prop-file-link{display:inline-flex;align-items:center;gap:4px;color:#1d4ed8;font-weight:800;text-decoration:none;font-size:12px}
+.prop-file-link:hover{text-decoration:underline}
 .prop-form-foot{padding:14px 22px;display:flex;justify-content:flex-end;gap:8px;background:#fff;border-top:1px solid #e2e9f3}
 @media (max-width:640px){
   .prop-panel{width:100vw}
@@ -1961,8 +1973,17 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
           <input id="pf-letter" placeholder="№ 01/234, 20.04.2026"></div>
       </div>
       <div class="pf-row">
-        <div class="pf-group"><label>АСОС — ҳужжат асоси (хат мазмуни) <span class="req">*</span></label>
-          <textarea id="pf-asos" rows="2" placeholder="Масалан: «Ер қаъридан фойдаланиш маркази» ДМнинг 21.05.2025 02-12/53285-сонли хати асосида"></textarea></div>
+        <div class="pf-group"><label>Расмий хат файли (PDF / расм) <span class="req">*</span></label>
+          <div class="pf-file">
+            <label class="pf-file-btn">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Файл танлаш</span>
+              <input id="pf-letterfile" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,image/*,application/pdf" onchange="handleProposalLetterFile(this)" hidden>
+            </label>
+            <span class="pf-file-name" id="pf-letterfile-name">Файл бириктирилмаган</span>
+          </div>
+          <div class="pf-file-hint">Туман/шаҳар расмий хати сканер-нусхаси (макс. 3 МБ). Усиз таклиф юборилмайди.</div>
+        </div>
       </div>
       <div class="pf-row">
         <div class="pf-group"><label>Координата рақамлари <span class="req">*</span></label>
@@ -3254,7 +3275,8 @@ function proposalToHkRow(p){
     'Лойиҳа қиймати (млн. долл.)': Number(p.cost) || 0,
     'Иш ўрни (нафар)': Number(p.jobs) || 0,
     'Лойиҳа ташаббускори': p.initiator || '',
-    'АСОС': p.asos || '',
+    'АСОС': p.letter ? ('Расмий хат: ' + p.letter) : '',
+    '_letterFile': p.letterFile || null,
     'Янги тоифаси': p.targetCat || ''
   };
 }
@@ -6914,6 +6936,7 @@ function renderProposalsList(){
         <div class="prop-card-field"><div class="l">Ташаббускор</div><div class="v">${escapeHtmlP(p.initiator || '—')}</div></div>
       </div>
       ${p.coords ? `<div class="prop-card-field"><div class="l">Координата</div><div class="v">${escapeHtmlP(p.coords)}</div></div>` : ''}
+      ${p.letterFile && p.letterFile.dataUrl ? `<div class="prop-card-field"><div class="l">Расмий хат файли</div><div class="v"><a class="prop-file-link" href="${p.letterFile.dataUrl}" download="${escapeHtmlP(p.letterFile.name||'rasmiy-xat')}" target="_blank" rel="noopener">📎 ${escapeHtmlP(p.letterFile.name||'Хат файли')} (${Math.round((p.letterFile.size||0)/1024)} КБ)</a></div></div>` : ''}
       ${note}
       ${rej}
       ${p.author ? `<div class="prop-card-meta">✍ ${escapeHtmlP(p.author)}</div>` : ''}
@@ -6970,6 +6993,31 @@ function openProposalForm(){
 function closeProposalForm(){
   document.getElementById('propFormWrap').style.display = 'none';
 }
+/* Расмий хат файли — base64 data-URL сифатида ўқиб, юборишгача сақланади. */
+let _proposalLetterFile = null;
+function handleProposalLetterFile(input){
+  const nameEl = document.getElementById('pf-letterfile-name');
+  const f = input.files && input.files[0];
+  if(!f){ _proposalLetterFile = null; if(nameEl){ nameEl.textContent='Файл бириктирилмаган'; nameEl.classList.remove('ok'); } return; }
+  const MAX = 3 * 1024 * 1024; // 3 MB
+  if(f.size > MAX){
+    _proposalLetterFile = null;
+    input.value = '';
+    if(nameEl){ nameEl.textContent='Файл 3 МБ дан катта — бошқа файл танланг'; nameEl.classList.remove('ok'); }
+    showToast('⚠️ Файл ҳажми 3 МБ дан ошмаслиги керак');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    _proposalLetterFile = { name: f.name, type: f.type || 'application/octet-stream', size: f.size, dataUrl: String(reader.result) };
+    if(nameEl){ nameEl.textContent = f.name + ' (' + Math.round(f.size/1024) + ' КБ)'; nameEl.classList.add('ok'); }
+  };
+  reader.onerror = () => {
+    _proposalLetterFile = null;
+    if(nameEl){ nameEl.textContent='Файлни ўқишда хатолик'; nameEl.classList.remove('ok'); }
+  };
+  reader.readAsDataURL(f);
+}
 function submitProposal(){
   const v = (id)=>document.getElementById(id).value.trim();
   const district = v('pf-district');
@@ -6983,7 +7031,6 @@ function submitProposal(){
   const jobs = v('pf-jobs');
   const initiator = v('pf-initiator');
   const letter = v('pf-letter');
-  const asos = v('pf-asos');
   const coords = v('pf-coords');
   const notes = v('pf-notes');
   const author = v('pf-author');
@@ -6992,8 +7039,8 @@ function submitProposal(){
     showToast('⚠️ Барча мажбурий майдонларни (*) тўлдиринг — координата ва контур ҳам мажбурий');
     return;
   }
-  if(!asos){
-    showToast('⚠️ АСОС хатини албатта киритинг — усиз таклиф админга юборилмайди');
+  if(!_proposalLetterFile){
+    showToast('⚠️ Расмий хат файлини бириктиринг — усиз таклиф админга юборилмайди');
     return;
   }
   // Координата ҳақиқатан парсерланишини текширамиз
@@ -7012,13 +7059,19 @@ function submitProposal(){
     currentCat: current, targetCat: target,
     cost: Number(cost) || 0,
     jobs: Number(jobs) || 0,
-    initiator, letter, asos, coords, notes, author,
+    initiator, letter, coords, notes, author,
+    letterFile: _proposalLetterFile,
     status: 'pending',
     createdAt: now,
     date: new Date(now).toLocaleDateString('uz-UZ')
   });
   saveProposals(all);
-  ['pf-district','pf-mfy','pf-name','pf-contour','pf-area','pf-current','pf-target','pf-cost','pf-jobs','pf-initiator','pf-letter','pf-asos','pf-coords','pf-notes','pf-author'].forEach(id=>{const el=document.getElementById(id);if(el){if(el.tagName==='SELECT')el.selectedIndex=0;else el.value='';}});
+  ['pf-district','pf-mfy','pf-name','pf-contour','pf-area','pf-current','pf-target','pf-cost','pf-jobs','pf-initiator','pf-letter','pf-coords','pf-notes','pf-author'].forEach(id=>{const el=document.getElementById(id);if(el){if(el.tagName==='SELECT')el.selectedIndex=0;else el.value='';}});
+  _proposalLetterFile = null;
+  const lfName = document.getElementById('pf-letterfile-name');
+  if(lfName){ lfName.textContent='Файл бириктирилмаган'; lfName.classList.remove('ok'); }
+  const lfInput = document.getElementById('pf-letterfile');
+  if(lfInput) lfInput.value = '';
   closeProposalForm();
   renderProposalsPanel();
   renderKpis();
