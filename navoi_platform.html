@@ -1925,19 +1925,29 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
         <div class="pf-group"><label>Туман / шаҳар <span class="req">*</span></label>
           <select id="pf-district"></select></div>
         <div class="pf-group"><label>МФЙ / маҳалла <span class="req">*</span></label>
-          <input id="pf-mfy" placeholder="Масалан: Шайхон МФЙ"></div>
+          <select id="pf-mfy"><option value="">— аввал туман танланг —</option></select></div>
       </div>
       <div class="pf-row">
         <div class="pf-group"><label>Ер участкаси номи / мақсади <span class="req">*</span></label>
           <input id="pf-name" placeholder="Масалан: Олтин қазиб олишни ташкил этиш"></div>
       </div>
       <div class="pf-row">
+        <div class="pf-group"><label>Контур рақами <span class="req">*</span></label>
+          <input id="pf-contour" placeholder="Масалан: 2705қ, 537қ"></div>
         <div class="pf-group"><label>Жами майдон (га) <span class="req">*</span></label>
           <input id="pf-area" type="number" step="0.01" min="0" placeholder="0.00"></div>
+      </div>
+      <div class="pf-row">
         <div class="pf-group"><label>Ҳозирги тоифаси</label>
           <input id="pf-current" placeholder="Масалан: қишлоқ хўжалиги"></div>
         <div class="pf-group"><label>Янги тоифаси <span class="req">*</span></label>
           <input id="pf-target" placeholder="Масалан: саноат"></div>
+      </div>
+      <div class="pf-row">
+        <div class="pf-group"><label>Лойиҳа қиймати (млн. долл.) <span class="req">*</span></label>
+          <input id="pf-cost" type="number" step="0.01" min="0" placeholder="0.00"></div>
+        <div class="pf-group"><label>Иш ўринлари (нафар) <span class="req">*</span></label>
+          <input id="pf-jobs" type="number" step="1" min="0" placeholder="0"></div>
       </div>
       <div class="pf-row">
         <div class="pf-group"><label>Ташаббускор</label>
@@ -1946,8 +1956,8 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
           <input id="pf-letter" placeholder="№ 01/234, 20.04.2026"></div>
       </div>
       <div class="pf-row">
-        <div class="pf-group"><label>Координаталар (ихтиёрий)</label>
-          <input id="pf-coords" placeholder="40°30'12.3&quot;N 65°25'15.7&quot;E ёки 40.503,65.421"></div>
+        <div class="pf-group"><label>Координата рақамлари <span class="req">*</span></label>
+          <textarea id="pf-coords" rows="3" placeholder="1. 40°30'12.3&quot;С 65°25'15.7&quot;В&#10;2. 40°30'15.1&quot;С 65°25'20.4&quot;В&#10;… (ҳар нуқта янги қаторда)"></textarea></div>
       </div>
       <div class="pf-row">
         <div class="pf-group"><label>Асослантириш / изоҳ</label>
@@ -6847,6 +6857,38 @@ function renderProposalsList(){
     </div>`;
   }).join('');
 }
+/* Танланган туман учун МФЙ рўйхати — GEO полигонларидан йиғилади. */
+function mfysForDistrict(districtLabel){
+  const set = new Set();
+  if(typeof GEO === 'undefined' || !GEO.features) return [];
+  for(const f of GEO.features){
+    const dk = (typeof geoDistKey === 'function') ? geoDistKey(f.properties.district) : f.properties.district;
+    const lbl = (distByKey[dk] || {}).label || dk;
+    if(lbl === districtLabel || dk === districtLabel){
+      const m = f.properties.mfy;
+      if(m && String(m).trim()) set.add(String(m).trim());
+    }
+  }
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'ru'));
+}
+function populateProposalMfy(){
+  const dSel = document.getElementById('pf-district');
+  const mSel = document.getElementById('pf-mfy');
+  if(!dSel || !mSel) return;
+  const dist = dSel.value;
+  if(!dist){
+    mSel.innerHTML = '<option value="">— аввал туман танланг —</option>';
+    return;
+  }
+  const mfys = mfysForDistrict(dist);
+  if(!mfys.length){
+    // GEO'да МФЙ топилмаса — қўлда киритишга йўл қўямиз
+    mSel.innerHTML = '<option value="">— МФЙ топилмади, изоҳда кўрсатинг —</option>';
+    return;
+  }
+  mSel.innerHTML = '<option value="">— танланг —</option>' +
+    mfys.map(m=>`<option value="${escapeHtmlP(m)}">${escapeHtmlP(m)}</option>`).join('');
+}
 function openProposalForm(){
   const wrap = document.getElementById('propFormWrap');
   // Populate district select
@@ -6854,6 +6896,11 @@ function openProposalForm(){
   if(sel && !sel.options.length){
     sel.innerHTML = '<option value="">— танланг —</option>' + DISTRICTS.map(d=>`<option value="${escapeHtmlP(d.label)}">${escapeHtmlP(d.label)}</option>`).join('');
   }
+  if(sel && !sel._mfyWired){
+    sel._mfyWired = true;
+    sel.addEventListener('change', populateProposalMfy);
+  }
+  populateProposalMfy();
   wrap.style.display = 'flex';
 }
 function closeProposalForm(){
@@ -6864,32 +6911,45 @@ function submitProposal(){
   const district = v('pf-district');
   const mfy = v('pf-mfy');
   const name = v('pf-name');
+  const contour = v('pf-contour');
   const area = v('pf-area');
   const current = v('pf-current');
   const target = v('pf-target');
+  const cost = v('pf-cost');
+  const jobs = v('pf-jobs');
   const initiator = v('pf-initiator');
   const letter = v('pf-letter');
   const coords = v('pf-coords');
   const notes = v('pf-notes');
   const author = v('pf-author');
-  if(!district || !mfy || !name || !area || !target || !letter){
-    showToast('⚠️ Барча мажбурий майдонларни (*) тўлдиринг');
+  // Мажбурий майдонлар текшируви
+  if(!district || !mfy || !name || !contour || !area || !target || !cost || !jobs || !letter || !coords){
+    showToast('⚠️ Барча мажбурий майдонларни (*) тўлдиринг — координата ва контур ҳам мажбурий');
+    return;
+  }
+  // Координата ҳақиқатан парсерланишини текширамиз
+  let parsedPts = [];
+  try { parsedPts = (typeof parseCoordinatePoints === 'function') ? parseCoordinatePoints(coords) : []; } catch(e){}
+  if(!parsedPts.length){
+    showToast('⚠️ Координата рақамлари нотўғри форматда — масалан: 40°30\'12.3"С 65°25\'15.7"В');
     return;
   }
   const all = getProposals();
   const now = Date.now();
   const id = 'p_' + now + '_' + Math.random().toString(36).slice(2,8);
   all.push({
-    id, district, mfy, name,
+    id, district, mfy, name, contour,
     area: Number(area) || 0,
     currentCat: current, targetCat: target,
+    cost: Number(cost) || 0,
+    jobs: Number(jobs) || 0,
     initiator, letter, coords, notes, author,
     status: 'pending',
     createdAt: now,
     date: new Date(now).toLocaleDateString('uz-UZ')
   });
   saveProposals(all);
-  ['pf-district','pf-mfy','pf-name','pf-area','pf-current','pf-target','pf-initiator','pf-letter','pf-coords','pf-notes','pf-author'].forEach(id=>{const el=document.getElementById(id);if(el){if(el.tagName==='SELECT')el.selectedIndex=0;else el.value='';}});
+  ['pf-district','pf-mfy','pf-name','pf-contour','pf-area','pf-current','pf-target','pf-cost','pf-jobs','pf-initiator','pf-letter','pf-coords','pf-notes','pf-author'].forEach(id=>{const el=document.getElementById(id);if(el){if(el.tagName==='SELECT')el.selectedIndex=0;else el.value='';}});
   closeProposalForm();
   renderProposalsPanel();
   renderKpis();
