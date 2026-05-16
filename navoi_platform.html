@@ -484,6 +484,57 @@ body.has-selection .home-pill{display:inline-flex}
 .tb-btn.excel-tb .excel-tb-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:18px;padding:0 5px;border-radius:9px;background:rgba(255,255,255,.22);color:#fff;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;margin-left:2px}
 .tb-btn.excel-tb:disabled{opacity:.6;cursor:not-allowed;transform:none}
 
+/* ===== БИЛДИРИШНОМА МАРКАЗИ ===== */
+.notif-wrap{position:relative;display:inline-flex}
+.notif-btn{position:relative}
+.notif-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;
+  background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;font-size:10.5px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;line-height:1;
+  box-shadow:0 2px 6px -1px rgba(220,38,38,.55);border:1.5px solid var(--panel);
+  animation:notifPulse 2s ease-in-out infinite}
+.notif-badge[hidden]{display:none}
+@keyframes notifPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.notif-panel{position:absolute;top:calc(100% + 8px);right:0;width:380px;max-width:92vw;z-index:2600;
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 24px 56px -20px rgba(15,26,54,.4),0 10px 24px -10px rgba(15,26,54,.2);
+  overflow:hidden;animation:notifIn .22s cubic-bezier(.2,.9,.3,1.2)}
+.notif-panel[hidden]{display:none}
+@keyframes notifIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.notif-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:13px 16px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff}
+.notif-head-l{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:850;letter-spacing:.2px}
+.notif-readall{padding:4px 10px;border-radius:7px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);
+  color:#fff;font-size:10.5px;font-weight:800;cursor:pointer;transition:background .15s}
+.notif-readall:hover{background:rgba(255,255,255,.3)}
+.notif-list{max-height:60vh;overflow-y:auto}
+.notif-list::-webkit-scrollbar{width:6px}.notif-list::-webkit-scrollbar-thumb{background:#cfdaec;border-radius:3px}
+.notif-item{display:flex;gap:10px;padding:12px 15px;border-bottom:1px solid var(--line);cursor:pointer;
+  transition:background .15s;position:relative}
+.notif-item:hover{background:var(--panel-2)}
+.notif-item.unseen{background:linear-gradient(90deg,rgba(29,78,216,.07),transparent)}
+.notif-item.unseen::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#1d4ed8}
+.notif-ic{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:#fff}
+.notif-ic.cat{background:linear-gradient(135deg,#2563eb,#3b82f6)}
+.notif-ic.auc{background:linear-gradient(135deg,#f59e0b,#fbbf24)}
+.notif-bd{flex:1;min-width:0}
+.notif-t{font-size:12.5px;font-weight:850;color:var(--ink);line-height:1.3;margin-bottom:2px}
+.notif-m{font-size:11px;color:var(--muted);font-weight:600;line-height:1.4}
+.notif-tag{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:2px 8px;border-radius:999px;
+  font-size:10px;font-weight:800}
+.notif-tag.cat{background:#dbeafe;color:#1d4ed8}
+.notif-tag.auc{background:#fef3c7;color:#92400e}
+.notif-tag.pending{background:#fef9c3;color:#854d0e}
+.notif-tag.approved{background:#dcfce7;color:#15803d}
+.notif-tag.rejected{background:#fee2e2;color:#b91c1c}
+.notif-time{font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;flex-shrink:0}
+.notif-empty{padding:34px 18px;text-align:center;color:var(--muted);font-size:12.5px;font-weight:600}
+.notif-empty svg{display:block;margin:0 auto 10px;opacity:.4}
+.notif-foot{padding:10px 15px;border-top:1px solid var(--line);background:var(--panel-2)}
+.notif-openall{width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid var(--line);
+  color:var(--brand);font-size:11.5px;font-weight:800;cursor:pointer;transition:all .15s}
+.notif-openall:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+
 /* Танланган контекст крамби — фильтрлар актив бўлганда харита устида қатор */
 .filter-crumb{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:7px 18px;background:linear-gradient(180deg,#f0f9ff,#e0f2fe);border-bottom:1px solid #bae6fd;font-size:11.5px;font-weight:700;color:#0c4a6e}
 .filter-crumb[hidden]{display:none}
@@ -1573,6 +1624,25 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
       <span id="langBtnLabel">Ўзбек</span>
     </button>
+    <div class="notif-wrap" id="notifWrap">
+      <button class="tb-btn notif-btn" id="notifBtn" type="button" title="Билдиришномалар — янги таклифлар" aria-label="Билдиришномалар">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-badge" id="notifBadge" hidden>0</span>
+      </button>
+      <div class="notif-panel" id="notifPanel" hidden role="dialog" aria-label="Билдиришномалар маркази">
+        <div class="notif-head">
+          <div class="notif-head-l">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span>Билдиришномалар маркази</span>
+          </div>
+          <button class="notif-readall" id="notifReadAll" type="button">Ҳаммасини ўқилди</button>
+        </div>
+        <div class="notif-list" id="notifList"></div>
+        <div class="notif-foot">
+          <button class="notif-openall" id="notifOpenAll" type="button">Барча таклифларни кўриш →</button>
+        </div>
+      </div>
+    </div>
     <button class="tb-btn" id="themeToggle" type="button" title="Режимни ўзгартириш: Кундузги · Тунги · Шом · Хариталик">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" id="themeIcon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
       <span id="themeLabel">Кундузги</span>
@@ -3892,6 +3962,143 @@ async function exportFilteredToExcel(){
   }
 }
 
+/* ================= БИЛДИРИШНОМА МАРКАЗИ =================
+   Шаҳар/туманлардан тоифа ўзгартириш ёки аукционга чиқариш таклифлари
+   келганда админга қўнғироқ + badge орқали билдиради. «Кўрилди»
+   санаси localStorage'да сақланади. */
+const NOTIF_SEEN_KEY = 'navoi_notif_seen_at_v1';
+function getNotifSeenAt(){
+  try { return Number(localStorage.getItem(NOTIF_SEEN_KEY)) || 0; } catch(e){ return 0; }
+}
+function setNotifSeenAt(ts){
+  try { localStorage.setItem(NOTIF_SEEN_KEY, String(ts)); } catch(e){}
+}
+/* Аукцион таклифими ёки тоифа ўзгартиришми — мақсад категориясидан аниқлаймиз. */
+function notifKind(p){
+  const t = ((p.targetCat||'') + ' ' + (p.notes||'') + ' ' + (p.name||'')).toLowerCase();
+  if(/аукцион|савдо|auksion|сотув/.test(t)) return 'auc';
+  return 'cat';
+}
+function __timeAgo(ts){
+  if(!ts) return '';
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff/60000), h = Math.floor(diff/3600000), d = Math.floor(diff/86400000);
+  if(d > 0) return d + ' кун олдин';
+  if(h > 0) return h + ' соат олдин';
+  if(m > 0) return m + ' дақиқа олдин';
+  return 'ҳозиргина';
+}
+function computeUnseenCount(){
+  const seenAt = getNotifSeenAt();
+  return (getProposals() || []).filter(p => p && (p.createdAt||0) > seenAt).length;
+}
+function updateNotifBadge(){
+  const badge = document.getElementById('notifBadge');
+  if(!badge) return;
+  const n = computeUnseenCount();
+  if(n > 0){ badge.hidden = false; badge.textContent = n > 99 ? '99+' : String(n); }
+  else { badge.hidden = true; }
+}
+function renderNotifications(){
+  const list = document.getElementById('notifList');
+  if(!list) return;
+  const seenAt = getNotifSeenAt();
+  const all = (getProposals() || []).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(!all.length){
+    list.innerHTML = `<div class="notif-empty">
+      <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      Ҳозирча янги таклифлар йўқ.<br>Шаҳар/туманлардан таклиф келганда шу ерда кўрсатилади.
+    </div>`;
+    return;
+  }
+  list.innerHTML = all.slice(0, 40).map(p => {
+    const kind = notifKind(p);
+    const unseen = (p.createdAt||0) > seenAt;
+    const kindLabel = kind === 'auc' ? 'Аукционга чиқариш' : 'Тоифа ўзгартириш';
+    const st = p.status || 'pending';
+    const stLabel = st === 'approved' ? 'Тасдиқланган' : st === 'rejected' ? 'Рад этилган' : 'Кутилмоқда';
+    return `<div class="notif-item ${unseen?'unseen':''}" data-pid="${escapeHtmlP(p.id)}">
+      <div class="notif-ic ${kind}">${kind==='auc'?'🔨':'🔄'}</div>
+      <div class="notif-bd">
+        <div class="notif-t">${escapeHtmlP(p.name || 'Ер участкаси')}</div>
+        <div class="notif-m">📍 ${escapeHtmlP(p.district||'—')}${p.mfy?' · '+escapeHtmlP(p.mfy):''}${p.area?' · '+escapeHtmlP(String(p.area))+' га':''}</div>
+        <div class="notif-m">${escapeHtmlP(p.author||'Номаълум')} юборди</div>
+        <span class="notif-tag ${kind}">${kindLabel}</span>
+        <span class="notif-tag ${st}">${stLabel}</span>
+      </div>
+      <div class="notif-time">${__timeAgo(p.createdAt)}</div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.notif-item[data-pid]').forEach(el => {
+    el.onclick = () => {
+      closeNotifPanel(true);
+      if(typeof openProposalsPanel === 'function') openProposalsPanel();
+    };
+  });
+}
+function openNotifPanel(){
+  const panel = document.getElementById('notifPanel');
+  if(!panel) return;
+  renderNotifications();
+  panel.hidden = false;
+}
+function closeNotifPanel(markSeen){
+  const panel = document.getElementById('notifPanel');
+  if(!panel) return;
+  panel.hidden = true;
+  if(markSeen){
+    setNotifSeenAt(Date.now());
+    updateNotifBadge();
+  }
+}
+(function wireNotifications(){
+  function bind(){
+    const btn = document.getElementById('notifBtn');
+    const panel = document.getElementById('notifPanel');
+    if(btn && !btn._wired){
+      btn._wired = true;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if(panel && panel.hidden) openNotifPanel();
+        else closeNotifPanel(false);
+      });
+    }
+    const readAll = document.getElementById('notifReadAll');
+    if(readAll && !readAll._wired){
+      readAll._wired = true;
+      readAll.addEventListener('click', () => {
+        setNotifSeenAt(Date.now());
+        updateNotifBadge();
+        renderNotifications();
+      });
+    }
+    const openAll = document.getElementById('notifOpenAll');
+    if(openAll && !openAll._wired){
+      openAll._wired = true;
+      openAll.addEventListener('click', () => {
+        closeNotifPanel(true);
+        if(typeof openProposalsPanel === 'function') openProposalsPanel();
+      });
+    }
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      const wrap = document.getElementById('notifWrap');
+      if(wrap && !wrap.contains(e.target) && panel && !panel.hidden){
+        closeNotifPanel(false);
+      }
+    });
+    // Initial badge + periodic refresh (picks up Firestore-synced proposals)
+    updateNotifBadge();
+    setInterval(() => {
+      updateNotifBadge();
+      const p = document.getElementById('notifPanel');
+      if(p && !p.hidden) renderNotifications();
+    }, 25000);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+})();
+
 /* ================= THEME SWITCHER =================
    4 режим — Кундузги (light, default) · Тунги (dark) · Шом (sepia) ·
    Хариталик (map-only). Топбардаги «Режим» тугмаси циклда ўтади. */
@@ -6189,7 +6396,18 @@ function saveProposals(arr){
   try{ localStorage.setItem(PROPOSALS_KEY, JSON.stringify(list)); }catch(e){}
   // Firestore sync (fire-and-forget). __syncProposalsToCloud is provided by the Firebase module below.
   try{ if(typeof window !== 'undefined' && typeof window.__syncProposalsToCloud === 'function'){ window.__syncProposalsToCloud(list); } }catch(e){ console.warn('firestore sync skipped:', e); }
+  // Refresh the notification badge immediately
+  try{ if(typeof updateNotifBadge === 'function') updateNotifBadge(); }catch(e){}
 }
+/* Called by the Firebase module when cloud proposals arrive — keeps the
+   admin notification badge live across devices. */
+window.__onProposalsSynced = function(){
+  try{ if(typeof updateNotifBadge === 'function') updateNotifBadge(); }catch(e){}
+  try{
+    const p = document.getElementById('notifPanel');
+    if(p && !p.hidden && typeof renderNotifications === 'function') renderNotifications();
+  }catch(e){}
+};
 function escapeHtmlP(s){
   return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -8955,6 +9173,7 @@ if(document.readyState === 'loading'){
         writeLocal(merged);
         try { if(typeof window.renderProposalsPanel === 'function') window.renderProposalsPanel(); } catch(e){}
         try { if(typeof window.renderKpis === 'function') window.renderKpis(); } catch(e){}
+        try { if(typeof window.__onProposalsSynced === 'function') window.__onProposalsSynced(); } catch(e){}
         console.info('[firebase] proposals pulled:', merged.length);
       } catch(err) {
         console.warn('[firebase] pullCloud failed — offline/rules:', err && err.message ? err.message : err);
