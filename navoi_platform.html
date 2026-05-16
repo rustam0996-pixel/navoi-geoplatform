@@ -379,7 +379,12 @@ body.has-selection .home-pill{display:inline-flex}
 .prop-stats{padding:14px 24px 0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .prop-stat{
   background:#fff;border:1px solid #e2e9f3;border-radius:10px;padding:10px 12px;
+  cursor:pointer;transition:transform .12s ease, box-shadow .15s ease;position:relative;
 }
+.prop-stat:hover{transform:translateY(-1px);box-shadow:0 6px 14px -6px rgba(15,26,54,.18)}
+.prop-stat.active{box-shadow:0 0 0 2px currentColor inset, 0 6px 14px -6px rgba(15,26,54,.2)}
+.prop-stat.active::after{content:"●";position:absolute;top:7px;right:9px;font-size:9px}
+.prop-stat.ok.active{color:#047857}.prop-stat.wait.active{color:#92400e}.prop-stat.rej.active{color:#991b1b}
 .prop-stat .l{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.25px}
 .prop-stat .v{font-size:18px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
 .prop-stat.ok{border-color:#bbf7d0;background:linear-gradient(135deg,#f0fdf4,#ecfdf5)}
@@ -1956,6 +1961,10 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
           <input id="pf-letter" placeholder="№ 01/234, 20.04.2026"></div>
       </div>
       <div class="pf-row">
+        <div class="pf-group"><label>АСОС — ҳужжат асоси (хат мазмуни) <span class="req">*</span></label>
+          <textarea id="pf-asos" rows="2" placeholder="Масалан: «Ер қаъридан фойдаланиш маркази» ДМнинг 21.05.2025 02-12/53285-сонли хати асосида"></textarea></div>
+      </div>
+      <div class="pf-row">
         <div class="pf-group"><label>Координата рақамлари <span class="req">*</span></label>
           <textarea id="pf-coords" rows="3" placeholder="1. 40°30'12.3&quot;С 65°25'15.7&quot;В&#10;2. 40°30'15.1&quot;С 65°25'20.4&quot;В&#10;… (ҳар нуқта янги қаторда)"></textarea></div>
       </div>
@@ -3172,6 +3181,8 @@ function __stageFromKind(kind){
 const CHANGED_SUBSET = ['changed','auction_listed','auction_sold','direct'];
 function rowStageKey(sec, row){
   if(!row) return null;
+  // Approved-proposal rows injected into HK → stage «Янги таклиф»
+  if(row._fromProposal) return 'proposal';
   // hk section parcels are always "in_process" (they're proposed but not yet changed)
   if(sec === 'hk') return 'in_process';
   // changed-section parcels: derive sub-state from the engine
@@ -3218,11 +3229,54 @@ function buildStageStats(){
       }
     }
   }
-  // Proposals → "Янги таклиф" stage
-  if(typeof getProposals === 'function'){
-    const all = getProposals() || [];
-    STAGE_STATS.proposal.count = all.length;
-    STAGE_STATS.proposal.area  = 0;
+  // «Янги таклиф» stage = the approved proposals that were injected into
+  // SECTIONS_RAW.hk (each carries _fromProposal). They're already counted in
+  // the loop above via rowStageKey()==='proposal'; no extra override needed.
+}
+/* ===== APPROVED-PROPOSAL → HK INJECTION =====
+   When a proposal is approved it must flow into «Ҳукумат комиссиясига
+   таклифлар» (the hk section) and appear on the map as a «Янги таклиф»
+   stage parcel. We keep SECTIONS_RAW.hk in sync with the approved set. */
+function proposalToHkRow(p){
+  return {
+    _row: 'P_' + p.id,
+    id: 'hk-P_' + p.id,
+    _fromProposal: true,
+    _proposalId: p.id,
+    'Ҳудуд номи': p.district || '',
+    'МФЙ номи': p.mfy || '',
+    'Жойлашган участка номи': p.name || '',
+    'Лойиҳа номи': p.name || '',
+    'Фойдаланиш мақсади': p.name || '',
+    'Контур рақами': p.contour || '',
+    'Координаталари': p.coords || '',
+    'Жами ер майдони (га)': Number(p.area) || 0,
+    'Лойиҳа қиймати (млн. долл.)': Number(p.cost) || 0,
+    'Иш ўрни (нафар)': Number(p.jobs) || 0,
+    'Лойиҳа ташаббускори': p.initiator || '',
+    'АСОС': p.asos || '',
+    'Янги тоифаси': p.targetCat || ''
+  };
+}
+function syncApprovedProposalsToHK(){
+  if(typeof SECTIONS_RAW === 'undefined' || !SECTIONS_RAW) return;
+  if(!Array.isArray(SECTIONS_RAW.hk)) SECTIONS_RAW.hk = [];
+  const approved = (typeof getProposals === 'function' ? getProposals() : [])
+    .filter(p => p && p.status === 'approved');
+  const approvedIds = new Set(approved.map(p => p.id));
+  // Drop proposal-rows whose proposal is no longer approved
+  SECTIONS_RAW.hk = SECTIONS_RAW.hk.filter(r => !r._fromProposal || approvedIds.has(r._proposalId));
+  // Add / refresh rows for every approved proposal
+  const existing = new Map();
+  SECTIONS_RAW.hk.forEach(r => { if(r._fromProposal) existing.set(r._proposalId, r); });
+  for(const p of approved){
+    const row = proposalToHkRow(p);
+    if(existing.has(p.id)){
+      const idx = SECTIONS_RAW.hk.indexOf(existing.get(p.id));
+      if(idx >= 0) SECTIONS_RAW.hk[idx] = row;
+    } else {
+      SECTIONS_RAW.hk.push(row);
+    }
   }
 }
 /* Filter predicate against current STAGE_STATE.
@@ -6417,6 +6471,8 @@ window.__onProposalsSynced = function(){
     const p = document.getElementById('notifPanel');
     if(p && !p.hidden && typeof renderNotifications === 'function') renderNotifications();
   }catch(e){}
+  // Cloud-synced approvals must also flow into HK + refresh derived data
+  try{ if(typeof __refreshAfterProposalChange === 'function') __refreshAfterProposalChange(); }catch(e){}
 };
 function escapeHtmlP(s){
   return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -6803,11 +6859,19 @@ function renderProposalsPanel(){
   const pending = all.filter(p=>p.status==='pending').length;
   const approved = all.filter(p=>p.status==='approved').length;
   const rejected = all.filter(p=>p.status==='rejected').length;
+  const aCls = (k) => _propFilter === k ? ' active' : '';
   document.getElementById('propStats').innerHTML = `
-    <div class="prop-stat wait"><div class="l">Кутилмоқда</div><div class="v">${fmt(pending)}</div></div>
-    <div class="prop-stat ok"><div class="l">Тасдиқланган</div><div class="v">${fmt(approved)}</div></div>
-    <div class="prop-stat rej"><div class="l">Рад этилган</div><div class="v">${fmt(rejected)}</div></div>
+    <div class="prop-stat wait${aCls('pending')}" data-pfilter="pending" title="Фақат кутилаётганлар"><div class="l">Кутилмоқда</div><div class="v">${fmt(pending)}</div></div>
+    <div class="prop-stat ok${aCls('approved')}" data-pfilter="approved" title="Фақат тасдиқланганлар"><div class="l">Тасдиқланган</div><div class="v">${fmt(approved)}</div></div>
+    <div class="prop-stat rej${aCls('rejected')}" data-pfilter="rejected" title="Фақат рад этилганлар"><div class="l">Рад этилган</div><div class="v">${fmt(rejected)}</div></div>
   `;
+  document.querySelectorAll('#propStats .prop-stat[data-pfilter]').forEach(el=>{
+    el.onclick = ()=>{
+      const k = el.dataset.pfilter;
+      _propFilter = (_propFilter === k) ? 'all' : k;   // toggle off → show all
+      renderProposalsPanel();
+    };
+  });
   renderProposalsList();
 }
 function renderProposalsList(){
@@ -6919,12 +6983,17 @@ function submitProposal(){
   const jobs = v('pf-jobs');
   const initiator = v('pf-initiator');
   const letter = v('pf-letter');
+  const asos = v('pf-asos');
   const coords = v('pf-coords');
   const notes = v('pf-notes');
   const author = v('pf-author');
   // Мажбурий майдонлар текшируви
   if(!district || !mfy || !name || !contour || !area || !target || !cost || !jobs || !letter || !coords){
     showToast('⚠️ Барча мажбурий майдонларни (*) тўлдиринг — координата ва контур ҳам мажбурий');
+    return;
+  }
+  if(!asos){
+    showToast('⚠️ АСОС хатини албатта киритинг — усиз таклиф админга юборилмайди');
     return;
   }
   // Координата ҳақиқатан парсерланишини текширамиз
@@ -6943,17 +7012,31 @@ function submitProposal(){
     currentCat: current, targetCat: target,
     cost: Number(cost) || 0,
     jobs: Number(jobs) || 0,
-    initiator, letter, coords, notes, author,
+    initiator, letter, asos, coords, notes, author,
     status: 'pending',
     createdAt: now,
     date: new Date(now).toLocaleDateString('uz-UZ')
   });
   saveProposals(all);
-  ['pf-district','pf-mfy','pf-name','pf-contour','pf-area','pf-current','pf-target','pf-cost','pf-jobs','pf-initiator','pf-letter','pf-coords','pf-notes','pf-author'].forEach(id=>{const el=document.getElementById(id);if(el){if(el.tagName==='SELECT')el.selectedIndex=0;else el.value='';}});
+  ['pf-district','pf-mfy','pf-name','pf-contour','pf-area','pf-current','pf-target','pf-cost','pf-jobs','pf-initiator','pf-letter','pf-asos','pf-coords','pf-notes','pf-author'].forEach(id=>{const el=document.getElementById(id);if(el){if(el.tagName==='SELECT')el.selectedIndex=0;else el.value='';}});
   closeProposalForm();
   renderProposalsPanel();
   renderKpis();
   showToast('📨 Таклиф юборилди — админ кўриб чиқиши кутилмоқда');
+}
+/* Rebuild every derived dataset + UI after a proposal status change. */
+function __refreshAfterProposalChange(){
+  try { if(typeof syncApprovedProposalsToHK === 'function') syncApprovedProposalsToHK(); } catch(e){ console.error('sync approved', e); }
+  try { if(typeof buildUnifiedStats === 'function') buildUnifiedStats(); } catch(e){}
+  try { if(typeof buildCategoryStats === 'function') buildCategoryStats(); } catch(e){}
+  try { if(typeof buildStageStats === 'function') buildStageStats(); } catch(e){}
+  try { if(typeof buildSourceTagStats === 'function') buildSourceTagStats(); } catch(e){}
+  try { if(typeof renderKpis === 'function') renderKpis(); } catch(e){}
+  try { if(typeof renderStageFilter === 'function') renderStageFilter(); } catch(e){}
+  try { if(typeof renderProposalsPanel === 'function') renderProposalsPanel(); } catch(e){}
+  try { if(typeof renderBubbles === 'function') renderBubbles(); } catch(e){}
+  try { if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict); } catch(e){}
+  try { if(typeof refreshExportBtn === 'function') refreshExportBtn(); } catch(e){}
 }
 function approveProposal(id){
   const all = getProposals();
@@ -6962,9 +7045,8 @@ function approveProposal(id){
   p.status = 'approved';
   p.reviewedAt = Date.now();
   saveProposals(all);
-  renderProposalsPanel();
-  renderKpis();
-  showToast('✓ Тасдиқланди');
+  __refreshAfterProposalChange();
+  showToast('✓ Тасдиқланди — «Ҳукумат комиссиясига таклифлар»га ўтказилди');
 }
 function rejectProposal(id){
   const reason = prompt('Рад этиш сабабини киритинг:');
@@ -6976,8 +7058,7 @@ function rejectProposal(id){
   p.rejectReason = reason || '';
   p.reviewedAt = Date.now();
   saveProposals(all);
-  renderProposalsPanel();
-  renderKpis();
+  __refreshAfterProposalChange();
   showToast('✕ Рад этилди');
 }
 
@@ -9156,6 +9237,8 @@ function boot(){
     document.querySelector('.loader .tx').textContent = 'Геомаълумотлар топилмади (navoi_geo.js)';
     return;
   }
+  // Inject already-approved proposals into HK before stats are built
+  try { if(typeof syncApprovedProposalsToHK === 'function') syncApprovedProposalsToHK(); } catch(e){ console.error('sync approved', e); }
   try {
     buildUnifiedStats();
   } catch(e){ console.error('unified stats', e); }
