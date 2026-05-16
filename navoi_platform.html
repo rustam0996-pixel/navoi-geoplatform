@@ -492,8 +492,12 @@ body.has-selection .home-pill{display:inline-flex}
 .filter-crumb .fc-pill b{font-weight:900}
 .filter-crumb .fc-pill .fc-x{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#e0f2fe;color:var(--fc-color,#0284c7);font-size:13px;line-height:1;cursor:pointer;font-weight:700;border:0;padding:0}
 .filter-crumb .fc-pill .fc-x:hover{background:var(--fc-color,#0284c7);color:#fff}
-.filter-crumb .fc-clear{margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:7px;font-size:10.5px;font-weight:800;cursor:pointer}
+.filter-crumb .fc-tolist{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:4px 12px;background:linear-gradient(135deg,#0d9488,#14b8a6);border:0;color:#fff;border-radius:7px;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 3px 8px -3px rgba(13,148,136,.45)}
+.filter-crumb .fc-tolist:hover{transform:translateY(-1px);box-shadow:0 6px 12px -3px rgba(13,148,136,.55)}
+.filter-crumb .fc-clear{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:7px;font-size:10.5px;font-weight:800;cursor:pointer;margin-left:8px}
 .filter-crumb .fc-clear:hover{background:#1e293b;color:#fff;border-color:#1e293b}
+/* When no tolist button is present, fc-clear keeps right-alignment */
+.filter-crumb .fc-clear:first-of-type{margin-left:auto}
 
 /* ========== ONBOARDING OVERLAY ========== */
 .onb-overlay{position:fixed;inset:0;z-index:6000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(15,26,54,.55);backdrop-filter:blur(4px);animation:onbFadeIn .3s ease-out}
@@ -3002,6 +3006,42 @@ function rowMatchesSourceTag(sec, row, tag){
   const tags = sourceTagsFor(sec, row);
   return tags.includes(tag);
 }
+/* ===== ALLOCATION FILTER (drawer stat-box → map) =====
+   Clicking «Бино аукционда сотилган / Бино тўғридан тўғри / Кон аукционда
+   сотилган / Кон тўғридан тўғри» in the district drawer now filters the
+   MAP to just those parcels first; a «Рўйхатга ўтиш» button then opens
+   the detailed registry. Mutually-aware with category / stage / source. */
+const ALLOC_STATE = { type: null };
+const ALLOC_LABELS = {
+  binoAucSold: 'Бино аукционда сотилган',
+  binoDirect:  'Бино тўғридан тўғри ажратилган',
+  konAucSold:  'Кон аукционда сотилган',
+  konDirect:   'Кон тўғридан тўғри ажратилган'
+};
+function activeAllocationFilter(){
+  return (ALLOC_STATE && ALLOC_STATE.type) || null;
+}
+function rowMatchesAllocation(sec, row, type){
+  if(!type) return true;
+  if(sec !== 'changed') return false;          // allocation lives on changed rows
+  const meta = SECTION_META.changed;
+  const extra = (window.CHANGED_EXTRA || {})[String(row._row)] || {};
+  if(type === 'binoAucSold') return !!(meta && meta.auctionField && toNum(row[meta.auctionField]) > 0);
+  if(type === 'binoDirect')  return toNum(extra.bd) > 0;
+  if(type === 'konAucSold')  return toNum(extra.ks) > 0;
+  if(type === 'konDirect')   return toNum(extra.kd) > 0;
+  return false;
+}
+/* Stat-box click handler — show matching parcels on the map, NOT the list. */
+function previewAllocationOnMap(type){
+  if(!ALLOC_LABELS[type]) return;
+  ALLOC_STATE.type = (ALLOC_STATE.type === type) ? null : type;
+  if(typeof renderBubbles === 'function') renderBubbles();
+  if(currentDistrict && typeof renderPlotPoints === 'function') renderPlotPoints();
+  if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
+  if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
+  if(typeof refreshExportBtn === 'function') refreshExportBtn();
+}
 /* Browser-console audit — exposes a friendly object for verification. */
 window.auditSourceTags = function(){
   buildSourceTagStats();
@@ -3245,6 +3285,7 @@ function collectFilteredRows(){
   const catFilter = activeCategoryFilter();
   const stageFilter = activeStageFilter();
   const sourceFilter = (typeof activeSourceTagFilter === 'function') ? activeSourceTagFilter() : null;
+  const allocFilter = (typeof activeAllocationFilter === 'function') ? activeAllocationFilter() : null;
   const distFilter = currentDistrict || null;
   const sectionFilter = (currentSection && currentSection !== 'all') ? currentSection : null;
   for(const sec of Object.keys(SECTIONS_RAW)){
@@ -3257,6 +3298,7 @@ function collectFilteredRows(){
       if(catFilter && !parcelMatchesCategory(sec, r, catFilter)) continue;
       if(stageFilter && !rowMatchesStage(sec, r, stageFilter)) continue;
       if(sourceFilter && !rowMatchesSourceTag(sec, r, sourceFilter)) continue;
+      if(allocFilter && !rowMatchesAllocation(sec, r, allocFilter)) continue;
       out.push({ sec, row:r, dist });
     }
   }
@@ -3994,6 +4036,11 @@ function renderFilterCrumb(){
     const def = SOURCE_TAG_DEFS.find(d => d.key === sourceSel) || {};
     pills.push({ key:'source', label: def.label || sourceSel, color: def.color || '#1d4ed8' });
   }
+  // Allocation (drawer stat-box → map)
+  const allocSel = (typeof activeAllocationFilter === 'function') ? activeAllocationFilter() : null;
+  if(allocSel){
+    pills.push({ key:'allocation', label: ALLOC_LABELS[allocSel] || allocSel, color:'#0d9488' });
+  }
   if(!pills.length){
     host.hidden = true;
     host.innerHTML = '';
@@ -4004,12 +4051,20 @@ function renderFilterCrumb(){
     <span class="fc-pill" style="--fc-color:${p.color}">
       <b>${escHtml(p.label)}</b>
       <button class="fc-x" type="button" data-clear="${p.key}" aria-label="Тозалаш">×</button>
-    </span>`).join('') + `
-    <button class="fc-clear" type="button" data-clear="all">Барчасини тозалаш</button>`;
+    </span>`).join('') +
+    // «Рўйхатга ўтиш» — when an allocation is previewed on the map, jump to the registry
+    (allocSel ? `<button class="fc-tolist" type="button" data-tolist="${allocSel}">📋 Рўйхатга ўтиш</button>` : '') +
+    `<button class="fc-clear" type="button" data-clear="all">Барчасини тозалаш</button>`;
   host.innerHTML = html;
   host.querySelectorAll('[data-clear]').forEach(btn => {
     btn.onclick = () => clearFilter(btn.dataset.clear);
   });
+  const toList = host.querySelector('[data-tolist]');
+  if(toList){
+    toList.onclick = () => {
+      if(typeof openAllocationResults === 'function') openAllocationResults(toList.dataset.tolist);
+    };
+  }
 }
 function clearFilter(key){
   if(key === 'district'){
@@ -4021,10 +4076,13 @@ function clearFilter(key){
     if(typeof STAGE_STATE !== 'undefined'){ STAGE_STATE.selected = 'all'; }
   } else if(key === 'source'){
     if(typeof SOURCE_TAG_STATE !== 'undefined'){ SOURCE_TAG_STATE.selected = 'all'; }
+  } else if(key === 'allocation'){
+    if(typeof ALLOC_STATE !== 'undefined'){ ALLOC_STATE.type = null; }
   } else if(key === 'all'){
     if(typeof CAT_STATE !== 'undefined'){ CAT_STATE.selected = 'all'; CAT_STATE.expanded = null; }
     if(typeof STAGE_STATE !== 'undefined'){ STAGE_STATE.selected = 'all'; }
     if(typeof SOURCE_TAG_STATE !== 'undefined'){ SOURCE_TAG_STATE.selected = 'all'; }
+    if(typeof ALLOC_STATE !== 'undefined'){ ALLOC_STATE.type = null; }
     if(typeof goHome === 'function') goHome();
   }
   // Re-render everything that depends on filter state
@@ -4375,6 +4433,7 @@ function hexToRgba(hex, a){
 }
 function distCountByCategory(distKey, section, catFilter, stageFilter, sourceFilter){
   let count = 0;
+  const allocFilter = (typeof activeAllocationFilter === 'function') ? activeAllocationFilter() : null;
   const sections = (section==='all' || !section) ? Object.keys(SECTIONS_RAW) : [section];
   for(const sec of sections){
     const rows = SECTIONS_RAW[sec] || [];
@@ -4385,6 +4444,7 @@ function distCountByCategory(distKey, section, catFilter, stageFilter, sourceFil
       if(catFilter && !parcelMatchesCategory(sec, r, catFilter)) continue;
       if(stageFilter && !rowMatchesStage(sec, r, stageFilter)) continue;
       if(sourceFilter && !rowMatchesSourceTag(sec, r, sourceFilter)) continue;
+      if(allocFilter && !rowMatchesAllocation(sec, r, allocFilter)) continue;
       count++;
     }
   }
@@ -4402,12 +4462,11 @@ function renderBubbles(){
   const catFilter = (typeof activeCategoryFilter === 'function') ? activeCategoryFilter() : null;
   const stageFilter = (typeof activeStageFilter === 'function') ? activeStageFilter() : null;
   const sourceFilter = (typeof activeSourceTagFilter === 'function') ? activeSourceTagFilter() : null;
+  const allocFilter = (typeof activeAllocationFilter === 'function') ? activeAllocationFilter() : null;
   // FILTER-ONLY MODE: when no district is selected but the user has chosen
-  // a category / stage / source filter, draw the actual matching parcels as
-  // pins across the whole viewport instead of district bubbles. This way
-  // clicking a stage chip ("Аукционда сотилган") or source chip ("ВМ-88")
-  // shows the participating parcels directly on the map.
-  if(catFilter || stageFilter || sourceFilter){
+  // a category / stage / source / allocation filter, draw the matching
+  // parcels as pins across the whole viewport instead of district bubbles.
+  if(catFilter || stageFilter || sourceFilter || allocFilter){
     renderPlotPoints();
     return;
   }
@@ -5321,7 +5380,8 @@ function collectPlotPoints(){
   // gather candidates ACROSS all districts so the matching parcels render as pins.
   const filterActive = (typeof activeCategoryFilter === 'function' && activeCategoryFilter())
                     || (typeof activeStageFilter === 'function' && activeStageFilter())
-                    || (typeof activeSourceTagFilter === 'function' && activeSourceTagFilter());
+                    || (typeof activeSourceTagFilter === 'function' && activeSourceTagFilter())
+                    || (typeof activeAllocationFilter === 'function' && activeAllocationFilter());
   if(!currentDistrict && !filterActive) return [];
   let candidates = [];
 
@@ -5388,10 +5448,11 @@ function renderPlotPoints(){
   }
   window.__plotLayer = null;
   window.__lastPlotItems = [];
-  // Allow filter-only mode (no district but a category/stage/source filter active)
+  // Allow filter-only mode (no district but a category/stage/source/alloc filter active)
   const filterActive = (typeof activeCategoryFilter === 'function' && activeCategoryFilter())
                     || (typeof activeStageFilter === 'function' && activeStageFilter())
-                    || (typeof activeSourceTagFilter === 'function' && activeSourceTagFilter());
+                    || (typeof activeSourceTagFilter === 'function' && activeSourceTagFilter())
+                    || (typeof activeAllocationFilter === 'function' && activeAllocationFilter());
   if(!currentDistrict && !filterActive) return;
   plotLayer = L.layerGroup().addTo(map);
   let items = collectPlotPoints();
@@ -5406,6 +5467,14 @@ function renderPlotPoints(){
     items = items.filter(it => {
       const cands = it.candidates || (it.primary ? [it.primary] : []);
       return cands.some(c => rowMatchesSourceTag(c.section, c.row, sourceFilter));
+    });
+  }
+  // Apply allocation filter (drawer stat-box → map)
+  const allocFilter = (typeof activeAllocationFilter === 'function') ? activeAllocationFilter() : null;
+  if(allocFilter){
+    items = items.filter(it => {
+      const cands = it.candidates || (it.primary ? [it.primary] : []);
+      return cands.some(c => rowMatchesAllocation(c.section, c.row, allocFilter));
     });
   }
   window.__plotLayer = plotLayer;
@@ -5748,7 +5817,11 @@ function renderDrawer(key){
     `;
   }
   document.querySelectorAll('#drStats .dr-stat[data-allocation]').forEach(el=>{
-    el.onclick = ()=>openAllocationResults(el.dataset.allocation);
+    // First click → preview those parcels on the MAP (not the list).
+    // The «Рўйхатга ўтиш» button in the filter crumb opens the registry.
+    el.onclick = ()=> (typeof previewAllocationOnMap === 'function')
+      ? previewAllocationOnMap(el.dataset.allocation)
+      : openAllocationResults(el.dataset.allocation);
   });
 
   // Section headings (now collapsible <summary> first spans)
@@ -5799,7 +5872,9 @@ function renderDrawer(key){
       importantRows.map(r=>`<div class="mfy-row ${r.action?'clickable':''}" ${r.action?`data-allocation="${r.action}" title="Қайси участкалар эканини кўриш"`:''}><div class="n">${r.label}</div><div class="c">${fmt(r.count)} та • ${fmtArea(r.area)} га</div></div>`).join('')
       : '<div style="padding:10px 12px;color:var(--muted);font-size:12px">Маълумот йўқ</div>';
     document.querySelectorAll('#drMfys .mfy-row[data-allocation]').forEach(el=>{
-      el.onclick = ()=>openAllocationResults(el.dataset.allocation);
+      el.onclick = ()=> (typeof previewAllocationOnMap === 'function')
+        ? previewAllocationOnMap(el.dataset.allocation)
+        : openAllocationResults(el.dataset.allocation);
     });
   } else if(currentSection === 'changed'){
     // FOCUSED on "Тоифаси ўзгарган" — show year-by-year breakdown
