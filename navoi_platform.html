@@ -10515,7 +10515,7 @@ if(document.readyState === 'loading'){
     window.__syncProposalsToCloud = function(list){ pushCloud(list); };
 
     /* ---- Generic collection sync (feedback, users) ---- */
-    function makeCloudSync(colName, lsKey, onSynced){
+    function makeCloudSync(colName, lsKey, onSynced, authoritative){
       const C = collection(db, colName);
       const rd = () => { try{ const r=localStorage.getItem(lsKey); if(r) return JSON.parse(r)||[]; }catch(e){} return []; };
       const wr = (a) => { try{ localStorage.setItem(lsKey, JSON.stringify(a||[])); }catch(e){} };
@@ -10523,13 +10523,21 @@ if(document.readyState === 'loading'){
         try{
           const snap = await getDocs(C);
           const cloud = []; snap.forEach(d=>{ const x=d.data(); cloud.push({ ...x, id: x.id || d.id }); });
-          const byId = new Map();
-          rd().forEach(p=>{ if(p&&p.id) byId.set(p.id,p); });
-          cloud.forEach(p=>{ if(p&&p.id) byId.set(p.id,p); });
-          const merged = Array.from(byId.values()).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-          wr(merged);
+          let result;
+          if(authoritative){
+            // Булут — ягона ҳақиқат манбаи (профиллар). Локалда қолган
+            // эски ёзувлар ташланади.
+            result = cloud.slice();
+          } else {
+            const byId = new Map();
+            rd().forEach(p=>{ if(p&&p.id) byId.set(p.id,p); });
+            cloud.forEach(p=>{ if(p&&p.id) byId.set(p.id,p); });
+            result = Array.from(byId.values());
+          }
+          result.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+          wr(result);
           try{ if(typeof window[onSynced]==='function') window[onSynced](); }catch(e){}
-          console.info('[firebase] '+colName+' pulled:', merged.length);
+          console.info('[firebase] '+colName+' pulled:', result.length);
         }catch(err){ console.warn('[firebase] '+colName+' pull failed:', err && err.message ? err.message : err); }
       }
       let busy=false, queued=null;
@@ -10547,7 +10555,7 @@ if(document.readyState === 'loading'){
       return { pull, push };
     }
     const fbSync = makeCloudSync('feedback', 'navoi_feedback_v1', '__onFeedbackSynced');
-    const usrSync = makeCloudSync('users', 'navoi_users_v1', '__onUsersSynced');
+    const usrSync = makeCloudSync('users', 'navoi_users_v1', '__onUsersSynced', true);
     window.__syncFeedbackToCloud = function(list){ fbSync.push(list); };
     // Фойдаланувчи профиллари UID бўйича алоҳида ҳужжатларда сақланади
     // (паролсиз). Шунинг учун бутун рўйхатни клоудга юкламаймиз —
