@@ -9337,6 +9337,10 @@ function renderHkEditForm(row, allKeys){
 }
 
 function openEditModal(section, rowIdx){
+  if(typeof isAppAdmin === 'function' && !isAppAdmin()){
+    showToast('⛔ Ер маълумотларини таҳрирлаш ҳуқуқи фақат админда. Сиз кўриш ва янги таклиф киритишингиз мумкин.');
+    return;
+  }
   const meta = SECTION_META[section];
   if(!meta) { showToast('Бўлим маълумоти топилмади'); return; }
   const arr = SECTIONS_RAW[section] || [];
@@ -9453,6 +9457,11 @@ function closeEditModal(){
   _editModalState = {};
 }
 function saveEditRecord(){
+  if(typeof isAppAdmin === 'function' && !isAppAdmin()){
+    showToast('⛔ Таҳрирлаш ҳуқуқи фақат админда');
+    closeEditModal();
+    return;
+  }
   const {section, rowIdx, row} = _editModalState;
   if(!section || !row) { showToast('Хатолик'); return; }
   if(section === 'hk') syncHkDecisionBeforeSave();
@@ -9708,14 +9717,14 @@ function showRowDetail(section, rowIdx){
       <div style="padding:16px 20px;border-bottom:1px solid #e5ecf5;display:flex;align-items:center;justify-content:space-between">
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px;color:#0f1a36;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(String(titleField))}</div><div style="font-size:11px;color:#6b7a99;margin-top:2px">${(SECTIONS.find(s=>s.key===section)||{label:section}).label} — тафсилот</div></div>
         <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:10px">
-          <button class="rs-action-btn" onclick="document.getElementById('rowDetailModal').remove();openEditModal('${section}',${rowIdx})" title="Таҳрирлаш" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Таҳрир</button>
+          ${(typeof isAppAdmin==='function' && isAppAdmin()) ? `<button class="rs-action-btn" onclick="document.getElementById('rowDetailModal').remove();openEditModal('${section}',${rowIdx})" title="Таҳрирлаш" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Таҳрир</button>` : ''}
           <button onclick="document.getElementById('rowDetailModal').remove()" style="width:32px;height:32px;border-radius:8px;background:#f2f5fa;border:0;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6b7a99">×</button>
         </div>
       </div>
       <div style="padding:16px 20px;overflow-y:auto;flex:1">${detailHtml}</div>
       <div style="padding:12px 20px;border-top:1px solid #e5ecf5;display:flex;gap:6px;justify-content:flex-end">
         ${points.length ? `<button class="rs-action-btn" onclick="downloadRowKml('${section}',${rowIdx})" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> KML</button>` : ''}
-        <button class="rs-action-btn" onclick="document.getElementById('rowDetailModal').remove();openEditModal('${section}',${rowIdx})" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Таҳрирлаш</button>
+        ${(typeof isAppAdmin==='function' && isAppAdmin()) ? `<button class="rs-action-btn" onclick="document.getElementById('rowDetailModal').remove();openEditModal('${section}',${rowIdx})" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Таҳрирлаш</button>` : '<span style="font-size:11px;color:#94a3b8;align-self:center">Кўриш режими — таҳрирлаш фақат админда</span>'}
       </div>
     </div>`;
   modal.style.display = 'flex';
