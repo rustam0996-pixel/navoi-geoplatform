@@ -3866,42 +3866,21 @@ function logAudit(action, target, details){
   }catch(e){ console.warn('logAudit', e); }
 }
 
-/* ===== ТУМАН ДОИРАСИ — district роли фақат ўз туманини кўради ===== */
+/* ===== ТУМАН ДОИРАСИ =====
+   Талаб бўйича: барча ходим ҲАММА маълумотни кўради (туман чекланмайди).
+   Фарқ фақат — таҳрирлаш админда, таклиф кириш барчада.
+   Шунинг учун доира чекловини ўчирамиз (scope = null). */
 window.__scopeDistrictKey = null;
-function computeDistrictScope(){
-  try{
-    const p = (typeof currentProfile==='function') ? currentProfile() : null;
-    if(p && p.role === 'district' && p.district){
-      const want = String(p.district).trim();
-      const d = (typeof DISTRICTS!=='undefined' ? DISTRICTS : []).find(x =>
-        x.label === want || x.key === want ||
-        String(x.label).toLowerCase() === want.toLowerCase());
-      return d ? d.key : null;
-    }
-  }catch(e){}
-  return null;
-}
+function computeDistrictScope(){ return null; }
 function applyDistrictScope(){
-  const key = computeDistrictScope();
-  window.__scopeDistrictKey = key;
-  // «Ўзбекистон» табини яшириш (доирадаги ходим вилоятдан чиқмасин)
+  window.__scopeDistrictKey = null;
   try{
     document.querySelectorAll('#tabbar .tab').forEach(t=>{
-      if(t.dataset.view === 'uz') t.style.display = key ? 'none' : '';
+      if(t.dataset.view === 'uz') t.style.display = '';
     });
     const bcRoot = document.getElementById('bcRoot');
-    if(bcRoot) bcRoot.style.pointerEvents = key ? 'none' : '';
+    if(bcRoot) bcRoot.style.pointerEvents = '';
   }catch(e){}
-  if(!key) return;
-  // Доирадаги туманни мажбурий танлаш
-  try{
-    if(typeof map !== 'undefined' && map && typeof selectDistrict === 'function'){
-      if(currentDistrict !== key) selectDistrict(key);
-      else { renderDistrictList(); renderBubbles(); }
-    } else if(typeof renderDistrictList === 'function'){
-      renderDistrictList();
-    }
-  }catch(e){ console.warn('scope apply', e); }
 }
 
 /* Filter predicate against current STAGE_STATE.
