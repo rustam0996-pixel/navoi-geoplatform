@@ -780,6 +780,9 @@ body.has-selection .home-pill{display:inline-flex}
 
 body.sidepanel-open .topbar{left:380px;grid-template-columns:minmax(0,1fr) max-content}
 body.sidepanel-open .brand{display:none}
+/* Қидирув режими: «Жами ер майдонлари» KPI блоки кераксиз — яширамиз
+   (фақат панель очиқ турганда; панель ёпилса қайта кўринади) */
+body.search-mode.sidepanel-open .kpis{display:none!important}
 body.sidepanel-open:not(.drawer-open) .kpis{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:6px}
 body.sidepanel-open:not(.drawer-open) .toolbar{max-width:none;flex-wrap:nowrap}
 body.drawer-open .topbar{right:420px}
@@ -7287,6 +7290,8 @@ function switchSidepanelTab(which){
   document.querySelectorAll('.sidepanel .sp-tab-pane').forEach(p => {
     p.classList.toggle('active', p.dataset.tabPane === which);
   });
+  // Қидирув очилганда «Жами ер майдонлари» KPI блоки кераксиз — яширамиз
+  document.body.classList.toggle('search-mode', which === 'search');
   if(which === 'search'){
     relocateSearchIntoSidebar();
     populateSearchSelects();
