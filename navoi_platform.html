@@ -3719,7 +3719,7 @@ function buildStageStats(){
    таклифлар» (the hk section) and appear on the map as a «Янги таклиф»
    stage parcel. We keep SECTIONS_RAW.hk in sync with the approved set. */
 function proposalToHkRow(p){
-  return {
+  const base = {
     _row: 'P_' + p.id,
     id: 'hk-P_' + p.id,
     _fromProposal: true,
@@ -3739,6 +3739,15 @@ function proposalToHkRow(p){
     '_letterFile': p.letterFile || null,
     'Янги тоифаси': p.targetCat || ''
   };
+  // Админ босқичма-босқич киритган ХК маълумотлари таклиф ёзувида
+  // (p._hkRow) сақланади ва булут орқали барча қурилмаларга етади.
+  if(p && p._hkRow && typeof p._hkRow === 'object'){
+    Object.assign(base, p._hkRow);
+    // Идентификация майдонлари ҳеч қачон ўзгармайди
+    base._row = 'P_' + p.id; base.id = 'hk-P_' + p.id;
+    base._fromProposal = true; base._proposalId = p.id;
+  }
+  return base;
 }
 function syncApprovedProposalsToHK(){
   if(typeof SECTIONS_RAW === 'undefined' || !SECTIONS_RAW) return;
@@ -3752,6 +3761,8 @@ function syncApprovedProposalsToHK(){
   const existing = new Map();
   SECTIONS_RAW.hk.forEach(r => { if(r._fromProposal) existing.set(r._proposalId, r); });
   for(const p of approved){
+    // proposalToHkRow энди p._hkRow (админ таҳрирлари)ни ҳам бирлаштиради,
+    // шунинг учун қайта қуриш хавфсиз — таҳрирлар булутдан тикланади.
     const row = proposalToHkRow(p);
     if(existing.has(p.id)){
       const idx = SECTIONS_RAW.hk.indexOf(existing.get(p.id));
@@ -9478,6 +9489,24 @@ function saveEditRecord(){
     const maybeNumber = Number(raw);
     row[field] = (!Number.isNaN(maybeNumber) && /^-?\d+(\.\d+)?$/.test(raw)) ? maybeNumber : raw;
   });
+  // Таклифдан келган ХК ёзуви — админ таҳрирларини таклиф объектига
+  // сақлаймиз (булутга — барча қурилмаларга етади, қайта юкланса тикланади).
+  if(row && row._fromProposal && row._proposalId && typeof getProposals === 'function'){
+    try{
+      const all = getProposals();
+      const p = all.find(x => x && x.id === row._proposalId);
+      if(p){
+        const snap = {};
+        Object.keys(row).forEach(k => {
+          if(['_row','id','_fromProposal','_proposalId','_letterFile'].includes(k)) return;
+          snap[k] = row[k];
+        });
+        p._hkRow = snap;
+        p.hkUpdatedAt = Date.now();
+        saveProposals(all);
+      }
+    }catch(e){ console.error('persist proposal hk edit', e); }
+  }
   // Rebuild stats to reflect changes
   try { buildUnifiedStats(); } catch(e){ console.error('rebuild stats',e); }
   try { buildCategoryStats(); } catch(e){ console.error('rebuild cat stats',e); }
@@ -9663,6 +9692,9 @@ function showRowDetail(section, rowIdx){
   const arr = SECTIONS_RAW[section] || [];
   const row = arr.find(r => r._row == rowIdx);
   if(!row) { showToast('Ёзув топилмади (row=' + rowIdx + ')'); return; }
+  // rowIdx таклиф ёзувлари учун матн бўлади ('P_p_...') — onclick'да
+  // тирноқсиз қўйилса JS хатоси беради. Хавфсиз литерал ясаймиз.
+  const ridJs = JSON.stringify(String(rowIdx));
   const cols = meta.columns || [];
   const allKeys = Object.keys(row).filter(k => k !== 'id' && k !== '_row');
   const displayKeys = allKeys.length > 0 ? allKeys : cols.map(c=>c.key);
@@ -9696,7 +9728,7 @@ function showRowDetail(section, rowIdx){
     detailHtml += `<div style="margin-top:10px;padding-top:8px;border-top:2px solid #e5ecf5">
       <div style="font-weight:800;font-size:11px;color:#16a34a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px">Координата маълумотлари</div>
       <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0f3f8"><span style="color:#6b7a99;font-size:11.5px;font-weight:600">Нуқталар сони</span><span style="font-weight:700;font-size:12px">${points.length} та</span></div>
-      ${points.length ? `<button class="rs-action-btn" onclick="downloadRowKml('${section}',${rowIdx});document.getElementById('rowDetailModal').remove()" style="margin-top:8px;width:100%;justify-content:center;padding:8px 14px">
+      ${points.length ? `<button class="rs-action-btn" onclick="downloadRowKml('${section}',${ridJs});document.getElementById('rowDetailModal').remove()" style="margin-top:8px;width:100%;justify-content:center;padding:8px 14px">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Google Earth Pro (.kml) юклаб олиш
       </button>
@@ -9717,14 +9749,14 @@ function showRowDetail(section, rowIdx){
       <div style="padding:16px 20px;border-bottom:1px solid #e5ecf5;display:flex;align-items:center;justify-content:space-between">
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px;color:#0f1a36;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(String(titleField))}</div><div style="font-size:11px;color:#6b7a99;margin-top:2px">${(SECTIONS.find(s=>s.key===section)||{label:section}).label} — тафсилот</div></div>
         <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:10px">
-          ${(typeof isAppAdmin==='function' && isAppAdmin()) ? `<button class="rs-action-btn" onclick="document.getElementById('rowDetailModal').remove();openEditModal('${section}',${rowIdx})" title="Таҳрирлаш" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Таҳрир</button>` : ''}
+          ${(typeof isAppAdmin==='function' && isAppAdmin()) ? `<button class="rs-action-btn" onclick="document.getElementById('rowDetailModal').remove();openEditModal('${section}',${ridJs})" title="Таҳрирлаш" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Таҳрир</button>` : ''}
           <button onclick="document.getElementById('rowDetailModal').remove()" style="width:32px;height:32px;border-radius:8px;background:#f2f5fa;border:0;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6b7a99">×</button>
         </div>
       </div>
       <div style="padding:16px 20px;overflow-y:auto;flex:1">${detailHtml}</div>
       <div style="padding:12px 20px;border-top:1px solid #e5ecf5;display:flex;gap:6px;justify-content:flex-end">
-        ${points.length ? `<button class="rs-action-btn" onclick="downloadRowKml('${section}',${rowIdx})" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> KML</button>` : ''}
-        ${(typeof isAppAdmin==='function' && isAppAdmin()) ? `<button class="rs-action-btn" onclick="document.getElementById('rowDetailModal').remove();openEditModal('${section}',${rowIdx})" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Таҳрирлаш</button>` : '<span style="font-size:11px;color:#94a3b8;align-self:center">Кўриш режими — таҳрирлаш фақат админда</span>'}
+        ${points.length ? `<button class="rs-action-btn" onclick="downloadRowKml('${section}',${ridJs})" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> KML</button>` : ''}
+        ${(typeof isAppAdmin==='function' && isAppAdmin()) ? `<button class="rs-action-btn" onclick="document.getElementById('rowDetailModal').remove();openEditModal('${section}',${ridJs})" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Таҳрирлаш</button>` : '<span style="font-size:11px;color:#94a3b8;align-self:center">Кўриш режими — таҳрирлаш фақат админда</span>'}
       </div>
     </div>`;
   modal.style.display = 'flex';
