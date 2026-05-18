@@ -501,6 +501,131 @@ body.has-selection .home-pill{display:inline-flex}
 .tb-btn.excel-tb .excel-tb-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:18px;padding:0 5px;border-radius:9px;background:rgba(255,255,255,.22);color:#fff;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;margin-left:2px}
 .tb-btn.excel-tb:disabled{opacity:.6;cursor:not-allowed;transform:none}
 
+/* ===== АДМИН ТУГМА + БЕЙДЖ ===== */
+.tb-btn.admin-tb{background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border-color:transparent;font-weight:750;box-shadow:0 4px 10px -3px rgba(79,70,229,.4);position:relative}
+.tb-btn.admin-tb:hover{transform:translateY(-1px);box-shadow:0 8px 16px -4px rgba(79,70,229,.5);color:#fff}
+.tb-btn.admin-tb svg{opacity:1}
+.admin-tb-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;
+  background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;font-size:10.5px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;line-height:1;
+  box-shadow:0 2px 6px -1px rgba(220,38,38,.55);border:1.5px solid var(--panel);
+  animation:notifPulse 2s ease-in-out infinite}
+.admin-tb-badge[hidden]{display:none}
+
+/* ===== АДМИН БОШҚАРУВ МАРКАЗИ ===== */
+.adm-overlay{position:fixed;inset:0;z-index:1700;display:flex;align-items:center;justify-content:center;
+  background:rgba(15,26,54,.5);backdrop-filter:blur(4px);padding:18px}
+.adm-shell{width:min(1080px,97vw);max-height:94vh;background:#f4f7fb;border-radius:18px;
+  display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 70px -22px rgba(15,26,54,.55)}
+.adm-head{padding:18px 24px;background:linear-gradient(135deg,#1e1b4b,#3730a3);color:#fff;
+  display:flex;align-items:center;justify-content:space-between;gap:14px}
+.adm-head .adm-h-l{display:flex;align-items:center;gap:13px}
+.adm-head .adm-seal{width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.14);
+  display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.22)}
+.adm-head .adm-seal svg{width:22px;height:22px}
+.adm-kicker{font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.adm-title{font-size:18px;font-weight:850;margin-top:1px}
+.adm-sub{font-size:11.5px;color:rgba(255,255,255,.72);margin-top:2px}
+.adm-close{width:34px;height:34px;border-radius:9px;border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.1);color:#fff;font-size:20px;cursor:pointer;line-height:1;flex:none}
+.adm-close:hover{background:rgba(255,255,255,.2)}
+.adm-whoami{font-size:11px;color:rgba(255,255,255,.8);font-weight:700;display:flex;align-items:center;gap:8px}
+.adm-logout{padding:5px 11px;border-radius:7px;border:1px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.12);color:#fff;font-size:11px;font-weight:800;cursor:pointer}
+.adm-logout:hover{background:rgba(255,255,255,.22)}
+
+/* Логин дарвозаси */
+.adm-login{padding:40px 30px;display:flex;flex-direction:column;align-items:center;text-align:center;background:#fff}
+.adm-login .adm-lock{width:64px;height:64px;border-radius:50%;background:#eef2ff;color:#4f46e5;
+  display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.adm-login .adm-lock svg{width:30px;height:30px}
+.adm-login h3{font-size:18px;font-weight:850;color:var(--ink)}
+.adm-login p{font-size:12.5px;color:var(--muted);margin-top:5px;max-width:380px;line-height:1.5}
+.adm-login-form{margin-top:20px;width:min(340px,90vw);display:flex;flex-direction:column;gap:11px}
+.adm-login-form input{background:#fff;border:1px solid #d7e0ed;border-radius:9px;padding:11px 13px;font-size:13.5px;font-family:inherit;outline:none}
+.adm-login-form input:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.18)}
+.adm-login-btn{padding:11px 16px;border-radius:9px;border:0;cursor:pointer;font-size:13.5px;font-weight:800;
+  background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;box-shadow:0 8px 18px -6px rgba(79,70,229,.5)}
+.adm-login-btn:hover{transform:translateY(-1px)}
+.adm-login-err{color:#dc2626;font-size:12px;font-weight:700;min-height:16px}
+
+.adm-tabs{display:flex;gap:4px;padding:12px 20px 0;background:#f4f7fb;border-bottom:1px solid #e2e9f3;flex-wrap:wrap}
+.adm-tab{padding:9px 16px;border-radius:9px 9px 0 0;border:1px solid transparent;border-bottom:0;
+  background:transparent;color:var(--ink-2);font-size:12.5px;font-weight:750;cursor:pointer;display:flex;align-items:center;gap:7px}
+.adm-tab:hover{background:#e9eef7;color:var(--ink)}
+.adm-tab.active{background:#fff;color:#3730a3;border-color:#e2e9f3}
+.adm-tab .adm-tab-cnt{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#eef2ff;color:#4f46e5;
+  font-size:10.5px;font-weight:900;display:inline-flex;align-items:center;justify-content:center}
+.adm-tab .adm-tab-cnt.hot{background:#fee2e2;color:#dc2626}
+.adm-body{padding:20px 24px;overflow-y:auto;flex:1;background:#fff}
+.adm-pane{display:none}.adm-pane.active{display:block}
+.adm-pane-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.adm-pane-head h4{font-size:15px;font-weight:850;color:var(--ink)}
+.adm-pane-head p{font-size:11.5px;color:var(--muted);margin-top:2px}
+.adm-act-btn{padding:9px 15px;border-radius:9px;border:0;cursor:pointer;font-size:12.5px;font-weight:800;
+  background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;display:inline-flex;align-items:center;gap:6px}
+.adm-act-btn:hover{transform:translateY(-1px)}
+.adm-act-btn.ghost{background:#eef2ff;color:#4338ca}
+
+/* Жадвал */
+.adm-table{width:100%;border-collapse:separate;border-spacing:0 7px;font-size:12.5px}
+.adm-table th{text-align:left;padding:4px 12px;font-size:10.5px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.4px;font-weight:800}
+.adm-table td{background:#f8fbff;border-top:1px solid #e5ecf5;border-bottom:1px solid #e5ecf5;
+  padding:11px 12px;color:var(--ink);vertical-align:middle}
+.adm-table tr td:first-child{border-left:1px solid #e5ecf5;border-radius:10px 0 0 10px}
+.adm-table tr td:last-child{border-right:1px solid #e5ecf5;border-radius:0 10px 10px 0}
+.adm-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.adm-pill.role-admin{background:#ede9fe;color:#6d28d9}
+.adm-pill.role-district{background:#dbeafe;color:#1d4ed8}
+.adm-pill.role-dept{background:#cffafe;color:#0e7490}
+.adm-pill.role-viewer{background:#f1f5f9;color:#475569}
+.adm-pill.st-active{background:#dcfce7;color:#15803d}
+.adm-pill.st-disabled{background:#fee2e2;color:#b91c1c}
+.adm-row-act{display:flex;gap:6px;flex-wrap:wrap}
+.adm-mini{padding:6px 10px;border-radius:7px;border:1px solid #d7e0ed;background:#fff;
+  font-size:11px;font-weight:800;cursor:pointer;color:var(--ink-2)}
+.adm-mini:hover{border-color:#9fb5d9;color:var(--ink)}
+.adm-mini.warn{color:#b45309;border-color:#fcd9a8;background:#fffbeb}
+.adm-mini.ok{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
+.adm-empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:13px}
+.adm-empty .ic{font-size:34px;display:block;margin-bottom:8px;opacity:.7}
+
+/* Фикр-мулоҳаза карточкалари */
+.fb-card{background:#f8fbff;border:1px solid #e5ecf5;border-radius:13px;padding:14px 16px;margin-bottom:11px}
+.fb-card.unseen{border-color:#c7d2fe;box-shadow:0 0 0 2px rgba(99,102,241,.13)}
+.fb-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:7px}
+.fb-card-title{font-size:13.5px;font-weight:850;color:var(--ink)}
+.fb-card-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.fb-tag{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:800}
+.fb-tag.suggest{background:#dbeafe;color:#1d4ed8}
+.fb-tag.complaint{background:#fee2e2;color:#b91c1c}
+.fb-tag.bug{background:#fef3c7;color:#b45309}
+.fb-tag.st-new{background:#ede9fe;color:#6d28d9}
+.fb-tag.st-resolved{background:#dcfce7;color:#15803d}
+.fb-card-msg{font-size:12.5px;color:var(--ink-2);line-height:1.55;white-space:pre-wrap;
+  background:#fff;border:1px solid #e8eef7;border-radius:9px;padding:10px 12px;margin:7px 0}
+.fb-card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.adm-settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.adm-set-card{background:#f8fbff;border:1px solid #e5ecf5;border-radius:13px;padding:15px 17px}
+.adm-set-card h5{font-size:13px;font-weight:850;color:var(--ink);margin-bottom:4px}
+.adm-set-card p{font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:10px}
+.adm-switch{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12.5px;font-weight:750;color:var(--ink)}
+.adm-switch input{width:0;height:0;opacity:0;position:absolute}
+.adm-switch .tr{width:42px;height:23px;border-radius:999px;background:#cbd5e1;position:relative;transition:background .18s;flex:none}
+.adm-switch .tr::after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;transition:left .18s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.adm-switch input:checked + .tr{background:#4f46e5}
+.adm-switch input:checked + .tr::after{left:21px}
+.adm-set-card textarea{width:100%;background:#fff;border:1px solid #d7e0ed;border-radius:8px;padding:9px 11px;
+  font-size:12.5px;font-family:inherit;resize:vertical;outline:none;margin-top:8px}
+.adm-set-card textarea:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.16)}
+@media (max-width:640px){
+  .adm-table thead{display:none}
+  .adm-table,.adm-table tbody,.adm-table tr,.adm-table td{display:block;width:100%}
+  .adm-table tr{margin-bottom:10px}
+  .adm-table td{border:1px solid #e5ecf5!important;border-radius:9px!important;margin-bottom:-1px}
+}
+
 /* ===== БИЛДИРИШНОМА МАРКАЗИ ===== */
 .notif-wrap{position:relative;display:inline-flex}
 .notif-btn{position:relative}
@@ -1664,6 +1789,15 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" id="themeIcon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
       <span id="themeLabel">Кундузги</span>
     </button>
+    <button class="tb-btn" id="feedbackBtn" type="button" title="Сайт бўйича таклиф ёки шикоят билдириш" onclick="openFeedbackForm()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Таклиф / Шикоят</span>
+    </button>
+    <button class="tb-btn admin-tb" id="adminBtn" type="button" title="Админ бошқарув маркази" onclick="openAdminCenter()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+      <span>Админ</span>
+      <span class="admin-tb-badge" id="adminBadge" hidden>0</span>
+    </button>
     <button class="tb-btn" id="topbarHelpBtn" type="button" title="Қандай ишлайди">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       <span>Қўлланма</span>
@@ -1696,6 +1830,13 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 
 <!-- ACTIVE FILTER CRUMB — appears only when at least one filter is set -->
 <div class="filter-crumb" id="filterCrumb" hidden></div>
+
+<!-- SITE NOTICE (админ эълони) -->
+<div id="siteNotice" hidden style="display:flex;align-items:center;gap:10px;margin:6px 16px 0;padding:9px 14px;border-radius:10px;background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #c7d2fe;color:#3730a3;font-size:12.5px;font-weight:700">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" style="flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+  <span id="siteNoticeText" style="flex:1"></span>
+  <button onclick="dismissSiteNotice()" aria-label="Ёпиш" style="border:0;background:transparent;color:#4f46e5;font-size:17px;cursor:pointer;line-height:1;flex:none">×</button>
+</div>
 
 <!-- ONBOARDING — first-time welcome / explanation -->
 <div class="onb-overlay" id="onbOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="onbTitle">
@@ -2001,6 +2142,207 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
     <div class="prop-form-foot">
       <button class="prop-btn ghost" onclick="closeProposalForm()">Бекор қилиш</button>
       <button class="prop-btn primary" onclick="submitProposal()">📨 Юбориш</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK FORM (таклиф / шикоят — сайт бўйича) -->
+<div class="prop-form-backdrop" id="fbFormWrap" style="display:none">
+  <div class="prop-form">
+    <div class="prop-form-head" style="background:linear-gradient(135deg,#0e7490,#0891b2)">
+      <div>
+        <div class="prop-form-title">Таклиф ва шикоятлар</div>
+        <div class="prop-form-sub">Ушбу сайт ва унинг иши бўйича таклиф, шикоят ёки хатолик ҳақида хабар беринг — мурожаат сайт админига юборилади</div>
+      </div>
+      <button class="prop-close" onclick="closeFeedbackForm()">×</button>
+    </div>
+    <div class="prop-form-body">
+      <div class="pf-row">
+        <div class="pf-group"><label>Мурожаат тури <span class="req">*</span></label>
+          <select id="fb-type">
+            <option value="suggest">💡 Таклиф (яхшилаш фикри)</option>
+            <option value="complaint">⚠️ Шикоят</option>
+            <option value="bug">🐞 Сайтдаги хатолик / носозлик</option>
+          </select></div>
+        <div class="pf-group"><label>Мавзу <span class="req">*</span></label>
+          <input id="fb-subject" placeholder="Қисқача мавзу — масалан: Харита секин юкланмоқда"></div>
+      </div>
+      <div class="pf-row">
+        <div class="pf-group"><label>Мурожаат матни <span class="req">*</span></label>
+          <textarea id="fb-message" rows="5" placeholder="Таклиф ёки шикоятингизни батафсил ёзинг..."></textarea></div>
+      </div>
+      <div class="pf-row">
+        <div class="pf-group"><label>Ф.И.Ш. / ташкилот</label>
+          <input id="fb-name" placeholder="Ихтиёрий"></div>
+        <div class="pf-group"><label>Алоқа (телефон / e-mail)</label>
+          <input id="fb-contact" placeholder="Ихтиёрий — жавоб олиш учун"></div>
+      </div>
+      <div class="pf-file-hint" style="padding:0 2px">Мурожаатингиз сайт админига етказилади. Шахсий маълумотлар (паспорт, банк) киритманг.</div>
+    </div>
+    <div class="prop-form-foot">
+      <button class="prop-btn ghost" onclick="closeFeedbackForm()">Бекор қилиш</button>
+      <button class="prop-btn primary" style="background:linear-gradient(135deg,#0e7490,#0891b2)" onclick="submitFeedback()">📨 Юбориш</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN CONTROL CENTER -->
+<div class="adm-overlay" id="adminOverlay" style="display:none">
+  <div class="adm-shell" role="dialog" aria-label="Админ бошқарув маркази">
+    <div class="adm-head">
+      <div class="adm-h-l">
+        <div class="adm-seal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <div>
+          <div class="adm-kicker">Навоий вилояти · Ер ресурслари геоплатформаси</div>
+          <div class="adm-title">Админ бошқарув маркази</div>
+          <div class="adm-sub">Фойдаланувчилар, доступ ва сайт созламаларини расмий бошқариш</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="adm-whoami" id="admWhoami" hidden></div>
+        <button class="adm-logout" id="admLogoutBtn" hidden onclick="adminLogout()">Чиқиш</button>
+        <button class="adm-close" onclick="closeAdminCenter()" aria-label="Ёпиш">×</button>
+      </div>
+    </div>
+
+    <!-- LOGIN GATE -->
+    <div class="adm-login" id="admLogin">
+      <div class="adm-lock">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h3>Админ кириши</h3>
+      <p>Бу бўлим фақат сайт маъмури учун. Фойдаланувчилар, туман ва бошқарма ходимларига доступ беришни шу ердан бошқарасиз.</p>
+      <form class="adm-login-form" id="admLoginForm" onsubmit="return adminLoginSubmit(event)">
+        <input id="adm-user" type="text" placeholder="Логин" autocomplete="username" required>
+        <input id="adm-pass" type="password" placeholder="Парол" autocomplete="current-password" required>
+        <div class="adm-login-err" id="adm-login-err"></div>
+        <button class="adm-login-btn" type="submit">Кириш</button>
+      </form>
+    </div>
+
+    <!-- MAIN (after login) -->
+    <div id="admMain" hidden>
+      <div class="adm-tabs" id="admTabs">
+        <button class="adm-tab active" data-atab="users" onclick="switchAdminTab('users')">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Фойдаланувчилар ва доступ <span class="adm-tab-cnt" id="admUsersCnt">0</span>
+        </button>
+        <button class="adm-tab" data-atab="feedback" onclick="switchAdminTab('feedback')">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Таклиф ва шикоятлар <span class="adm-tab-cnt" id="admFbCnt">0</span>
+        </button>
+        <button class="adm-tab" data-atab="settings" onclick="switchAdminTab('settings')">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Созламалар
+        </button>
+      </div>
+      <div class="adm-body">
+        <!-- USERS -->
+        <div class="adm-pane active" data-apane="users">
+          <div class="adm-pane-head">
+            <div>
+              <h4>Фойдаланувчилар ва доступ</h4>
+              <p>Туман/шаҳар ваколатли ходимлари ва бошқарма ходимларига кириш ҳуқуқи бериш ва бошқариш</p>
+            </div>
+            <button class="adm-act-btn" onclick="openUserForm()"><span style="font-size:15px;line-height:1">＋</span> Янги ходим қўшиш</button>
+          </div>
+          <div id="admUsersWrap"></div>
+        </div>
+        <!-- FEEDBACK -->
+        <div class="adm-pane" data-apane="feedback">
+          <div class="adm-pane-head">
+            <div>
+              <h4>Таклиф ва шикоятлар</h4>
+              <p>Фойдаланувчилардан сайт бўйича келиб тушган мурожаатлар</p>
+            </div>
+            <div class="adm-row-act">
+              <button class="adm-mini" id="admFbFilterAll" onclick="setAdminFbFilter('all')">Барчаси</button>
+              <button class="adm-mini" id="admFbFilterNew" onclick="setAdminFbFilter('new')">Янги</button>
+              <button class="adm-mini" id="admFbFilterResolved" onclick="setAdminFbFilter('resolved')">Кўрилган</button>
+            </div>
+          </div>
+          <div id="admFbWrap"></div>
+        </div>
+        <!-- SETTINGS -->
+        <div class="adm-pane" data-apane="settings">
+          <div class="adm-pane-head">
+            <div>
+              <h4>Сайт созламалари</h4>
+              <p>Админ томонидан бошқариладиган умумий созламалар</p>
+            </div>
+          </div>
+          <div class="adm-settings-grid">
+            <div class="adm-set-card">
+              <h5>Янги таклиф қабул қилиш</h5>
+              <p>Туман/шаҳарлардан ер участкаси таклифи юбориш имконини ёқиш ёки ўчириш.</p>
+              <label class="adm-switch"><input type="checkbox" id="set-proposals" onchange="onAdminSettingChange()"><span class="tr"></span><span>Таклиф юбориш ёқилган</span></label>
+            </div>
+            <div class="adm-set-card">
+              <h5>Таклиф/шикоят қабул қилиш</h5>
+              <p>Фойдаланувчилардан сайт бўйича таклиф ва шикоят қабул қилишни ёқиш.</p>
+              <label class="adm-switch"><input type="checkbox" id="set-feedback" onchange="onAdminSettingChange()"><span class="tr"></span><span>Мурожаат қабули ёқилган</span></label>
+            </div>
+            <div class="adm-set-card" style="grid-column:1/-1">
+              <h5>Сайт эълони (баннер)</h5>
+              <p>Бош саҳифада барча фойдаланувчиларга кўринадиган қисқа расмий эълон матни. Бўш қолдирилса эълон кўрсатилмайди.</p>
+              <textarea id="set-notice" rows="2" placeholder="Масалан: 20-майдан бошлаб платформа янги маълумотлар билан янгиланди."></textarea>
+              <div style="margin-top:9px"><button class="adm-act-btn" onclick="saveAdminNotice()">Эълонни сақлаш</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USER ADD / EDIT MODAL -->
+<div class="prop-form-backdrop" id="userFormWrap" style="display:none">
+  <div class="prop-form" style="width:min(560px,96vw)">
+    <div class="prop-form-head" style="background:linear-gradient(135deg,#3730a3,#4f46e5)">
+      <div>
+        <div class="prop-form-title" id="userFormTitle">Янги ходим қўшиш</div>
+        <div class="prop-form-sub">Туман/шаҳар ёки бошқарма ходимига кириш ҳуқуқи бериш</div>
+      </div>
+      <button class="prop-close" onclick="closeUserForm()">×</button>
+    </div>
+    <div class="prop-form-body">
+      <div class="pf-row">
+        <div class="pf-group"><label>Ф.И.Ш. <span class="req">*</span></label>
+          <input id="uf-fullname" placeholder="Масалан: Алиев Валиев"></div>
+        <div class="pf-group"><label>Лавозим</label>
+          <input id="uf-position" placeholder="Масалан: Ер ресурслари бўлими бошлиғи"></div>
+      </div>
+      <div class="pf-row">
+        <div class="pf-group"><label>Роль / даража <span class="req">*</span></label>
+          <select id="uf-role" onchange="onUserRoleChange()">
+            <option value="district">Туман / шаҳар ходими</option>
+            <option value="dept">Бошқарма ходими</option>
+            <option value="viewer">Кузатувчи (фақат кўриш)</option>
+            <option value="admin">Админ</option>
+          </select></div>
+        <div class="pf-group" id="uf-district-grp"><label>Туман / шаҳар <span class="req">*</span></label>
+          <select id="uf-district"></select></div>
+      </div>
+      <div class="pf-row">
+        <div class="pf-group"><label>Логин <span class="req">*</span></label>
+          <input id="uf-username" placeholder="Кириш учун логин" autocomplete="off"></div>
+        <div class="pf-group"><label>Парол <span class="req">*</span></label>
+          <input id="uf-password" placeholder="Камида 5 белги" autocomplete="new-password"></div>
+      </div>
+      <div class="pf-row">
+        <div class="pf-group"><label>Ҳолат</label>
+          <select id="uf-status">
+            <option value="active">Фаол (кириши мумкин)</option>
+            <option value="disabled">Блокланган (кира олмайди)</option>
+          </select></div>
+      </div>
+      <div class="pf-file-hint" style="padding:0 2px">Доступ берилган ходим ушбу логин ва парол билан тизимга кира олади. Паролни ходимга расмий тарзда етказинг.</div>
+    </div>
+    <div class="prop-form-foot">
+      <button class="prop-btn ghost" onclick="closeUserForm()">Бекор қилиш</button>
+      <button class="prop-btn primary" style="background:linear-gradient(135deg,#3730a3,#4f46e5)" onclick="saveUserForm()">💾 Сақлаш</button>
     </div>
   </div>
 </div>
@@ -7019,6 +7361,7 @@ function handleProposalLetterFile(input){
   reader.readAsDataURL(f);
 }
 function submitProposal(){
+  try{ if(typeof getAdminSettings==='function' && getAdminSettings().proposalsOff){ showToast('ℹ️ Ҳозирча янги таклиф қабули админ томонидан вақтинча ўчирилган'); return; } }catch(e){}
   const v = (id)=>document.getElementById(id).value.trim();
   const district = v('pf-district');
   const mfy = v('pf-mfy');
@@ -7114,6 +7457,393 @@ function rejectProposal(id){
   __refreshAfterProposalChange();
   showToast('✕ Рад этилди');
 }
+
+/* ============================================================
+   ФИКР-МУЛОҲАЗА (таклиф / шикоят — сайт бўйича)
+   ============================================================ */
+const FEEDBACK_KEY = 'navoi_feedback_v1';
+const FB_SEEN_KEY  = 'navoi_feedback_seen_at_v1';
+let _admFbFilter = 'all';
+function getFeedback(){
+  try{ const raw = localStorage.getItem(FEEDBACK_KEY); if(raw) return JSON.parse(raw) || []; }catch(e){}
+  return [];
+}
+function saveFeedback(arr){
+  const list = arr || [];
+  try{ localStorage.setItem(FEEDBACK_KEY, JSON.stringify(list)); }catch(e){}
+  try{ if(typeof window.__syncFeedbackToCloud === 'function'){ window.__syncFeedbackToCloud(list); } }catch(e){ console.warn('feedback sync skipped:', e); }
+  try{ updateAdminBadge(); }catch(e){}
+}
+function getFbSeenAt(){ try{ return Number(localStorage.getItem(FB_SEEN_KEY)) || 0; }catch(e){ return 0; } }
+function setFbSeenAt(ts){ try{ localStorage.setItem(FB_SEEN_KEY, String(ts)); }catch(e){} }
+function openFeedbackForm(){
+  if(getAdminSettings().feedbackOff){ showToast('ℹ️ Ҳозирча мурожаат қабули вақтинча ўчирилган'); return; }
+  const w = document.getElementById('fbFormWrap');
+  if(w) w.style.display = 'flex';
+}
+function closeFeedbackForm(){ const w=document.getElementById('fbFormWrap'); if(w) w.style.display='none'; }
+function submitFeedback(){
+  const v = (id)=>{ const el=document.getElementById(id); return el? el.value.trim() : ''; };
+  const type = v('fb-type') || 'suggest';
+  const subject = v('fb-subject');
+  const message = v('fb-message');
+  const name = v('fb-name');
+  const contact = v('fb-contact');
+  if(!subject || !message){
+    showToast('⚠️ Мавзу ва мурожаат матнини тўлдиринг');
+    return;
+  }
+  const all = getFeedback();
+  const now = Date.now();
+  all.push({
+    id: 'fb_' + now + '_' + Math.random().toString(36).slice(2,8),
+    type, subject, message, name, contact,
+    status: 'new', createdAt: now,
+    date: new Date(now).toLocaleDateString('uz-UZ')
+  });
+  saveFeedback(all);
+  ['fb-subject','fb-message','fb-name','fb-contact'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const ts=document.getElementById('fb-type'); if(ts) ts.selectedIndex=0;
+  closeFeedbackForm();
+  showToast('📨 Мурожаатингиз юборилди — раҳмат! Админ кўриб чиқади');
+}
+
+/* ============================================================
+   ФОЙДАЛАНУВЧИЛАР / ДОСТУП + АДМИН СОЗЛАМАЛАРИ
+   ============================================================ */
+const USERS_KEY    = 'navoi_users_v1';
+const SETTINGS_KEY = 'navoi_admin_settings_v1';
+const ADMIN_SESS   = 'navoi_admin_ok_v1';
+function _seedUsers(){
+  try{
+    const seed = (window.SECTIONS_RAW_FULL && Array.isArray(window.SECTIONS_RAW_FULL.users)) ? window.SECTIONS_RAW_FULL.users : [];
+    return JSON.parse(JSON.stringify(seed));
+  }catch(e){ return []; }
+}
+function getUsers(){
+  try{ const raw = localStorage.getItem(USERS_KEY); if(raw){ const a=JSON.parse(raw); if(Array.isArray(a)&&a.length) return a; } }catch(e){}
+  const seed = _seedUsers();
+  if(seed.length){ try{ localStorage.setItem(USERS_KEY, JSON.stringify(seed)); }catch(e){} }
+  return seed;
+}
+function saveUsers(arr){
+  const list = arr || [];
+  try{ localStorage.setItem(USERS_KEY, JSON.stringify(list)); }catch(e){}
+  try{ if(typeof window.__syncUsersToCloud === 'function'){ window.__syncUsersToCloud(list); } }catch(e){ console.warn('users sync skipped:', e); }
+}
+function getAdminSettings(){
+  try{ const raw=localStorage.getItem(SETTINGS_KEY); if(raw) return Object.assign({proposalsOff:false,feedbackOff:false,notice:''}, JSON.parse(raw)||{}); }catch(e){}
+  return {proposalsOff:false,feedbackOff:false,notice:''};
+}
+function saveAdminSettings(s){
+  try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s||{})); }catch(e){}
+}
+
+/* ---- Админ сессияси ---- */
+function isAdminUnlocked(){ try{ return sessionStorage.getItem(ADMIN_SESS) === '1'; }catch(e){ return false; } }
+function setAdminUnlocked(ok, name){
+  try{
+    if(ok){ sessionStorage.setItem(ADMIN_SESS, '1'); if(name) sessionStorage.setItem(ADMIN_SESS+'_n', name); }
+    else { sessionStorage.removeItem(ADMIN_SESS); sessionStorage.removeItem(ADMIN_SESS+'_n'); }
+  }catch(e){}
+}
+function adminName(){ try{ return sessionStorage.getItem(ADMIN_SESS+'_n') || 'Админ'; }catch(e){ return 'Админ'; } }
+
+function openAdminCenter(){
+  const ov = document.getElementById('adminOverlay');
+  if(!ov) return;
+  ov.style.display = 'flex';
+  _renderAdminGate();
+}
+function closeAdminCenter(){ const ov=document.getElementById('adminOverlay'); if(ov) ov.style.display='none'; }
+function _renderAdminGate(){
+  const unlocked = isAdminUnlocked();
+  const login = document.getElementById('admLogin');
+  const main  = document.getElementById('admMain');
+  const who   = document.getElementById('admWhoami');
+  const lo    = document.getElementById('admLogoutBtn');
+  if(login) login.style.display = unlocked ? 'none' : 'flex';
+  if(main)  main.hidden = !unlocked;
+  if(who){ who.hidden = !unlocked; who.textContent = unlocked ? ('👤 ' + adminName()) : ''; }
+  if(lo)   lo.hidden = !unlocked;
+  if(unlocked){
+    switchAdminTab('users');
+    renderAdminUsers(); renderAdminFeedback(); loadAdminSettingsIntoForm();
+    updateAdminTabCounts();
+  } else {
+    const u=document.getElementById('adm-user'), e=document.getElementById('adm-login-err');
+    if(e) e.textContent=''; if(u) setTimeout(()=>u.focus(),120);
+  }
+}
+function adminLoginSubmit(ev){
+  if(ev) ev.preventDefault();
+  const u = (document.getElementById('adm-user')||{}).value || '';
+  const p = (document.getElementById('adm-pass')||{}).value || '';
+  const err = document.getElementById('adm-login-err');
+  const user = getUsers().find(x => x && x.username === u.trim() && x.password === p && x.role === 'admin' && (x.status||'active') === 'active');
+  if(!user){
+    if(err) err.textContent = 'Логин ёки парол нотўғри, ёки админ ҳуқуқи йўқ';
+    return false;
+  }
+  setAdminUnlocked(true, user.fullName || user.username);
+  const pp=document.getElementById('adm-pass'); if(pp) pp.value='';
+  _renderAdminGate();
+  showToast('✓ Админ панелга кирдингиз');
+  return false;
+}
+function adminLogout(){
+  setAdminUnlocked(false);
+  _renderAdminGate();
+  showToast('Админ сессияси якунланди');
+}
+function switchAdminTab(which){
+  document.querySelectorAll('#admTabs .adm-tab').forEach(b=>b.classList.toggle('active', b.dataset.atab===which));
+  document.querySelectorAll('#admMain .adm-pane').forEach(p=>p.classList.toggle('active', p.dataset.apane===which));
+  if(which==='users') renderAdminUsers();
+  if(which==='feedback') renderAdminFeedback();
+  if(which==='settings') loadAdminSettingsIntoForm();
+}
+function roleLabel(r){
+  return r==='admin' ? 'Админ' : r==='district' ? 'Туман/шаҳар' : r==='dept' ? 'Бошқарма' : 'Кузатувчи';
+}
+function renderAdminUsers(){
+  const wrap = document.getElementById('admUsersWrap');
+  if(!wrap) return;
+  const users = getUsers();
+  const cnt = document.getElementById('admUsersCnt'); if(cnt) cnt.textContent = users.length;
+  if(!users.length){
+    wrap.innerHTML = '<div class="adm-empty"><span class="ic">👥</span>Ҳозирча фойдаланувчилар йўқ. «Янги ходим қўшиш» орқали доступ беринг.</div>';
+    return;
+  }
+  wrap.innerHTML = `<table class="adm-table"><thead><tr>
+    <th>Ф.И.Ш.</th><th>Логин</th><th>Роль</th><th>Туман/шаҳар</th><th>Ҳолат</th><th>Амал</th>
+  </tr></thead><tbody>` + users.map(u=>{
+    const r = u.role||'viewer', st = (u.status||'active');
+    const dis = st==='disabled';
+    return `<tr>
+      <td><b>${escapeHtmlP(u.fullName||'—')}</b>${u.position?`<div style="font-size:11px;color:var(--muted)">${escapeHtmlP(u.position)}</div>`:''}</td>
+      <td><code style="font-size:12px">${escapeHtmlP(u.username||'—')}</code></td>
+      <td><span class="adm-pill role-${r}">${roleLabel(r)}</span></td>
+      <td>${escapeHtmlP(u.district||'—')}</td>
+      <td><span class="adm-pill ${dis?'st-disabled':'st-active'}">${dis?'Блокланган':'Фаол'}</span></td>
+      <td><div class="adm-row-act">
+        <button class="adm-mini" onclick="openUserForm('${escapeHtmlP(u.id)}')">Таҳрир</button>
+        <button class="adm-mini ${dis?'ok':'warn'}" onclick="toggleUserStatus('${escapeHtmlP(u.id)}')">${dis?'Фаоллаштириш':'Блоклаш'}</button>
+      </div></td>
+    </tr>`;
+  }).join('') + '</tbody></table>';
+}
+function onUserRoleChange(){
+  const r = (document.getElementById('uf-role')||{}).value;
+  const grp = document.getElementById('uf-district-grp');
+  if(grp) grp.style.display = (r==='district') ? 'flex' : 'none';
+}
+let _editUserId = null;
+function openUserForm(id){
+  _editUserId = id || null;
+  const dSel = document.getElementById('uf-district');
+  if(dSel && !dSel.options.length){
+    dSel.innerHTML = '<option value="">— танланг —</option>' + DISTRICTS.map(d=>`<option value="${escapeHtmlP(d.label)}">${escapeHtmlP(d.label)}</option>`).join('');
+  }
+  const t = document.getElementById('userFormTitle');
+  const set=(i,val)=>{ const el=document.getElementById(i); if(el) el.value = val==null?'':val; };
+  if(id){
+    const u = getUsers().find(x=>x.id===id) || {};
+    if(t) t.textContent = 'Ходимни таҳрирлаш';
+    set('uf-fullname',u.fullName); set('uf-position',u.position);
+    set('uf-role',u.role||'district'); set('uf-district',u.district);
+    set('uf-username',u.username); set('uf-password',u.password);
+    set('uf-status',u.status||'active');
+  } else {
+    if(t) t.textContent = 'Янги ходим қўшиш';
+    set('uf-fullname',''); set('uf-position','');
+    set('uf-role','district'); set('uf-district','');
+    set('uf-username',''); set('uf-password','');
+    set('uf-status','active');
+  }
+  onUserRoleChange();
+  const w=document.getElementById('userFormWrap'); if(w) w.style.display='flex';
+}
+function closeUserForm(){ const w=document.getElementById('userFormWrap'); if(w) w.style.display='none'; _editUserId=null; }
+function saveUserForm(){
+  const v=(i)=>{ const el=document.getElementById(i); return el? el.value.trim() : ''; };
+  const fullName=v('uf-fullname'), position=v('uf-position'), role=v('uf-role'),
+        district=v('uf-district'), username=v('uf-username'), password=v('uf-password'),
+        status=v('uf-status');
+  if(!fullName || !username || !password || !role){
+    showToast('⚠️ Ф.И.Ш., роль, логин ва паролни тўлдиринг'); return;
+  }
+  if(password.length < 5){ showToast('⚠️ Парол камида 5 белгидан иборат бўлсин'); return; }
+  if(role==='district' && !district){ showToast('⚠️ Туман/шаҳар ходими учун туман танланг'); return; }
+  const users = getUsers();
+  const clash = users.find(x=>x.username===username && x.id!==_editUserId);
+  if(clash){ showToast('⚠️ Бу логин банд — бошқа логин танланг'); return; }
+  if(_editUserId){
+    const u = users.find(x=>x.id===_editUserId);
+    if(u){ Object.assign(u, {fullName,position,role,district:role==='district'?district:'',username,password,status}); }
+  } else {
+    users.push({
+      id:'u_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+      fullName, position, role, district: role==='district'?district:'',
+      username, password, status, createdAt: Date.now()
+    });
+  }
+  saveUsers(users);
+  closeUserForm();
+  renderAdminUsers(); updateAdminTabCounts();
+  showToast(_editUserId ? '💾 Ходим маълумоти янгиланди' : '✓ Янги ходимга доступ берилди');
+}
+function toggleUserStatus(id){
+  const users = getUsers();
+  const u = users.find(x=>x.id===id);
+  if(!u) return;
+  if(u.role==='admin' && (u.status||'active')==='active'){
+    const others = users.filter(x=>x.role==='admin' && (x.status||'active')==='active' && x.id!==id);
+    if(!others.length){ showToast('⚠️ Охирги фаол админни блоклаб бўлмайди'); return; }
+  }
+  u.status = (u.status||'active')==='active' ? 'disabled' : 'active';
+  saveUsers(users);
+  renderAdminUsers();
+  showToast(u.status==='active' ? '✓ Ходим фаоллаштирилди' : '⛔ Ходим блокланди');
+}
+
+/* ---- Фикр-мулоҳазалар (админ кўриниши) ---- */
+function setAdminFbFilter(f){ _admFbFilter=f; renderAdminFeedback(); }
+function renderAdminFeedback(){
+  const wrap = document.getElementById('admFbWrap');
+  if(!wrap) return;
+  ['all','new','resolved'].forEach(f=>{
+    const b=document.getElementById('admFbFilter'+f.charAt(0).toUpperCase()+f.slice(1));
+    if(b) b.classList.toggle('ok', _admFbFilter===f);
+  });
+  const all = getFeedback().slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const newCnt = all.filter(f=>(f.status||'new')==='new').length;
+  const fbCnt = document.getElementById('admFbCnt');
+  if(fbCnt){ fbCnt.textContent = newCnt; fbCnt.classList.toggle('hot', newCnt>0); }
+  const filtered = _admFbFilter==='all' ? all : all.filter(f=>(f.status||'new')===(_admFbFilter==='resolved'?'resolved':'new'));
+  setFbSeenAt(Date.now()); updateAdminBadge();
+  if(!filtered.length){
+    wrap.innerHTML = '<div class="adm-empty"><span class="ic">📭</span>'+(all.length?'Бу тоифада мурожаат йўқ.':'Ҳозирча мурожаатлар йўқ.')+'</div>';
+    return;
+  }
+  const tLabel = (t)=> t==='complaint'?'Шикоят':t==='bug'?'Хатолик':'Таклиф';
+  wrap.innerHTML = filtered.map(f=>{
+    const st = f.status||'new';
+    const resolved = st==='resolved';
+    return `<div class="fb-card ${resolved?'':'unseen'}">
+      <div class="fb-card-head">
+        <div>
+          <div class="fb-card-title">${escapeHtmlP(f.subject||'—')}</div>
+          <div class="fb-card-meta">📅 ${escapeHtmlP(f.date||'')} · ${__timeAgo(f.createdAt)}${f.name?' · ✍ '+escapeHtmlP(f.name):''}${f.contact?' · ☎ '+escapeHtmlP(f.contact):''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+          <span class="fb-tag ${f.type==='complaint'?'complaint':f.type==='bug'?'bug':'suggest'}">${tLabel(f.type)}</span>
+          <span class="fb-tag ${resolved?'st-resolved':'st-new'}">${resolved?'Кўрилган':'Янги'}</span>
+        </div>
+      </div>
+      <div class="fb-card-msg">${escapeHtmlP(f.message||'')}</div>
+      <div class="fb-card-foot">
+        <span style="font-size:11px;color:var(--muted)">${resolved&&f.resolvedAt?('Кўрилди: '+new Date(f.resolvedAt).toLocaleDateString('uz-UZ')):''}</span>
+        <div class="adm-row-act">
+          ${resolved
+            ? `<button class="adm-mini warn" onclick="reopenFeedback('${f.id}')">Қайта очиш</button>`
+            : `<button class="adm-mini ok" onclick="resolveFeedback('${f.id}')">✓ Кўриб чиқилди деб белгилаш</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function resolveFeedback(id){
+  const all=getFeedback(); const f=all.find(x=>x.id===id); if(!f) return;
+  f.status='resolved'; f.resolvedAt=Date.now();
+  saveFeedback(all); renderAdminFeedback(); updateAdminTabCounts();
+  showToast('✓ Мурожаат кўрилган деб белгиланди');
+}
+function reopenFeedback(id){
+  const all=getFeedback(); const f=all.find(x=>x.id===id); if(!f) return;
+  f.status='new'; delete f.resolvedAt;
+  saveFeedback(all); renderAdminFeedback(); updateAdminTabCounts();
+}
+function updateAdminTabCounts(){
+  const uc=document.getElementById('admUsersCnt'); if(uc) uc.textContent=getUsers().length;
+  const newCnt=getFeedback().filter(f=>(f.status||'new')==='new').length;
+  const fc=document.getElementById('admFbCnt'); if(fc){ fc.textContent=newCnt; fc.classList.toggle('hot', newCnt>0); }
+}
+function updateAdminBadge(){
+  const b=document.getElementById('adminBadge');
+  if(!b) return;
+  const n = getFeedback().filter(f=>(f.status||'new')==='new').length;
+  if(n>0){ b.hidden=false; b.textContent = n>99?'99+':String(n); }
+  else { b.hidden=true; }
+}
+window.__onFeedbackSynced = function(){ try{ updateAdminBadge(); }catch(e){} try{ const ov=document.getElementById('adminOverlay'); if(ov&&ov.style.display==='flex'&&isAdminUnlocked()) renderAdminFeedback(); }catch(e){} };
+window.__onUsersSynced = function(){ try{ const ov=document.getElementById('adminOverlay'); if(ov&&ov.style.display==='flex'&&isAdminUnlocked()) renderAdminUsers(); }catch(e){} };
+
+/* ---- Созламалар ---- */
+function loadAdminSettingsIntoForm(){
+  const s=getAdminSettings();
+  const sp=document.getElementById('set-proposals'); if(sp) sp.checked = !s.proposalsOff;
+  const sf=document.getElementById('set-feedback');  if(sf) sf.checked = !s.feedbackOff;
+  const sn=document.getElementById('set-notice');    if(sn) sn.value = s.notice||'';
+}
+function onAdminSettingChange(){
+  const s=getAdminSettings();
+  const sp=document.getElementById('set-proposals'); if(sp) s.proposalsOff = !sp.checked;
+  const sf=document.getElementById('set-feedback');  if(sf) s.feedbackOff  = !sf.checked;
+  saveAdminSettings(s);
+  applyAdminSettingsUI();
+  showToast('⚙️ Созлама сақланди');
+}
+function saveAdminNotice(){
+  const s=getAdminSettings();
+  const sn=document.getElementById('set-notice'); s.notice = sn? sn.value.trim() : '';
+  saveAdminSettings(s);
+  try{ localStorage.removeItem('navoi_notice_dismissed'); }catch(e){}
+  applySiteNotice();
+  showToast('📢 Эълон сақланди');
+}
+function applyAdminSettingsUI(){
+  const s=getAdminSettings();
+  const fb=document.getElementById('feedbackBtn');
+  if(fb) fb.style.display = s.feedbackOff ? 'none' : '';
+}
+function applySiteNotice(){
+  const s=getAdminSettings();
+  const bar=document.getElementById('siteNotice'), tx=document.getElementById('siteNoticeText');
+  if(!bar||!tx) return;
+  let dismissed=''; try{ dismissed=localStorage.getItem('navoi_notice_dismissed')||''; }catch(e){}
+  if(s.notice && s.notice.trim() && dismissed!==s.notice){
+    tx.textContent = s.notice; bar.hidden=false;
+  } else { bar.hidden=true; }
+}
+function dismissSiteNotice(){
+  const s=getAdminSettings();
+  try{ localStorage.setItem('navoi_notice_dismissed', s.notice||''); }catch(e){}
+  const bar=document.getElementById('siteNotice'); if(bar) bar.hidden=true;
+}
+
+/* Esc + backdrop yopish — admin/feedback/user modallari */
+(function wireAdminDismiss(){
+  function bind(){
+    document.addEventListener('keydown', (e)=>{
+      if(e.key!=='Escape') return;
+      const uf=document.getElementById('userFormWrap');
+      if(uf && uf.style.display==='flex'){ closeUserForm(); return; }
+      const fb=document.getElementById('fbFormWrap');
+      if(fb && fb.style.display==='flex'){ closeFeedbackForm(); return; }
+      const ad=document.getElementById('adminOverlay');
+      if(ad && ad.style.display==='flex'){ closeAdminCenter(); return; }
+    });
+    const ad=document.getElementById('adminOverlay');
+    if(ad) ad.addEventListener('mousedown',(e)=>{ if(e.target===ad) closeAdminCenter(); });
+    const fb=document.getElementById('fbFormWrap');
+    if(fb) fb.addEventListener('mousedown',(e)=>{ if(e.target===fb) closeFeedbackForm(); });
+    const uf=document.getElementById('userFormWrap');
+    if(uf) uf.addEventListener('mousedown',(e)=>{ if(e.target===uf) closeUserForm(); });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+})();
 
 /* ================= EVENTS ================= */
 function wireEvents(){
@@ -9308,6 +10038,7 @@ function boot(){
   // Active-filter crumb + topbar Excel count (P1 simplification)
   if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
   if(typeof refreshExportBtn === 'function') refreshExportBtn();
+  try { getUsers(); applyAdminSettingsUI(); applySiteNotice(); updateAdminBadge(); } catch(e){ console.warn('admin init', e); }
   setTimeout(()=>document.getElementById('loader').classList.add('hidden'), 500);
   // Onboarding — show once on first visit (after a short delay so the
   // map can settle behind the overlay)
@@ -9403,11 +10134,48 @@ if(document.readyState === 'loading'){
     // Expose for saveProposals()
     window.__syncProposalsToCloud = function(list){ pushCloud(list); };
 
+    /* ---- Generic collection sync (feedback, users) ---- */
+    function makeCloudSync(colName, lsKey, onSynced){
+      const C = collection(db, colName);
+      const rd = () => { try{ const r=localStorage.getItem(lsKey); if(r) return JSON.parse(r)||[]; }catch(e){} return []; };
+      const wr = (a) => { try{ localStorage.setItem(lsKey, JSON.stringify(a||[])); }catch(e){} };
+      async function pull(){
+        try{
+          const snap = await getDocs(C);
+          const cloud = []; snap.forEach(d=>{ const x=d.data(); cloud.push({ ...x, id: x.id || d.id }); });
+          const byId = new Map();
+          rd().forEach(p=>{ if(p&&p.id) byId.set(p.id,p); });
+          cloud.forEach(p=>{ if(p&&p.id) byId.set(p.id,p); });
+          const merged = Array.from(byId.values()).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+          wr(merged);
+          try{ if(typeof window[onSynced]==='function') window[onSynced](); }catch(e){}
+          console.info('[firebase] '+colName+' pulled:', merged.length);
+        }catch(err){ console.warn('[firebase] '+colName+' pull failed:', err && err.message ? err.message : err); }
+      }
+      let busy=false, queued=null;
+      async function push(list){
+        if(busy){ queued=list; return; }
+        busy=true;
+        try{
+          const arr=(list||rd()).filter(p=>p&&p.id);
+          let ids=new Set();
+          try{ const s=await getDocs(C); s.forEach(d=>ids.add(d.id)); }catch(e){}
+          for(const p of arr){ try{ await setDoc(doc(db,colName,p.id), p, {merge:true}); ids.delete(p.id); }catch(e){} }
+          for(const id of ids){ try{ await deleteDoc(doc(db,colName,id)); }catch(e){} }
+        } finally { busy=false; if(queued){ const q=queued; queued=null; push(q); } }
+      }
+      return { pull, push };
+    }
+    const fbSync = makeCloudSync('feedback', 'navoi_feedback_v1', '__onFeedbackSynced');
+    const usrSync = makeCloudSync('users', 'navoi_users_v1', '__onUsersSynced');
+    window.__syncFeedbackToCloud = function(list){ fbSync.push(list); };
+    window.__syncUsersToCloud    = function(list){ usrSync.push(list); };
+
     // Pull once DOM is interactive so boot() render functions exist
     if(document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', () => setTimeout(pullCloud, 400));
+      document.addEventListener('DOMContentLoaded', () => setTimeout(()=>{ pullCloud(); fbSync.pull(); usrSync.pull(); }, 400));
     } else {
-      setTimeout(pullCloud, 400);
+      setTimeout(()=>{ pullCloud(); fbSync.pull(); usrSync.pull(); }, 400);
     }
   } catch(err) {
     console.error('[firebase] init failed:', err);
