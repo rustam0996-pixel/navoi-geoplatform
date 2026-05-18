@@ -502,28 +502,51 @@ body.has-selection .home-pill{display:inline-flex}
 .tb-btn.excel-tb:disabled{opacity:.6;cursor:not-allowed;transform:none}
 
 /* ===== AUTH GATE ===== */
-.authgate{position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px}
+.authgate{position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Inter','Segoe UI',system-ui,sans-serif}
 .authgate[hidden]{display:none}
-.ag-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0f172a,#1e1b4b 55%,#1e3a8a);overflow:hidden}
-.ag-bg::after{content:"";position:absolute;inset:-40%;background:
-  radial-gradient(circle at 20% 30%,rgba(99,102,241,.35),transparent 45%),
-  radial-gradient(circle at 80% 70%,rgba(56,189,248,.25),transparent 45%)}
-.ag-card{position:relative;width:min(420px,94vw);background:#fff;border-radius:20px;padding:30px 30px 22px;
-  box-shadow:0 30px 80px -20px rgba(0,0,0,.6);animation:agIn .35s cubic-bezier(.2,.9,.3,1.15)}
-@keyframes agIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
-.ag-brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}
-.ag-logo{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#1d4ed8,#4f46e5);
-  color:#fff;font-weight:900;font-size:17px;display:flex;align-items:center;justify-content:center;letter-spacing:.5px}
-.ag-t1{font-size:16px;font-weight:850;color:#0f1a36}
-.ag-t2{font-size:12px;color:#6b7a99;margin-top:1px}
-.ag-state{display:flex;align-items:center;gap:10px;justify-content:center;padding:22px 0;color:#475569;font-size:13px;font-weight:600}
+.ag-bg{position:absolute;inset:0;background:radial-gradient(125% 125% at 50% 0%,#1e3a8a 0%,#1e1b4b 46%,#0a0e1c 100%);overflow:hidden}
+.ag-bg::before{content:"";position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:48px 48px;-webkit-mask-image:radial-gradient(circle at 50% 38%,#000 0%,transparent 72%);mask-image:radial-gradient(circle at 50% 38%,#000 0%,transparent 72%)}
+.ag-bg::after{content:"";position:absolute;inset:-30%;background:
+  radial-gradient(circle at 22% 26%,rgba(99,102,241,.42),transparent 42%),
+  radial-gradient(circle at 80% 74%,rgba(56,189,248,.30),transparent 42%),
+  radial-gradient(circle at 62% 8%,rgba(168,85,247,.22),transparent 40%);
+  animation:agAurora 16s ease-in-out infinite alternate}
+@keyframes agAurora{0%{transform:translate3d(-2%,-1%,0) scale(1)}100%{transform:translate3d(2%,2%,0) scale(1.09)}}
+.ag-card{position:relative;width:min(440px,94vw);background:rgba(255,255,255,.985);border:1px solid rgba(255,255,255,.55);border-radius:24px;padding:34px 34px 22px;
+  box-shadow:0 40px 90px -24px rgba(0,0,0,.66),0 0 0 1px rgba(99,102,241,.10),inset 0 1px 0 rgba(255,255,255,.7);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:agIn .55s cubic-bezier(.2,.9,.3,1.12)}
+.ag-card::before{content:"";position:absolute;inset:-1px;border-radius:24px;padding:1px;
+  background:linear-gradient(135deg,rgba(79,70,229,.6),rgba(56,189,248,.28),transparent 62%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+@keyframes agIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
+.ag-brand{display:flex;align-items:center;gap:14px;padding-bottom:18px;margin-bottom:20px;border-bottom:1px solid #eef1f7}
+.ag-logo{position:relative;width:52px;height:52px;border-radius:15px;background:linear-gradient(140deg,#1d4ed8,#4f46e5 58%,#6d28d9);
+  color:#fff;font-weight:900;font-size:18px;display:flex;align-items:center;justify-content:center;letter-spacing:.5px;
+  box-shadow:0 10px 22px -8px rgba(79,70,229,.7),inset 0 1px 0 rgba(255,255,255,.35)}
+.ag-logo::after{content:"";position:absolute;inset:-5px;border-radius:19px;border:1.5px solid rgba(79,70,229,.30);animation:agRing 2.8s ease-in-out infinite}
+@keyframes agRing{0%,100%{transform:scale(1);opacity:.55}55%{transform:scale(1.14);opacity:0}}
+.ag-t1{font-size:17px;font-weight:850;color:#0f1a36;letter-spacing:-.2px}
+.ag-t2{font-size:12px;color:#64748b;margin-top:2px;font-weight:600}
+/* Текширилмоқда — замонавий лоадер */
+.ag-state{display:flex;flex-direction:column;align-items:center;gap:15px;padding:26px 0 22px}
 .ag-state[hidden]{display:none}
+.ag-loader{position:relative;width:52px;height:52px}
+.ag-loader::before,.ag-loader::after{content:"";position:absolute;border-radius:50%;border:3px solid transparent}
+.ag-loader::before{inset:0;border-top-color:#4f46e5;border-right-color:#6366f1;animation:agSpin 1s linear infinite}
+.ag-loader::after{inset:9px;border-bottom-color:#38bdf8;border-left-color:#0ea5e9;animation:agSpin 1.5s linear infinite reverse}
+.ag-st-tx{font-size:13.5px;font-weight:750;color:#334155;letter-spacing:.2px}
+.ag-st-tx::after{content:"";animation:agDots 1.5s steps(1,end) infinite}
+@keyframes agDots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+.ag-bar{width:210px;max-width:62%;height:4px;border-radius:999px;background:#e7ebf3;overflow:hidden}
+.ag-bar i{display:block;height:100%;width:38%;border-radius:999px;background:linear-gradient(90deg,#4f46e5,#38bdf8);animation:agBar 1.35s ease-in-out infinite}
+@keyframes agBar{0%{transform:translateX(-130%)}100%{transform:translateX(330%)}}
+@keyframes agSpin{to{transform:rotate(360deg)}}
 .ag-form[hidden],.ag-help[hidden],.ag-help-toggle[hidden]{display:none}
 /* Ходим қўшиш/таҳрир ва фикр формаси админ маркази (z:1700) устида чиқсин */
 #userFormWrap{z-index:1900}
 #fbFormWrap{z-index:1900}
-.ag-spin{width:18px;height:18px;border:2.5px solid #c7d2fe;border-top-color:#4f46e5;border-radius:50%;animation:agSpin .8s linear infinite}
-@keyframes agSpin{to{transform:rotate(360deg)}}
 .ag-h{font-size:19px;font-weight:850;color:#0f1a36}
 .ag-sub{font-size:12px;color:#6b7a99;line-height:1.55;margin:5px 0 16px}
 .ag-lbl{display:block;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.4px;margin:11px 0 5px}
@@ -551,7 +574,8 @@ body.has-selection .home-pill{display:inline-flex}
 .ag-help li{margin:5px 0}
 .ag-help code{background:#e8eef7;padding:1px 5px;border-radius:4px;font-size:11px}
 .ag-muted{color:#94a3b8;font-size:11px}
-.ag-foot{margin-top:18px;text-align:center;font-size:10.5px;color:#94a3b8;font-weight:600;letter-spacing:.3px}
+.ag-foot{margin-top:20px;padding-top:14px;border-top:1px solid #eef1f7;text-align:center;font-size:10.5px;color:#94a3b8;font-weight:700;letter-spacing:.4px;display:flex;align-items:center;justify-content:center;gap:6px}
+.ag-foot svg{width:12px;height:12px;opacity:.8}
 /* Кирган фойдаланувчи чипи (топбарда) */
 .tb-user{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.86);
   border:1px solid rgba(215,224,237,.85);border-radius:8px;min-height:32px;padding:5px 9px;
@@ -1805,8 +1829,9 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       </div>
     </div>
     <div class="ag-state" id="agState">
-      <div class="ag-spin"></div>
-      <span>Тизим текширилмоқда…</span>
+      <div class="ag-loader" aria-hidden="true"></div>
+      <div class="ag-st-tx">Тизим текширилмоқда</div>
+      <div class="ag-bar" aria-hidden="true"><i></i></div>
     </div>
     <form class="ag-form" id="agForm" onsubmit="return agSubmit(event)" hidden>
       <div class="ag-h">Тизимга кириш</div>
@@ -1841,7 +1866,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <button class="ag-btn" type="button" id="bsBtn" style="margin-top:8px" onclick="bootstrapAdminSubmit()">Админ аккаунтини яратиш</button>
       <span class="ag-muted" style="display:block;margin-top:10px">Яратилгач, шу логин ва парол билан тизимга кирасиз. Бошқа ходимларни «Админ» бўлимидан қўшасиз.</span>
     </div>
-    <div class="ag-foot">Расмий ахборот тизими · Навоий вилояти ҳокимлиги</div>
+    <div class="ag-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg> Расмий ахборот тизими · Навоий вилояти ҳокимлиги</div>
   </div>
 </div>
 
