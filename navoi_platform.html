@@ -501,6 +501,62 @@ body.has-selection .home-pill{display:inline-flex}
 .tb-btn.excel-tb .excel-tb-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:18px;padding:0 5px;border-radius:9px;background:rgba(255,255,255,.22);color:#fff;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;margin-left:2px}
 .tb-btn.excel-tb:disabled{opacity:.6;cursor:not-allowed;transform:none}
 
+/* ===== AUTH GATE ===== */
+.authgate{position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px}
+.authgate[hidden]{display:none}
+.ag-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0f172a,#1e1b4b 55%,#1e3a8a);overflow:hidden}
+.ag-bg::after{content:"";position:absolute;inset:-40%;background:
+  radial-gradient(circle at 20% 30%,rgba(99,102,241,.35),transparent 45%),
+  radial-gradient(circle at 80% 70%,rgba(56,189,248,.25),transparent 45%)}
+.ag-card{position:relative;width:min(420px,94vw);background:#fff;border-radius:20px;padding:30px 30px 22px;
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.6);animation:agIn .35s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes agIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.ag-brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.ag-logo{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#1d4ed8,#4f46e5);
+  color:#fff;font-weight:900;font-size:17px;display:flex;align-items:center;justify-content:center;letter-spacing:.5px}
+.ag-t1{font-size:16px;font-weight:850;color:#0f1a36}
+.ag-t2{font-size:12px;color:#6b7a99;margin-top:1px}
+.ag-state{display:flex;align-items:center;gap:10px;justify-content:center;padding:22px 0;color:#475569;font-size:13px;font-weight:600}
+.ag-spin{width:18px;height:18px;border:2.5px solid #c7d2fe;border-top-color:#4f46e5;border-radius:50%;animation:agSpin .8s linear infinite}
+@keyframes agSpin{to{transform:rotate(360deg)}}
+.ag-h{font-size:19px;font-weight:850;color:#0f1a36}
+.ag-sub{font-size:12px;color:#6b7a99;line-height:1.55;margin:5px 0 16px}
+.ag-lbl{display:block;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.4px;margin:11px 0 5px}
+.ag-form input{width:100%;background:#fff;border:1px solid #d7e0ed;border-radius:10px;padding:11px 13px;
+  font-size:14px;font-family:inherit;color:#0f1a36;outline:none;transition:border-color .15s,box-shadow .15s}
+.ag-form input:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.18)}
+.ag-pass{position:relative}
+.ag-pass input{padding-right:42px}
+.ag-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;
+  color:#94a3b8;cursor:pointer;padding:5px;display:flex}
+.ag-eye:hover{color:#4f46e5}
+.ag-err{color:#dc2626;font-size:12px;font-weight:700;min-height:17px;margin:9px 0 2px}
+.ag-btn{width:100%;margin-top:6px;padding:12px 16px;border-radius:10px;border:0;cursor:pointer;
+  font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#3730a3,#4f46e5);
+  box-shadow:0 10px 22px -8px rgba(79,70,229,.55);transition:transform .12s,opacity .15s}
+.ag-btn:hover{transform:translateY(-1px)}
+.ag-btn:disabled{opacity:.6;cursor:progress;transform:none}
+.ag-help-toggle{margin-top:16px;width:100%;background:transparent;border:0;color:#64748b;
+  font-size:11.5px;font-weight:700;cursor:pointer;padding:6px}
+.ag-help-toggle:hover{color:#4f46e5}
+.ag-help{margin-top:8px;background:#f4f7fb;border:1px solid #e2e9f3;border-radius:10px;padding:13px 15px;
+  font-size:11.5px;color:#475569;line-height:1.6}
+.ag-help[hidden]{display:none}
+.ag-help ol{margin:8px 0 6px;padding-left:18px}
+.ag-help li{margin:5px 0}
+.ag-help code{background:#e8eef7;padding:1px 5px;border-radius:4px;font-size:11px}
+.ag-muted{color:#94a3b8;font-size:11px}
+.ag-foot{margin-top:18px;text-align:center;font-size:10.5px;color:#94a3b8;font-weight:600;letter-spacing:.3px}
+/* Кирган фойдаланувчи чипи (топбарда) */
+.tb-user{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.86);
+  border:1px solid rgba(215,224,237,.85);border-radius:8px;min-height:32px;padding:5px 9px;
+  font-size:11.5px;font-weight:700;color:var(--ink-2)}
+.tb-user .tu-av{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#3730a3);
+  color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.tb-user .tu-role{font-size:9.5px;font-weight:800;color:#4f46e5;text-transform:uppercase;letter-spacing:.3px}
+.tb-user .tu-logout{border:0;background:transparent;color:#dc2626;cursor:pointer;font-size:11px;font-weight:800;padding:2px 4px}
+.tb-user .tu-logout:hover{text-decoration:underline}
+
 /* ===== АДМИН ТУГМА + БЕЙДЖ ===== */
 .tb-btn.admin-tb{background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border-color:transparent;font-weight:750;box-shadow:0 4px 10px -3px rgba(79,70,229,.4);position:relative}
 .tb-btn.admin-tb:hover{transform:translateY(-1px);box-shadow:0 8px 16px -4px rgba(79,70,229,.5);color:#fff}
@@ -1729,6 +1785,53 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
   <div class="tx">Харита ва маълумотлар юкланмоқда...</div>
 </div>
 
+<!-- ================= AUTH GATE (бутун сайт логин остида) ================= -->
+<div class="authgate" id="authGate">
+  <div class="ag-bg" aria-hidden="true"></div>
+  <div class="ag-card" role="dialog" aria-label="Тизимга кириш">
+    <div class="ag-brand">
+      <div class="ag-logo">NV</div>
+      <div>
+        <div class="ag-t1">Навоий вилояти</div>
+        <div class="ag-t2">Ер ресурслари геоплатформаси</div>
+      </div>
+    </div>
+    <div class="ag-state" id="agState">
+      <div class="ag-spin"></div>
+      <span>Тизим текширилмоқда…</span>
+    </div>
+    <form class="ag-form" id="agForm" onsubmit="return agSubmit(event)" hidden>
+      <div class="ag-h">Тизимга кириш</div>
+      <div class="ag-sub">Платформадан фойдаланиш учун логин ва паролингизни киритинг. Доступ сайт админи томонидан берилади.</div>
+      <label class="ag-lbl">Логин</label>
+      <input id="ag-user" type="text" autocomplete="username" placeholder="Масалан: karmana_er" required>
+      <label class="ag-lbl">Парол</label>
+      <div class="ag-pass">
+        <input id="ag-pass" type="password" autocomplete="current-password" placeholder="Парол" required>
+        <button type="button" class="ag-eye" id="agEye" aria-label="Паролни кўрсатиш" onclick="agTogglePass()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="ag-err" id="ag-err"></div>
+      <button class="ag-btn" type="submit" id="agBtn">Кириш</button>
+    </form>
+    <button class="ag-help-toggle" type="button" onclick="document.getElementById('agHelp').hidden=!document.getElementById('agHelp').hidden">
+      ⚙️ Созлаш қўлланмаси (админ учун)
+    </button>
+    <div class="ag-help" id="agHelp" hidden>
+      <b>Биринчи марта созлаш (фақат админ, Firebase консолида):</b>
+      <ol>
+        <li>Firebase Console → <b>Authentication → Sign-in method</b> → <b>Email/Password</b>ни ёқинг.</li>
+        <li>Authentication → Users → <b>Add user</b>: email <code>admin@navoi-platform.uz</code> ва парол киритинг.</li>
+        <li>Firestore → <code>users</code> коллекцияси → ҳужжат ID = ўша фойдаланувчи UID, майдонлар: <code>username:"admin"</code>, <code>role:"admin"</code>, <code>status:"active"</code>, <code>fullName:"..."</code>, <code>district:""</code>.</li>
+        <li>Firestore → <b>Rules</b> → берилган хавфсизлик қоидаларини жойлаштиринг.</li>
+      </ol>
+      <span class="ag-muted">Шундан сўнг бошқа барча ходимларни сайтнинг ўзидаги «Админ» бўлимидан қўшасиз.</span>
+    </div>
+    <div class="ag-foot">Расмий ахборот тизими · Навоий вилояти ҳокимлиги</div>
+  </div>
+</div>
+
 <!-- TOP BAR -->
 <div class="topbar">
   <div class="brand" id="brandHome" role="button" tabindex="0" title="Бош саҳифага қайтиш" aria-label="Бош саҳифага қайтиш">
@@ -1789,6 +1892,11 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" id="themeIcon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
       <span id="themeLabel">Кундузги</span>
     </button>
+    <div class="tb-user" id="tbUser" hidden>
+      <span class="tu-av" id="tuAv">·</span>
+      <span><span id="tuName">—</span> · <span class="tu-role" id="tuRole">—</span></span>
+      <button class="tu-logout" type="button" onclick="appLogout()" title="Тизимдан чиқиш">Чиқиш</button>
+    </div>
     <button class="tb-btn" id="feedbackBtn" type="button" title="Сайт бўйича таклиф ёки шикоят билдириш" onclick="openFeedbackForm()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       <span>Таклиф / Шикоят</span>
@@ -7520,23 +7628,22 @@ function submitFeedback(){
    ============================================================ */
 const USERS_KEY    = 'navoi_users_v1';
 const SETTINGS_KEY = 'navoi_admin_settings_v1';
-const ADMIN_SESS   = 'navoi_admin_ok_v1';
-function _seedUsers(){
-  try{
-    const seed = (window.SECTIONS_RAW_FULL && Array.isArray(window.SECTIONS_RAW_FULL.users)) ? window.SECTIONS_RAW_FULL.users : [];
-    return JSON.parse(JSON.stringify(seed));
-  }catch(e){ return []; }
-}
+/* Профиллар Firestore `users` коллекциясида UID бўйича сақланади
+   (паролсиз — пароллар Firebase Auth'да хэшланган). Бу ерда фақат
+   булутдан синхронланган локал кўзгуни ўқиймиз. */
 function getUsers(){
-  try{ const raw = localStorage.getItem(USERS_KEY); if(raw){ const a=JSON.parse(raw); if(Array.isArray(a)&&a.length) return a; } }catch(e){}
-  const seed = _seedUsers();
-  if(seed.length){ try{ localStorage.setItem(USERS_KEY, JSON.stringify(seed)); }catch(e){} }
-  return seed;
+  try{
+    const raw = localStorage.getItem(USERS_KEY);
+    if(raw){
+      const a = JSON.parse(raw);
+      if(Array.isArray(a)) return a.map(u => Object.assign({}, u, { id: u.id || u.uid }));
+    }
+  }catch(e){}
+  return [];
 }
 function saveUsers(arr){
-  const list = arr || [];
-  try{ localStorage.setItem(USERS_KEY, JSON.stringify(list)); }catch(e){}
-  try{ if(typeof window.__syncUsersToCloud === 'function'){ window.__syncUsersToCloud(list); } }catch(e){ console.warn('users sync skipped:', e); }
+  // Локал кўзгу (Firestore'дан per-doc ёзилади, бу фақат UI учун)
+  try{ localStorage.setItem(USERS_KEY, JSON.stringify(arr||[])); }catch(e){}
 }
 function getAdminSettings(){
   try{ const raw=localStorage.getItem(SETTINGS_KEY); if(raw) return Object.assign({proposalsOff:false,feedbackOff:false,notice:''}, JSON.parse(raw)||{}); }catch(e){}
@@ -7546,90 +7653,95 @@ function saveAdminSettings(s){
   try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s||{})); }catch(e){}
 }
 
-/* ---- Админ сессияси ---- */
-function isAdminUnlocked(){ try{ return sessionStorage.getItem(ADMIN_SESS) === '1'; }catch(e){ return false; } }
-function setAdminUnlocked(ok, name){
-  try{
-    if(ok){ sessionStorage.setItem(ADMIN_SESS, '1'); if(name) sessionStorage.setItem(ADMIN_SESS+'_n', name); }
-    else { sessionStorage.removeItem(ADMIN_SESS); sessionStorage.removeItem(ADMIN_SESS+'_n'); }
-  }catch(e){}
-}
-function adminName(){ try{ return sessionStorage.getItem(ADMIN_SESS+'_n') || 'Админ'; }catch(e){ return 'Админ'; } }
+/* ---- Кириш ҳолати (Firebase Auth профили) ---- */
+function currentProfile(){ return (window.__profile || (window.__auth && window.__auth.profile)) || null; }
+function isAppAdmin(){ const p=currentProfile(); return !!(p && p.role==='admin' && (p.status||'active')==='active'); }
 
-/* «Админ» тугмаси оддий фойдаланувчиларга кўринмайди — фақат админ уни
-   яширин йўл (Ctrl+Shift+A ёки #admin URL) орқали очади, ёки сессияда
-   аллақачон кирган бўлса. */
-const ADMIN_REVEAL = 'navoi_admin_reveal_v1';
-function _adminUrlHint(){
+/* AUTH GATE — логин формаси */
+function agTogglePass(){
+  const i=document.getElementById('ag-pass'); if(!i) return;
+  i.type = i.type==='password' ? 'text' : 'password';
+}
+async function agSubmit(ev){
+  if(ev) ev.preventDefault();
+  const u=(document.getElementById('ag-user')||{}).value||'';
+  const p=(document.getElementById('ag-pass')||{}).value||'';
+  const err=document.getElementById('ag-err');
+  const btn=document.getElementById('agBtn');
+  if(!u.trim()||!p){ if(err) err.textContent='Логин ва паролни киритинг'; return false; }
+  if(!window.__auth){ if(err) err.textContent='Тизим ҳали юкланмоқда — бир оз кутинг'; return false; }
+  if(err) err.textContent='';
+  if(btn){ btn.disabled=true; btn.textContent='Текширилмоқда…'; }
   try{
-    const h = (location.hash||'').toLowerCase();
-    const s = (location.search||'').toLowerCase();
-    return h.indexOf('admin') >= 0 || s.indexOf('admin') >= 0;
-  }catch(e){ return false; }
+    const r = await window.__auth.signIn(u, p);
+    if(!r.ok){ if(err) err.textContent = r.error || 'Кириш амалга ошмади'; }
+    else { const pp=document.getElementById('ag-pass'); if(pp) pp.value=''; }
+  }catch(e){ if(err) err.textContent='Хатолик: '+(e&&e.message||e); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='Кириш'; } }
+  return false;
 }
+async function appLogout(){
+  if(!confirm('Тизимдан чиқишни тасдиқлайсизми?')) return;
+  closeAdminCenter();
+  if(window.__auth && window.__auth.signOutNow) await window.__auth.signOutNow();
+}
+
+/* Кириш ҳал бўлганда — топбар чипи, админ тугмаси, кўзгу янгиланади */
+function _initial(s){ s=String(s||'').trim(); return s ? s[0].toUpperCase() : '·'; }
+window.__onAuthResolved = function(profile){
+  window.__profile = profile || null;
+  const chip=document.getElementById('tbUser');
+  if(profile){
+    const nm = profile.fullName || profile.username || 'Фойдаланувчи';
+    const av=document.getElementById('tuAv'), nme=document.getElementById('tuName'), rl=document.getElementById('tuRole');
+    if(av) av.textContent=_initial(nm);
+    if(nme) nme.textContent=nm;
+    if(rl) rl.textContent=roleLabel(profile.role);
+    if(chip) chip.hidden=false;
+    try{ if(typeof window.__refreshUsersMirror==='function') window.__refreshUsersMirror(); }catch(e){}
+  } else {
+    if(chip) chip.hidden=true;
+    closeAdminCenter();
+  }
+  try{ refreshAdminBtnVisibility(); }catch(e){}
+  try{ applyAdminSettingsUI(); }catch(e){}
+  // Админ маркази очиқ бўлса — қайта чизиш
+  try{ const ov=document.getElementById('adminOverlay'); if(ov && ov.style.display==='flex') _renderAdminGate(); }catch(e){}
+};
+
+/* «Админ» тугмаси фақат админ ролидаги фойдаланувчига кўринади */
 function refreshAdminBtnVisibility(){
-  const b = document.getElementById('adminBtn');
-  if(!b) return;
-  let revealed = false;
-  try{ revealed = sessionStorage.getItem(ADMIN_REVEAL) === '1'; }catch(e){}
-  const show = revealed || isAdminUnlocked() || _adminUrlHint();
-  b.style.display = show ? '' : 'none';
-  if(show){ try{ sessionStorage.setItem(ADMIN_REVEAL,'1'); }catch(e){} }
-}
-function revealAdminButton(){
-  try{ sessionStorage.setItem(ADMIN_REVEAL,'1'); }catch(e){}
-  refreshAdminBtnVisibility();
+  const b=document.getElementById('adminBtn');
+  if(b) b.style.display = isAppAdmin() ? '' : 'none';
 }
 function openAdminCenter(){
-  const ov = document.getElementById('adminOverlay');
+  if(!isAppAdmin()){ showToast('⛔ Сизда админ ҳуқуқи йўқ'); return; }
+  const ov=document.getElementById('adminOverlay');
   if(!ov) return;
-  revealAdminButton();
-  ov.style.display = 'flex';
+  ov.style.display='flex';
   _renderAdminGate();
 }
 function closeAdminCenter(){ const ov=document.getElementById('adminOverlay'); if(ov) ov.style.display='none'; }
 function _renderAdminGate(){
-  const unlocked = isAdminUnlocked();
+  const admin = isAppAdmin();
   const login = document.getElementById('admLogin');
   const main  = document.getElementById('admMain');
   const who   = document.getElementById('admWhoami');
   const lo    = document.getElementById('admLogoutBtn');
-  if(login) login.style.display = unlocked ? 'none' : 'flex';
-  if(main)  main.hidden = !unlocked;
-  if(who){ who.hidden = !unlocked; who.textContent = unlocked ? ('👤 ' + adminName()) : ''; }
-  if(lo)   lo.hidden = !unlocked;
-  if(unlocked){
+  if(login) login.style.display = 'none';            // эски парол формаси ишлатилмайди
+  if(main)  main.hidden = !admin;
+  const p = currentProfile();
+  if(who){ who.hidden = !admin; who.textContent = admin ? ('👤 ' + (p&&(p.fullName||p.username)||'Админ')) : ''; }
+  if(lo){ lo.hidden = !admin; lo.textContent='Тизимдан чиқиш'; lo.onclick = appLogout; }
+  if(admin){
     switchAdminTab('users');
     renderAdminUsers(); renderAdminFeedback(); loadAdminSettingsIntoForm();
     updateAdminTabCounts();
-  } else {
-    const u=document.getElementById('adm-user'), e=document.getElementById('adm-login-err');
-    if(e) e.textContent=''; if(u) setTimeout(()=>u.focus(),120);
   }
 }
-function adminLoginSubmit(ev){
-  if(ev) ev.preventDefault();
-  const u = (document.getElementById('adm-user')||{}).value || '';
-  const p = (document.getElementById('adm-pass')||{}).value || '';
-  const err = document.getElementById('adm-login-err');
-  const user = getUsers().find(x => x && x.username === u.trim() && x.password === p && x.role === 'admin' && (x.status||'active') === 'active');
-  if(!user){
-    if(err) err.textContent = 'Логин ёки парол нотўғри, ёки админ ҳуқуқи йўқ';
-    return false;
-  }
-  setAdminUnlocked(true, user.fullName || user.username);
-  const pp=document.getElementById('adm-pass'); if(pp) pp.value='';
-  _renderAdminGate();
-  showToast('✓ Админ панелга кирдингиз');
-  return false;
-}
-function adminLogout(){
-  setAdminUnlocked(false);
-  try{ sessionStorage.removeItem(ADMIN_REVEAL); }catch(e){}
-  closeAdminCenter();
-  refreshAdminBtnVisibility();
-  showToast('Админ сессияси якунланди');
-}
+/* Эски парол гейти энди ишлатилмайди (бутун сайт логин остида) */
+function adminLoginSubmit(ev){ if(ev) ev.preventDefault(); return false; }
+function adminLogout(){ appLogout(); }
 function switchAdminTab(which){
   document.querySelectorAll('#admTabs .adm-tab').forEach(b=>b.classList.toggle('active', b.dataset.atab===which));
   document.querySelectorAll('#admMain .adm-pane').forEach(p=>p.classList.toggle('active', p.dataset.apane===which));
@@ -7681,64 +7793,89 @@ function openUserForm(id){
   }
   const t = document.getElementById('userFormTitle');
   const set=(i,val)=>{ const el=document.getElementById(i); if(el) el.value = val==null?'':val; };
+  const passGrp = document.getElementById('uf-password') ? document.getElementById('uf-password').closest('.pf-group') : null;
   if(id){
     const u = getUsers().find(x=>x.id===id) || {};
     if(t) t.textContent = 'Ходимни таҳрирлаш';
     set('uf-fullname',u.fullName); set('uf-position',u.position);
     set('uf-role',u.role||'district'); set('uf-district',u.district);
-    set('uf-username',u.username); set('uf-password',u.password);
+    set('uf-username',u.username); set('uf-password','');
     set('uf-status',u.status||'active');
+    const un=document.getElementById('uf-username'); if(un) un.disabled=true;          // логин ўзгармайди
+    if(passGrp) passGrp.style.display='none';                                           // паролни клиентдан ўзгартириб бўлмайди
   } else {
     if(t) t.textContent = 'Янги ходим қўшиш';
     set('uf-fullname',''); set('uf-position','');
     set('uf-role','district'); set('uf-district','');
     set('uf-username',''); set('uf-password','');
     set('uf-status','active');
+    const un=document.getElementById('uf-username'); if(un) un.disabled=false;
+    if(passGrp) passGrp.style.display='';
   }
   onUserRoleChange();
   const w=document.getElementById('userFormWrap'); if(w) w.style.display='flex';
 }
 function closeUserForm(){ const w=document.getElementById('userFormWrap'); if(w) w.style.display='none'; _editUserId=null; }
-function saveUserForm(){
+async function saveUserForm(){
+  if(!isAppAdmin()){ showToast('⛔ Сизда админ ҳуқуқи йўқ'); return; }
   const v=(i)=>{ const el=document.getElementById(i); return el? el.value.trim() : ''; };
   const fullName=v('uf-fullname'), position=v('uf-position'), role=v('uf-role'),
-        district=v('uf-district'), username=v('uf-username'), password=v('uf-password'),
+        district=v('uf-district'), username=v('uf-username').toLowerCase(), password=v('uf-password'),
         status=v('uf-status');
-  if(!fullName || !username || !password || !role){
-    showToast('⚠️ Ф.И.Ш., роль, логин ва паролни тўлдиринг'); return;
-  }
-  if(password.length < 5){ showToast('⚠️ Парол камида 5 белгидан иборат бўлсин'); return; }
+  if(!fullName || !role){ showToast('⚠️ Ф.И.Ш. ва ролни тўлдиринг'); return; }
   if(role==='district' && !district){ showToast('⚠️ Туман/шаҳар ходими учун туман танланг'); return; }
-  const users = getUsers();
-  const clash = users.find(x=>x.username===username && x.id!==_editUserId);
-  if(clash){ showToast('⚠️ Бу логин банд — бошқа логин танланг'); return; }
+  const btnSel='#userFormWrap .prop-btn.primary';
+  const btn=document.querySelector(btnSel);
   if(_editUserId){
-    const u = users.find(x=>x.id===_editUserId);
-    if(u){ Object.assign(u, {fullName,position,role,district:role==='district'?district:'',username,password,status}); }
-  } else {
-    users.push({
-      id:'u_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
-      fullName, position, role, district: role==='district'?district:'',
-      username, password, status, createdAt: Date.now()
+    // Таҳрир — фақат профил майдонлари (логин/парол Auth'да ўзгармайди)
+    const u = getUsers().find(x=>x.id===_editUserId);
+    if(!u){ showToast('Ходим топилмади'); return; }
+    if(btn){ btn.disabled=true; btn.textContent='Сақланмоқда…'; }
+    const r = await window.__auth.updateProfileDoc(u.uid||u.id, {
+      fullName, position, role, district: role==='district'?district:'', status
     });
+    if(btn){ btn.disabled=false; btn.textContent='💾 Сақлаш'; }
+    if(!r.ok){ showToast('⚠️ '+(r.error||'Сақлашда хатолик')); return; }
+    if(typeof window.__refreshUsersMirror==='function') window.__refreshUsersMirror();
+    closeUserForm();
+    setTimeout(()=>{ renderAdminUsers(); updateAdminTabCounts(); }, 600);
+    showToast('💾 Ходим маълумоти янгиланди');
+    return;
   }
-  saveUsers(users);
+  // Янги ходим — Firebase Auth аккаунти яратилади
+  if(!username || !password){ showToast('⚠️ Логин ва паролни тўлдиринг'); return; }
+  if(!/^[a-z0-9._-]{3,}$/.test(username)){ showToast('⚠️ Логин: камида 3 та лотин ҳарф/рақам (a-z, 0-9, . _ -)'); return; }
+  if(password.length < 6){ showToast('⚠️ Парол камида 6 белгидан иборат бўлсин'); return; }
+  const clash = getUsers().find(x=>String(x.username||'').toLowerCase()===username);
+  if(clash){ showToast('⚠️ Бу логин банд — бошқа логин танланг'); return; }
+  if(!window.__auth){ showToast('Тизим ҳали юкланмоқда'); return; }
+  if(btn){ btn.disabled=true; btn.textContent='Яратилмоқда…'; }
+  const r = await window.__auth.createStaff({ username, password, fullName, position, role, district: role==='district'?district:'', status });
+  if(btn){ btn.disabled=false; btn.textContent='💾 Сақлаш'; }
+  if(!r.ok){ showToast('⚠️ '+(r.error||'Яратишда хатолик')); return; }
+  if(typeof window.__refreshUsersMirror==='function') window.__refreshUsersMirror();
   closeUserForm();
-  renderAdminUsers(); updateAdminTabCounts();
-  showToast(_editUserId ? '💾 Ходим маълумоти янгиланди' : '✓ Янги ходимга доступ берилди');
+  setTimeout(()=>{ renderAdminUsers(); updateAdminTabCounts(); }, 700);
+  showToast('✓ Янги ходимга доступ берилди — логин: '+username);
 }
-function toggleUserStatus(id){
+async function toggleUserStatus(id){
+  if(!isAppAdmin()){ showToast('⛔ Сизда админ ҳуқуқи йўқ'); return; }
   const users = getUsers();
   const u = users.find(x=>x.id===id);
   if(!u) return;
-  if(u.role==='admin' && (u.status||'active')==='active'){
+  const active = (u.status||'active')==='active';
+  if(u.role==='admin' && active){
     const others = users.filter(x=>x.role==='admin' && (x.status||'active')==='active' && x.id!==id);
     if(!others.length){ showToast('⚠️ Охирги фаол админни блоклаб бўлмайди'); return; }
   }
-  u.status = (u.status||'active')==='active' ? 'disabled' : 'active';
-  saveUsers(users);
-  renderAdminUsers();
-  showToast(u.status==='active' ? '✓ Ходим фаоллаштирилди' : '⛔ Ходим блокланди');
+  const me = currentProfile();
+  if(me && (me.uid===u.uid || me.uid===u.id) && active){ showToast('⚠️ Ўзингизни блоклай олмайсиз'); return; }
+  const newStatus = active ? 'disabled' : 'active';
+  const r = await window.__auth.updateProfileDoc(u.uid||u.id, { status:newStatus });
+  if(!r.ok){ showToast('⚠️ '+(r.error||'Хатолик')); return; }
+  if(typeof window.__refreshUsersMirror==='function') window.__refreshUsersMirror();
+  setTimeout(()=>renderAdminUsers(), 500);
+  showToast(newStatus==='active' ? '✓ Ходим фаоллаштирилди' : '⛔ Ходим блокланди');
 }
 
 /* ---- Фикр-мулоҳазалар (админ кўриниши) ---- */
@@ -7810,8 +7947,8 @@ function updateAdminBadge(){
   if(n>0){ b.hidden=false; b.textContent = n>99?'99+':String(n); }
   else { b.hidden=true; }
 }
-window.__onFeedbackSynced = function(){ try{ updateAdminBadge(); }catch(e){} try{ const ov=document.getElementById('adminOverlay'); if(ov&&ov.style.display==='flex'&&isAdminUnlocked()) renderAdminFeedback(); }catch(e){} };
-window.__onUsersSynced = function(){ try{ const ov=document.getElementById('adminOverlay'); if(ov&&ov.style.display==='flex'&&isAdminUnlocked()) renderAdminUsers(); }catch(e){} };
+window.__onFeedbackSynced = function(){ try{ updateAdminBadge(); }catch(e){} try{ const ov=document.getElementById('adminOverlay'); if(ov&&ov.style.display==='flex'&&isAppAdmin()) renderAdminFeedback(); }catch(e){} };
+window.__onUsersSynced = function(){ try{ const ov=document.getElementById('adminOverlay'); if(ov&&ov.style.display==='flex'&&isAppAdmin()) renderAdminUsers(); }catch(e){} };
 
 /* ---- Созламалар ---- */
 function loadAdminSettingsIntoForm(){
@@ -10104,8 +10241,12 @@ if(document.readyState === 'loading'){
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAnalytics, isSupported as analyticsSupported } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
   import {
-    getFirestore, collection, getDocs, setDoc, deleteDoc, doc
+    getFirestore, collection, getDocs, getDoc, setDoc, deleteDoc, doc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import {
+    getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+    createUserWithEmailAndPassword, setPersistence, browserLocalPersistence
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB_ouaIV15tOJyqHACLRDalnEvPpqTzPq0",
@@ -10124,6 +10265,131 @@ if(document.readyState === 'loading'){
     const COL = collection(db, 'proposals');
     window.firebaseApp = app;
     window.firebaseDb  = db;
+
+    /* ============================================================
+       FIREBASE AUTHENTICATION — бутун сайт логин остида
+       Синтетик email: <login>@navoi-platform.uz
+       ============================================================ */
+    const USER_DOMAIN = '@navoi-platform.uz';
+    const uname2email = (u) => String(u||'').trim().toLowerCase().replace(/\s+/g,'') + USER_DOMAIN;
+    const auth = getAuth(app);
+    try { await setPersistence(auth, browserLocalPersistence); } catch(e){}
+    // Иккиламчи илова — янги ходим яратилганда жорий админ сессияси узилмаслиги учун
+    let secApp = null, secAuth = null;
+    function getSecAuth(){
+      if(!secAuth){
+        secApp  = initializeApp(firebaseConfig, 'admin-worker-' + Date.now());
+        secAuth = getAuth(secApp);
+      }
+      return secAuth;
+    }
+
+    function gateEl(id){ return document.getElementById(id); }
+    function showGate(mode, msg){
+      const g = gateEl('authGate'); if(g) g.hidden = false;
+      const st = gateEl('agState'), fm = gateEl('agForm');
+      if(mode === 'form'){
+        if(st) st.hidden = true;
+        if(fm) fm.hidden = false;
+        const e = gateEl('ag-err'); if(e) e.textContent = msg || '';
+        const u = gateEl('ag-user'); if(u) setTimeout(()=>u.focus(), 150);
+      } else { // 'checking'
+        if(st) st.hidden = false;
+        if(fm) fm.hidden = true;
+      }
+      document.body.classList.add('auth-locked');
+    }
+    function hideGate(){
+      const g = gateEl('authGate'); if(g) g.hidden = true;
+      document.body.classList.remove('auth-locked');
+    }
+    window.__authShowGate = showGate;
+
+    async function loadProfile(user){
+      try{
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if(!snap.exists()) return null;
+        return Object.assign({ uid: user.uid }, snap.data());
+      }catch(e){ console.warn('[auth] profile read failed:', e && e.message); return undefined; }
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if(!user){
+        window.__profile = null;
+        try{ if(typeof window.__onAuthResolved === 'function') window.__onAuthResolved(null); }catch(e){}
+        showGate('form');
+        return;
+      }
+      showGate('checking');
+      const prof = await loadProfile(user);
+      if(prof === undefined){
+        // Firestore ўқишда хатолик (қоидалар ёки оффлайн) — кирмаган деб ҳисоблаймиз
+        try{ await signOut(auth); }catch(e){}
+        showGate('form', 'Профилни ўқишда хатолик. Админга мурожаат қилинг.');
+        return;
+      }
+      if(!prof){
+        try{ await signOut(auth); }catch(e){}
+        showGate('form', 'Профил топилмади. Сизга ҳали доступ берилмаган — админга мурожаат қилинг.');
+        return;
+      }
+      if((prof.status||'active') !== 'active'){
+        try{ await signOut(auth); }catch(e){}
+        showGate('form', 'Аккаунтингиз блокланган. Сайт админига мурожаат қилинг.');
+        return;
+      }
+      window.__profile = prof;
+      hideGate();
+      try{ if(typeof window.__onAuthResolved === 'function') window.__onAuthResolved(prof); }catch(e){}
+    });
+
+    window.__auth = {
+      get profile(){ return window.__profile || null; },
+      async signIn(username, password){
+        try{
+          await signInWithEmailAndPassword(auth, uname2email(username), password);
+          return { ok:true };
+        }catch(err){
+          const c = (err && err.code) || '';
+          let m = 'Логин ёки парол нотўғри';
+          if(c.indexOf('too-many-requests') >= 0) m = 'Жуда кўп уриниш — бироздан сўнг қайта уриниб кўринг';
+          else if(c.indexOf('network') >= 0) m = 'Интернет алоқаси йўқ';
+          else if(c.indexOf('operation-not-allowed') >= 0) m = 'Email/Password провайдери Firebase\'да ёқилмаган (созлаш қўлланмасига қаранг)';
+          return { ok:false, error:m };
+        }
+      },
+      async signOutNow(){ try{ await signOut(auth); }catch(e){} },
+      /* Админ янги ходим яратади (иккиламчи илова орқали — сессия узилмайди) */
+      async createStaff(p){
+        const sa = getSecAuth();
+        try{
+          const cred = await createUserWithEmailAndPassword(sa, uname2email(p.username), p.password);
+          const uid = cred.user.uid;
+          const profile = {
+            uid, username: String(p.username||'').trim().toLowerCase(),
+            fullName: p.fullName||'', position: p.position||'',
+            role: p.role||'viewer', district: p.district||'',
+            status: p.status||'active', createdAt: Date.now()
+          };
+          await setDoc(doc(db, 'users', uid), profile);
+          try{ await signOut(sa); }catch(e){}
+          return { ok:true, uid, profile };
+        }catch(err){
+          const c = (err && err.code) || '';
+          let m = (err && err.message) || 'Хатолик';
+          if(c.indexOf('email-already-in-use') >= 0) m = 'Бу логин аллақачон банд';
+          else if(c.indexOf('weak-password') >= 0) m = 'Парол жуда содда (камида 6 белги)';
+          else if(c.indexOf('operation-not-allowed') >= 0) m = 'Email/Password провайдери ёқилмаган';
+          else if(c.indexOf('permission') >= 0) m = 'Firestore қоидалари рухсат бермади';
+          try{ await signOut(sa); }catch(e){}
+          return { ok:false, error:m };
+        }
+      },
+      async updateProfileDoc(uid, patch){
+        try{ await setDoc(doc(db, 'users', uid), patch, { merge:true }); return { ok:true }; }
+        catch(err){ return { ok:false, error:(err&&err.message)||'Хатолик' }; }
+      }
+    };
 
     const PROP_KEY = 'navoi_proposals_v1';
     const readLocal = () => { try{ const raw = localStorage.getItem(PROP_KEY); if(raw) return JSON.parse(raw)||[]; }catch(e){} return []; };
@@ -10212,7 +10478,11 @@ if(document.readyState === 'loading'){
     const fbSync = makeCloudSync('feedback', 'navoi_feedback_v1', '__onFeedbackSynced');
     const usrSync = makeCloudSync('users', 'navoi_users_v1', '__onUsersSynced');
     window.__syncFeedbackToCloud = function(list){ fbSync.push(list); };
-    window.__syncUsersToCloud    = function(list){ usrSync.push(list); };
+    // Фойдаланувчи профиллари UID бўйича алоҳида ҳужжатларда сақланади
+    // (паролсиз). Шунинг учун бутун рўйхатни клоудга юкламаймиз —
+    // фақат булутдан ўқиб локал кўзгуни янгилаймиз.
+    window.__syncUsersToCloud   = function(){ /* no-op: per-doc writes via __auth */ };
+    window.__refreshUsersMirror = function(){ try{ usrSync.pull(); }catch(e){} };
 
     // Pull once DOM is interactive so boot() render functions exist
     if(document.readyState === 'loading'){
@@ -10222,6 +10492,13 @@ if(document.readyState === 'loading'){
     }
   } catch(err) {
     console.error('[firebase] init failed:', err);
+    try{
+      const st=document.getElementById('agState'), fm=document.getElementById('agForm'), e=document.getElementById('ag-err'), g=document.getElementById('authGate');
+      if(g) g.hidden=false;
+      if(st) st.hidden=true;
+      if(fm) fm.hidden=false;
+      if(e) e.textContent='Аутентификация тизими юкланмади. Интернетни текширинг ёки админга мурожаат қилинг.';
+    }catch(_){}
   }
 </script>
 </body>
