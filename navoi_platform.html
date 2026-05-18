@@ -10386,7 +10386,7 @@ if(document.readyState === 'loading'){
           let m = 'Логин ёки парол нотўғри';
           if(c.indexOf('too-many-requests') >= 0) m = 'Жуда кўп уриниш — бироздан сўнг қайта уриниб кўринг';
           else if(c.indexOf('network') >= 0) m = 'Интернет алоқаси йўқ';
-          else if(c.indexOf('operation-not-allowed') >= 0) m = 'Email/Password провайдери Firebase\'да ёқилмаган (созлаш қўлланмасига қаранг)';
+          else if(c.indexOf('operation-not-allowed') >= 0 || c.indexOf('configuration-not-found') >= 0) m = 'Firebase Authentication ёқилмаган. Console → Authentication → Get started → Email/Password → Enable қилинг.';
           return { ok:false, error:m };
         }
       },
@@ -10411,7 +10411,7 @@ if(document.readyState === 'loading'){
           let m = (err && err.message) || 'Хатолик';
           if(c.indexOf('email-already-in-use') >= 0) m = 'Бу логин аллақачон банд';
           else if(c.indexOf('weak-password') >= 0) m = 'Парол жуда содда (камида 6 белги)';
-          else if(c.indexOf('operation-not-allowed') >= 0) m = 'Email/Password провайдери ёқилмаган';
+          else if(c.indexOf('operation-not-allowed') >= 0 || c.indexOf('configuration-not-found') >= 0) m = 'Firebase Authentication ёқилмаган. Console → Authentication → Get started → Email/Password → Enable.';
           else if(c.indexOf('permission') >= 0) m = 'Firestore қоидалари рухсат бермади';
           try{ await signOut(sa); }catch(e){}
           return { ok:false, error:m };
@@ -10442,7 +10442,7 @@ if(document.readyState === 'loading'){
           let m = (err && err.message) || 'Хатолик';
           if(c.indexOf('email-already-in-use') >= 0) m = 'Бу логин аллақачон яратилган — энди оддий «Кириш»дан фойдаланинг';
           else if(c.indexOf('weak-password') >= 0) m = 'Парол жуда содда (камида 6 белги)';
-          else if(c.indexOf('operation-not-allowed') >= 0) m = 'Firebase\'да Email/Password ёқилмаган. Console → Authentication → Sign-in method → Email/Password → Enable';
+          else if(c.indexOf('operation-not-allowed') >= 0 || c.indexOf('configuration-not-found') >= 0) m = 'Firebase Authentication ҳали ёқилмаган. Console → Authentication → Get started → Email/Password → Enable қилинг, кейин қайта уриниб кўринг.';
           else if(c.indexOf('permission') >= 0) m = 'Firestore қоидалари рухсат бермади — қоидаларни янгиланг';
           return { ok:false, error:m };
         }
