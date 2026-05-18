@@ -10322,7 +10322,7 @@ if(document.readyState === 'loading'){
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAnalytics, isSupported as analyticsSupported } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
   import {
-    getFirestore, collection, getDocs, getDoc, setDoc, deleteDoc, doc
+    getFirestore, collection, getDocs, getDoc, setDoc, deleteDoc, doc, onSnapshot
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import {
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
@@ -10405,8 +10405,33 @@ if(document.readyState === 'loading'){
       return lastErr ? undefined : null;
     }
 
+    let _profileUnsub = null;
+    function _stopProfileWatch(){ if(_profileUnsub){ try{ _profileUnsub(); }catch(e){} _profileUnsub = null; } }
+    /* Реал вақт: ўз профилини кузатиб турамиз — админ блокласа ёки
+       профил ўчирилса, ходим ДАРҲОЛ (саҳифани янгиламай) чиқарилади. */
+    function _watchProfile(uid){
+      _stopProfileWatch();
+      try{
+        _profileUnsub = onSnapshot(doc(db, 'users', uid), (snap) => {
+          if(!auth.currentUser) return;
+          const blocked = !snap.exists() || ((snap.data()||{}).status || 'active') !== 'active';
+          if(blocked){
+            _stopProfileWatch();
+            const msg = !snap.exists()
+              ? 'Профилингиз ўчирилди. Сайт админига мурожаат қилинг.'
+              : 'Аккаунтингиз админ томонидан блокланди.';
+            signOut(auth).catch(()=>{}).finally(()=>{ showGate('form', msg); });
+          } else {
+            window.__profile = Object.assign({ uid }, snap.data());
+            try{ if(typeof window.__onAuthResolved === 'function') window.__onAuthResolved(window.__profile); }catch(e){}
+          }
+        }, (err) => { console.warn('[auth] profile watch:', err && err.message); });
+      }catch(e){ console.warn('[auth] watch setup failed:', e && e.message); }
+    }
+
     onAuthStateChanged(auth, async (user) => {
       if(!user){
+        _stopProfileWatch();
         window.__profile = null;
         try{ if(typeof window.__onAuthResolved === 'function') window.__onAuthResolved(null); }catch(e){}
         showGate('form');
@@ -10433,6 +10458,7 @@ if(document.readyState === 'loading'){
       window.__profile = prof;
       hideGate();
       try{ if(typeof window.__onAuthResolved === 'function') window.__onAuthResolved(prof); }catch(e){}
+      _watchProfile(user.uid);
     });
 
     window.__auth = {
