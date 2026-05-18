@@ -1804,7 +1804,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <div class="ag-h">Тизимга кириш</div>
       <div class="ag-sub">Платформадан фойдаланиш учун логин ва паролингизни киритинг. Доступ сайт админи томонидан берилади.</div>
       <label class="ag-lbl">Логин</label>
-      <input id="ag-user" type="text" autocomplete="username" placeholder="Масалан: karmana_er" required>
+      <input id="ag-user" type="text" autocomplete="username" placeholder="admin" required>
       <label class="ag-lbl">Парол</label>
       <div class="ag-pass">
         <input id="ag-pass" type="password" autocomplete="current-password" placeholder="Парол" required>
@@ -1815,18 +1815,23 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <div class="ag-err" id="ag-err"></div>
       <button class="ag-btn" type="submit" id="agBtn">Кириш</button>
     </form>
-    <button class="ag-help-toggle" type="button" onclick="document.getElementById('agHelp').hidden=!document.getElementById('agHelp').hidden">
-      ⚙️ Созлаш қўлланмаси (админ учун)
+    <button class="ag-help-toggle" type="button" onclick="var x=document.getElementById('agBoot');x.hidden=!x.hidden;if(!x.hidden){var u=document.getElementById('bs-user');if(u&&!u.value)u.value='admin';}">
+      🆕 Биринчи админни яратиш (биринчи марта)
     </button>
-    <div class="ag-help" id="agHelp" hidden>
-      <b>Биринчи марта созлаш (фақат админ, Firebase консолида):</b>
-      <ol>
-        <li>Firebase Console → <b>Authentication → Sign-in method</b> → <b>Email/Password</b>ни ёқинг.</li>
-        <li>Authentication → Users → <b>Add user</b>: email <code>admin@navoi-platform.uz</code> ва парол киритинг.</li>
-        <li>Firestore → <code>users</code> коллекцияси → ҳужжат ID = ўша фойдаланувчи UID, майдонлар: <code>username:"admin"</code>, <code>role:"admin"</code>, <code>status:"active"</code>, <code>fullName:"..."</code>, <code>district:""</code>.</li>
-        <li>Firestore → <b>Rules</b> → берилган хавфсизлик қоидаларини жойлаштиринг.</li>
-      </ol>
-      <span class="ag-muted">Шундан сўнг бошқа барча ходимларни сайтнинг ўзидаги «Админ» бўлимидан қўшасиз.</span>
+    <div class="ag-help" id="agBoot" hidden>
+      <b>Биринчи админ аккаунтини шу ердан яратинг.</b>
+      <div class="ag-muted" style="display:block;margin:6px 0 10px">Аввал <b>1 та</b> созлама: Firebase Console → лойиҳа <code>yer-loyiha</code> → <b>Authentication → Sign-in method → Email/Password → Enable</b>. Кейин қуйидагини тўлдиринг:</div>
+      <label class="ag-lbl">Созлаш коди</label>
+      <input id="bs-code" type="text" placeholder="Созлаш коди" autocomplete="off">
+      <label class="ag-lbl" style="margin-top:9px">Ф.И.Ш.</label>
+      <input id="bs-name" type="text" placeholder="Масалан: Бош администратор" autocomplete="off">
+      <label class="ag-lbl" style="margin-top:9px">Логин</label>
+      <input id="bs-user" type="text" placeholder="admin" autocomplete="off">
+      <label class="ag-lbl" style="margin-top:9px">Парол (камида 6 белги)</label>
+      <input id="bs-pass" type="text" placeholder="Эслаб қоладиган парол" autocomplete="off">
+      <div class="ag-err" id="bs-err" style="margin-top:8px"></div>
+      <button class="ag-btn" type="button" id="bsBtn" style="margin-top:8px" onclick="bootstrapAdminSubmit()">Админ аккаунтини яратиш</button>
+      <span class="ag-muted" style="display:block;margin-top:10px">Яратилгач, шу логин ва парол билан тизимга кирасиз. Бошқа ходимларни «Админ» бўлимидан қўшасиз.</span>
     </div>
     <div class="ag-foot">Расмий ахборот тизими · Навоий вилояти ҳокимлиги</div>
   </div>
@@ -7680,6 +7685,22 @@ async function agSubmit(ev){
   finally{ if(btn){ btn.disabled=false; btn.textContent='Кириш'; } }
   return false;
 }
+async function bootstrapAdminSubmit(){
+  const v=(i)=>{ const el=document.getElementById(i); return el? el.value.trim() : ''; };
+  const code=v('bs-code'), name=v('bs-name'), user=v('bs-user').toLowerCase(), pass=v('bs-pass');
+  const err=document.getElementById('bs-err'), btn=document.getElementById('bsBtn');
+  if(err) err.textContent='';
+  if(!code||!user||!pass){ if(err) err.textContent='Созлаш коди, логин ва паролни тўлдиринг'; return; }
+  if(pass.length<6){ if(err) err.textContent='Парол камида 6 белги'; return; }
+  if(!window.__auth || !window.__auth.bootstrapAdmin){ if(err) err.textContent='Тизим ҳали юкланмоқда — бир оз кутинг'; return; }
+  if(btn){ btn.disabled=true; btn.textContent='Яратилмоқда…'; }
+  try{
+    const r = await window.__auth.bootstrapAdmin({ code, username:user, password:pass, fullName:name });
+    if(!r.ok){ if(err) err.textContent = r.error || 'Хатолик'; }
+    else { showToast('✓ Админ аккаунти яратилди — тизимга кирилди'); }
+  }catch(e){ if(err) err.textContent='Хатолик: '+(e&&e.message||e); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='Админ аккаунтини яратиш'; } }
+}
 async function appLogout(){
   if(!confirm('Тизимдан чиқишни тасдиқлайсизми?')) return;
   closeAdminCenter();
@@ -10271,7 +10292,11 @@ if(document.readyState === 'loading'){
        Синтетик email: <login>@navoi-platform.uz
        ============================================================ */
     const USER_DOMAIN = '@navoi-platform.uz';
-    const uname2email = (u) => String(u||'').trim().toLowerCase().replace(/\s+/g,'') + USER_DOMAIN;
+    const SETUP_CODE  = 'navoi-2026';
+    const uname2email = (u) => {
+      const s = String(u||'').trim().toLowerCase().replace(/\s+/g,'');
+      return s.indexOf('@') >= 0 ? s : (s + USER_DOMAIN);
+    };
     const auth = getAuth(app);
     try { await setPersistence(auth, browserLocalPersistence); } catch(e){}
     // Иккиламчи илова — янги ходим яратилганда жорий админ сессияси узилмаслиги учун
@@ -10306,11 +10331,18 @@ if(document.readyState === 'loading'){
     window.__authShowGate = showGate;
 
     async function loadProfile(user){
-      try{
-        const snap = await getDoc(doc(db, 'users', user.uid));
-        if(!snap.exists()) return null;
-        return Object.assign({ uid: user.uid }, snap.data());
-      }catch(e){ console.warn('[auth] profile read failed:', e && e.message); return undefined; }
+      // Янги яратилган профил (айниқса биринчи админ) дарров ёзилмаслиги
+      // мумкин — бир неча марта қайта уринамиз.
+      let lastErr = false;
+      for(let i=0;i<4;i++){
+        try{
+          const snap = await getDoc(doc(db, 'users', user.uid));
+          if(snap.exists()) return Object.assign({ uid: user.uid }, snap.data());
+          lastErr = false;
+        }catch(e){ console.warn('[auth] profile read failed:', e && e.message); lastErr = true; }
+        await new Promise(r=>setTimeout(r, 700));
+      }
+      return lastErr ? undefined : null;
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -10388,6 +10420,32 @@ if(document.readyState === 'loading'){
       async updateProfileDoc(uid, patch){
         try{ await setDoc(doc(db, 'users', uid), patch, { merge:true }); return { ok:true }; }
         catch(err){ return { ok:false, error:(err&&err.message)||'Хатолик' }; }
+      },
+      /* Биринчи админни созлаш коди билан яратиш (биринчи марта).
+         Асосий илова орқали — яратилгач ўша админ сифатида кириб қолади. */
+      async bootstrapAdmin(p){
+        if(!p || p.code !== SETUP_CODE) return { ok:false, error:'Созлаш коди нотўғри' };
+        if(!p.username || !p.password) return { ok:false, error:'Логин ва паролни тўлдиринг' };
+        if(String(p.password).length < 6) return { ok:false, error:'Парол камида 6 белги' };
+        try{
+          const cred = await createUserWithEmailAndPassword(auth, uname2email(p.username), p.password);
+          const uid  = cred.user.uid;
+          await setDoc(doc(db, 'users', uid), {
+            uid, username: String(p.username).trim().toLowerCase(),
+            fullName: p.fullName || 'Бош администратор', position: '',
+            role: 'admin', district: '', status: 'active', createdAt: Date.now()
+          });
+          // onAuthStateChanged энди профилни ўқиб киритади
+          return { ok:true, uid };
+        }catch(err){
+          const c = (err && err.code) || '';
+          let m = (err && err.message) || 'Хатолик';
+          if(c.indexOf('email-already-in-use') >= 0) m = 'Бу логин аллақачон яратилган — энди оддий «Кириш»дан фойдаланинг';
+          else if(c.indexOf('weak-password') >= 0) m = 'Парол жуда содда (камида 6 белги)';
+          else if(c.indexOf('operation-not-allowed') >= 0) m = 'Firebase\'да Email/Password ёқилмаган. Console → Authentication → Sign-in method → Email/Password → Enable';
+          else if(c.indexOf('permission') >= 0) m = 'Firestore қоидалари рухсат бермади — қоидаларни янгиланг';
+          return { ok:false, error:m };
+        }
       }
     };
 
