@@ -3866,6 +3866,44 @@ function logAudit(action, target, details){
   }catch(e){ console.warn('logAudit', e); }
 }
 
+/* ===== ТУМАН ДОИРАСИ — district роли фақат ўз туманини кўради ===== */
+window.__scopeDistrictKey = null;
+function computeDistrictScope(){
+  try{
+    const p = (typeof currentProfile==='function') ? currentProfile() : null;
+    if(p && p.role === 'district' && p.district){
+      const want = String(p.district).trim();
+      const d = (typeof DISTRICTS!=='undefined' ? DISTRICTS : []).find(x =>
+        x.label === want || x.key === want ||
+        String(x.label).toLowerCase() === want.toLowerCase());
+      return d ? d.key : null;
+    }
+  }catch(e){}
+  return null;
+}
+function applyDistrictScope(){
+  const key = computeDistrictScope();
+  window.__scopeDistrictKey = key;
+  // «Ўзбекистон» табини яшириш (доирадаги ходим вилоятдан чиқмасин)
+  try{
+    document.querySelectorAll('#tabbar .tab').forEach(t=>{
+      if(t.dataset.view === 'uz') t.style.display = key ? 'none' : '';
+    });
+    const bcRoot = document.getElementById('bcRoot');
+    if(bcRoot) bcRoot.style.pointerEvents = key ? 'none' : '';
+  }catch(e){}
+  if(!key) return;
+  // Доирадаги туманни мажбурий танлаш
+  try{
+    if(typeof map !== 'undefined' && map && typeof selectDistrict === 'function'){
+      if(currentDistrict !== key) selectDistrict(key);
+      else { renderDistrictList(); renderBubbles(); }
+    } else if(typeof renderDistrictList === 'function'){
+      renderDistrictList();
+    }
+  }catch(e){ console.warn('scope apply', e); }
+}
+
 /* Filter predicate against current STAGE_STATE.
    Items can be either a section row (sec, row) or a plot item with .candidates. */
 function activeStageFilter(){
@@ -5262,6 +5300,7 @@ function renderDistrictList(){
   // In focused-section mode (not 'all') only show districts that have data
   const focused = currentSection !== 'all';
   let list = DISTRICTS.slice();
+  if(window.__scopeDistrictKey) list = list.filter(d=>d.key===window.__scopeDistrictKey);
   list.sort((a,b)=>distCount(b.key,currentSection)-distCount(a.key,currentSection));
   if(focused) list = list.filter(d=>distCount(d.key,currentSection) > 0);
   if(!list.length){
@@ -5339,7 +5378,8 @@ function renderBubbles(){
   const stageColor = stageFilter ? ((STAGE_DEFS.find(d=>d.key===stageFilter)||{}).color || null) : null;
   const sourceColor = sourceFilter ? ((SOURCE_TAG_DEFS.find(d=>d.key===sourceFilter)||{}).color || null) : null;
   const col = sourceColor || stageColor || catColor || secMeta.color;
-  for(const d of DISTRICTS){
+  const _bubbleDistricts = window.__scopeDistrictKey ? DISTRICTS.filter(d=>d.key===window.__scopeDistrictKey) : DISTRICTS;
+  for(const d of _bubbleDistricts){
     const c = districtCentroids[d.key];
     if(!c) continue;
     const count = (catFilter || stageFilter || sourceFilter)
@@ -6897,6 +6937,8 @@ function initMap(){
 
 /* ================= VIEW TABS ================= */
 function setView(view){
+  // Доирадаги ходим вилоятдан чиқа олмайди
+  if(window.__scopeDistrictKey && view==='uz'){ view='navoi'; }
   document.querySelectorAll('#tabbar .tab').forEach(t=>t.classList.toggle('active', t.dataset.view===view));
   const all = L.latLngBounds([]);
   for(const k in districtBounds) all.extend(districtBounds[k]);
@@ -7232,7 +7274,8 @@ function renderSearchResults(){
   const list = document.getElementById('srList');
   const stats = document.getElementById('srStats');
   if(!list || !stats) return;
-  const items = runSearch();
+  let items = runSearch();
+  if(window.__scopeDistrictKey) items = items.filter(it => it.distKey === window.__scopeDistrictKey);
   const active = SEARCH_STATE.q || SEARCH_STATE.dist || SEARCH_STATE.sec || SEARCH_STATE.year
                 || SEARCH_STATE.mfyQ || SEARCH_STATE.areaMin !== '' || SEARCH_STATE.areaMax !== '';
   stats.innerHTML = `<span class="sr-count"><b>${fmt(items.length)}</b> та натижа</span>
@@ -7841,6 +7884,7 @@ window.__onAuthResolved = function(profile){
   }
   try{ refreshAdminBtnVisibility(); }catch(e){}
   try{ applyAdminSettingsUI(); }catch(e){}
+  try{ if(typeof applyDistrictScope==='function') applyDistrictScope(); }catch(e){}
   // Админ маркази очиқ бўлса — қайта чизиш
   try{ const ov=document.getElementById('adminOverlay'); if(ov && ov.style.display==='flex') _renderAdminGate(); }catch(e){}
 };
@@ -10430,7 +10474,7 @@ function boot(){
   // Active-filter crumb + topbar Excel count (P1 simplification)
   if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
   if(typeof refreshExportBtn === 'function') refreshExportBtn();
-  try { getUsers(); applyAdminSettingsUI(); applySiteNotice(); updateAdminBadge(); refreshAdminBtnVisibility(); } catch(e){ console.warn('admin init', e); }
+  try { getUsers(); applyAdminSettingsUI(); applySiteNotice(); updateAdminBadge(); refreshAdminBtnVisibility(); applyDistrictScope(); } catch(e){ console.warn('admin init', e); }
   setTimeout(()=>document.getElementById('loader').classList.add('hidden'), 500);
   // Onboarding — show once on first visit (after a short delay so the
   // map can settle behind the overlay)
