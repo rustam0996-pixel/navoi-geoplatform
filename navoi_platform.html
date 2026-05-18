@@ -1815,7 +1815,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <div class="ag-err" id="ag-err"></div>
       <button class="ag-btn" type="submit" id="agBtn">Кириш</button>
     </form>
-    <button class="ag-help-toggle" type="button" onclick="var x=document.getElementById('agBoot');x.hidden=!x.hidden;if(!x.hidden){var u=document.getElementById('bs-user');if(u&&!u.value)u.value='admin';}">
+    <button class="ag-help-toggle" type="button" id="agBootToggle" hidden onclick="var x=document.getElementById('agBoot');x.hidden=!x.hidden;if(!x.hidden){var u=document.getElementById('bs-user');if(u&&!u.value)u.value='admin';}">
       🆕 Биринчи админни яратиш (биринчи марта)
     </button>
     <div class="ag-help" id="agBoot" hidden>
@@ -8017,6 +8017,14 @@ function dismissSiteNotice(){
 /* Esc + backdrop yopish — admin/feedback/user modallari */
 (function wireAdminDismiss(){
   function bind(){
+    try{
+      // Биринчи админ яратиш формаси оддий ҳолда яширин — фақат
+      // махсус ҳавола (#setup) орқали кўринади (тиклаш зарурати учун).
+      var hint = ((location.hash||'')+' '+(location.search||'')).toLowerCase();
+      if(hint.indexOf('setup') >= 0){
+        var bt=document.getElementById('agBootToggle'); if(bt) bt.hidden=false;
+      }
+    }catch(e){}
     try{ refreshAdminBtnVisibility(); }catch(e){}
     window.addEventListener('hashchange', ()=>{ try{ refreshAdminBtnVisibility(); }catch(e){} });
     // Яширин админ киришу: Ctrl+Shift+A

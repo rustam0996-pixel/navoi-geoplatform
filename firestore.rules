@@ -18,10 +18,10 @@ service cloud.firestore {
     // Фойдаланувчи профиллари — паролсиз (пароллар Firebase Auth'да)
     match /users/{uid} {
       allow read:   if signedIn() && (request.auth.uid == uid || isAdmin());
-      // create: админ ходим қўшади ЁКИ фойдаланувчи ўз профилини яратади
-      // (биринчи админни созлаш учун). update/delete: фақат админ.
-      allow create: if isAdmin() || (signedIn() && request.auth.uid == uid);
-      allow update, delete: if isAdmin();
+      // Биринчи админ яратилгач — фақат админ ходим қўша/ўзгартира олади.
+      // (Тиклаш зарур бўлса, шу қаторни вақтинча
+      //  `if isAdmin() || (signedIn() && request.auth.uid == uid);` га ўзгартиринг.)
+      allow create, update, delete: if isAdmin();
     }
 
     // Ер участкаси таклифлари
