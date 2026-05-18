@@ -2404,6 +2404,10 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Созламалар
         </button>
+        <button class="adm-tab" data-atab="reports" onclick="switchAdminTab('reports')">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8"/><rect x="12" y="6" width="3" height="12"/><rect x="17" y="13" width="3" height="5"/></svg>
+          Ҳисоботлар
+        </button>
         <button class="adm-tab" data-atab="audit" onclick="switchAdminTab('audit')">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           Аудит изи
@@ -2462,6 +2466,20 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
               <div style="margin-top:9px"><button class="adm-act-btn" onclick="saveAdminNotice()">Эълонни сақлаш</button></div>
             </div>
           </div>
+        </div>
+        <!-- REPORTS -->
+        <div class="adm-pane" data-apane="reports">
+          <div class="adm-pane-head">
+            <div>
+              <h4>Ҳисоботлар — туманлар кесимида таклифлар</h4>
+              <p>Туман/шаҳар бўйича таклифлар сони, ҳолати, майдони ва лойиҳа қиймати</p>
+            </div>
+            <div class="adm-row-act">
+              <button class="adm-mini" onclick="renderAdminReports()">↻ Янгилаш</button>
+              <button class="adm-act-btn" onclick="exportProposalsReportExcel()"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Excel</button>
+            </div>
+          </div>
+          <div id="admReportsWrap"><div class="adm-empty"><span class="ic">📊</span>Юкланмоқда…</div></div>
         </div>
         <!-- AUDIT -->
         <div class="adm-pane" data-apane="audit">
@@ -8101,6 +8119,99 @@ function switchAdminTab(which){
   if(which==='feedback') renderAdminFeedback();
   if(which==='settings') loadAdminSettingsIntoForm();
   if(which==='audit') renderAdminAudit();
+  if(which==='reports') renderAdminReports();
+}
+/* ===== АДМИН ҲИСОБОТЛАРИ — туманлар кесимида таклифлар ===== */
+function _proposalsByDistrict(){
+  const all = (typeof getProposals==='function'? getProposals() : []) || [];
+  const map = {};
+  (typeof DISTRICTS!=='undefined'?DISTRICTS:[]).forEach(d=>{
+    map[d.label] = { district:d.label, total:0, pending:0, approved:0, returned:0, rejected:0, area:0, cost:0, jobs:0 };
+  });
+  all.forEach(p=>{
+    const k = p.district || 'Номаълум';
+    if(!map[k]) map[k] = { district:k, total:0, pending:0, approved:0, returned:0, rejected:0, area:0, cost:0, jobs:0 };
+    const r = map[k];
+    r.total++;
+    const st = p.status||'pending';
+    if(r[st]!=null) r[st]++;
+    r.area += Number(p.area)||0;
+    r.cost += Number(p.cost)||0;
+    r.jobs += Number(p.jobs)||0;
+  });
+  return Object.values(map).filter(r=>r.total>0).sort((a,b)=>b.total-a.total);
+}
+function renderAdminReports(){
+  const wrap = document.getElementById('admReportsWrap');
+  if(!wrap) return;
+  const rows = _proposalsByDistrict();
+  if(!rows.length){
+    wrap.innerHTML = '<div class="adm-empty"><span class="ic">📊</span>Ҳозирча таклифлар йўқ.</div>';
+    return;
+  }
+  const tot = rows.reduce((a,r)=>({total:a.total+r.total,pending:a.pending+r.pending,approved:a.approved+r.approved,returned:a.returned+r.returned,rejected:a.rejected+r.rejected,area:a.area+r.area,cost:a.cost+r.cost,jobs:a.jobs+r.jobs}),{total:0,pending:0,approved:0,returned:0,rejected:0,area:0,cost:0,jobs:0});
+  const maxT = Math.max(...rows.map(r=>r.total),1);
+  const nf = (n)=> (typeof fmt==='function'? fmt(Math.round(n)) : Math.round(n));
+  const bars = rows.map(r=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+      <div style="width:120px;font-size:11.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtmlP(r.district)}</div>
+      <div style="flex:1;background:#eef2f7;border-radius:6px;overflow:hidden;height:18px;display:flex">
+        <div title="Тасдиқланган: ${r.approved}" style="width:${r.total?r.approved/maxT*100:0}%;background:#10b981"></div>
+        <div title="Кутилмоқда: ${r.pending}" style="width:${r.total?r.pending/maxT*100:0}%;background:#f59e0b"></div>
+        <div title="Қайтарилган: ${r.returned}" style="width:${r.total?r.returned/maxT*100:0}%;background:#7c3aed"></div>
+        <div title="Рад этилган: ${r.rejected}" style="width:${r.total?r.rejected/maxT*100:0}%;background:#ef4444"></div>
+      </div>
+      <div style="width:34px;text-align:right;font-size:12px;font-weight:800;color:var(--ink)">${r.total}</div>
+    </div>`).join('');
+  wrap.innerHTML = `
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px">
+      <div class="adm-set-card" style="flex:1;min-width:120px"><h5>Жами таклиф</h5><div style="font-size:22px;font-weight:850;color:#1d4ed8">${nf(tot.total)}</div></div>
+      <div class="adm-set-card" style="flex:1;min-width:120px"><h5>Тасдиқланган</h5><div style="font-size:22px;font-weight:850;color:#047857">${nf(tot.approved)}</div></div>
+      <div class="adm-set-card" style="flex:1;min-width:120px"><h5>Кутилмоқда</h5><div style="font-size:22px;font-weight:850;color:#92400e">${nf(tot.pending)}</div></div>
+      <div class="adm-set-card" style="flex:1;min-width:120px"><h5>Жами майдон</h5><div style="font-size:22px;font-weight:850;color:#0f1a36">${nf(tot.area)} га</div></div>
+    </div>
+    <div class="adm-set-card" style="margin-bottom:14px">
+      <h5 style="margin-bottom:10px">Туманлар бўйича (ранг: 🟢тасдиқ 🟠кутилмоқда 🟣қайтарилган 🔴рад)</h5>
+      ${bars}
+    </div>
+    <table class="adm-table"><thead><tr>
+      <th>Туман/шаҳар</th><th>Жами</th><th>Кутилмоқда</th><th>Тасдиқланган</th><th>Қайтарилган</th><th>Рад</th><th>Майдон (га)</th><th>Қиймат (млн.$)</th><th>Иш ўрни</th>
+    </tr></thead><tbody>
+      ${rows.map(r=>`<tr>
+        <td><b>${escapeHtmlP(r.district)}</b></td><td>${r.total}</td><td>${r.pending}</td>
+        <td>${r.approved}</td><td>${r.returned}</td><td>${r.rejected}</td>
+        <td>${nf(r.area)}</td><td>${(r.cost||0).toFixed(1)}</td><td>${nf(r.jobs)}</td>
+      </tr>`).join('')}
+      <tr style="font-weight:800;background:#eef2ff">
+        <td>ЖАМИ</td><td>${tot.total}</td><td>${tot.pending}</td><td>${tot.approved}</td>
+        <td>${tot.returned}</td><td>${tot.rejected}</td><td>${nf(tot.area)}</td>
+        <td>${(tot.cost||0).toFixed(1)}</td><td>${nf(tot.jobs)}</td>
+      </tr>
+    </tbody></table>`;
+}
+function exportProposalsReportExcel(){
+  const rows = _proposalsByDistrict();
+  if(!rows.length){ showToast('Экспорт учун таклиф йўқ'); return; }
+  const tot = rows.reduce((a,r)=>({total:a.total+r.total,pending:a.pending+r.pending,approved:a.approved+r.approved,returned:a.returned+r.returned,rejected:a.rejected+r.rejected,area:a.area+r.area,cost:a.cost+r.cost,jobs:a.jobs+r.jobs}),{total:0,pending:0,approved:0,returned:0,rejected:0,area:0,cost:0,jobs:0});
+  const esc=(s)=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const th='style="background:#1e40af;color:#fff;font-weight:bold;border:1px solid #94a3b8;padding:6px"';
+  const td='style="border:1px solid #cbd5e1;padding:5px"';
+  let html = `<html><head><meta charset="utf-8"></head><body>
+    <h2>Навоий вилояти — таклифлар ҳисоботи (туманлар кесимида)</h2>
+    <div>Сана: ${new Date().toLocaleDateString('uz-UZ')}</div><br>
+    <table border="1" style="border-collapse:collapse">
+      <tr><th ${th}>Туман/шаҳар</th><th ${th}>Жами</th><th ${th}>Кутилмоқда</th><th ${th}>Тасдиқланган</th><th ${th}>Қайтарилган</th><th ${th}>Рад</th><th ${th}>Майдон (га)</th><th ${th}>Қиймат (млн.$)</th><th ${th}>Иш ўрни</th></tr>
+      ${rows.map(r=>`<tr><td ${td}>${esc(r.district)}</td><td ${td}>${r.total}</td><td ${td}>${r.pending}</td><td ${td}>${r.approved}</td><td ${td}>${r.returned}</td><td ${td}>${r.rejected}</td><td ${td}>${(r.area||0).toFixed(2)}</td><td ${td}>${(r.cost||0).toFixed(2)}</td><td ${td}>${Math.round(r.jobs)}</td></tr>`).join('')}
+      <tr style="font-weight:bold;background:#e2e8f0"><td ${td}>ЖАМИ</td><td ${td}>${tot.total}</td><td ${td}>${tot.pending}</td><td ${td}>${tot.approved}</td><td ${td}>${tot.returned}</td><td ${td}>${tot.rejected}</td><td ${td}>${(tot.area||0).toFixed(2)}</td><td ${td}>${(tot.cost||0).toFixed(2)}</td><td ${td}>${Math.round(tot.jobs)}</td></tr>
+    </table></body></html>`;
+  const blob = new Blob(['﻿'+html], {type:'application/vnd.ms-excel;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'takliflar_hisoboti_' + new Date().toISOString().slice(0,10) + '.xls';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  try{ logAudit('Ҳисобот экспорт қилинди', 'Таклифлар (туманлар кесимида)', {jami:tot.total}); }catch(e){}
+  showToast('📊 Excel ҳисобот юклаб олинди');
 }
 async function renderAdminAudit(){
   const wrap = document.getElementById('admAuditWrap');
