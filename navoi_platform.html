@@ -390,6 +390,8 @@ body.has-selection .home-pill{display:inline-flex}
 .prop-stat.ok{border-color:#bbf7d0;background:linear-gradient(135deg,#f0fdf4,#ecfdf5)}
 .prop-stat.wait{border-color:#fde68a;background:linear-gradient(135deg,#fffbeb,#fef3c7)}
 .prop-stat.rej{border-color:#fecaca;background:linear-gradient(135deg,#fef2f2,#fee2e2)}
+.prop-stat.ret{border-color:#ddd6fe;background:linear-gradient(135deg,#f5f3ff,#ede9fe)}
+.prop-stat.ret .v{color:#5b21b6}.prop-stat.ret.active{color:#5b21b6}
 .prop-stat.ok .v{color:#047857}.prop-stat.wait .v{color:#92400e}.prop-stat.rej .v{color:#991b1b}
 .prop-toolbar{padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .prop-btn{
@@ -419,6 +421,7 @@ body.has-selection .home-pill{display:inline-flex}
 .prop-card.pending{border-left:3px solid #f59e0b}
 .prop-card.approved{border-left:3px solid #10b981}
 .prop-card.rejected{border-left:3px solid #ef4444}
+.prop-card.returned{border-left:3px solid #7c3aed}
 .prop-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .prop-card-title{font-weight:800;font-size:14px;line-height:1.3;color:var(--ink)}
 .prop-card-meta{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
@@ -426,6 +429,23 @@ body.has-selection .home-pill{display:inline-flex}
 .prop-card-st.pending{background:#fef3c7;color:#92400e}
 .prop-card-st.approved{background:#d1fae5;color:#065f46}
 .prop-card-st.rejected{background:#fee2e2;color:#991b1b}
+.prop-card-st.returned{background:#ede9fe;color:#5b21b6}
+/* Изоҳ ёзишмаси (админ ↔ туман) */
+.prop-thread{margin-top:8px;border-top:1px dashed #e2e9f3;padding-top:8px}
+.prop-thread-h{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px}
+.prop-msg{display:flex;flex-direction:column;gap:2px;padding:7px 10px;border-radius:8px;margin-bottom:6px;background:#f4f7fb;font-size:11.5px;line-height:1.45}
+.prop-msg.admin{background:#eef2ff;border-left:3px solid #4f46e5}
+.prop-msg.staff{background:#ecfdf5;border-left:3px solid #10b981}
+.prop-msg .pm-who{font-size:10px;font-weight:800;color:var(--ink-2)}
+.prop-msg .pm-tx{color:var(--ink);white-space:pre-wrap;word-break:break-word}
+.prop-msg .pm-tm{font-size:9.5px;color:var(--muted)}
+.prop-cmt-box{display:flex;gap:6px;margin-top:4px}
+.prop-cmt-box input{flex:1;border:1px solid #d7e0ed;border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none}
+.prop-cmt-box input:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+.prop-cmt-box button{border:0;border-radius:8px;background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;font-size:12px;font-weight:800;padding:7px 12px;cursor:pointer}
+.prop-card-actions .ret{background:#fff;color:#5b21b6;border-color:#c4b5fd}
+.prop-card-actions .ret:hover{background:#ede9fe}
+.prop-card-actions .resub{background:#4f46e5;color:#fff;border-color:#4f46e5}
 .prop-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:8px 0 4px;border-top:1px dashed #e2e9f3}
 .prop-card-field{display:flex;flex-direction:column;gap:2px;min-width:0}
 .prop-card-field .l{font-size:9.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.2px}
@@ -2206,6 +2226,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
         <button class="prop-chip active" data-pfilter="all">Барчаси</button>
         <button class="prop-chip" data-pfilter="pending">Кутилмоқда</button>
         <button class="prop-chip" data-pfilter="approved">Тасдиқланган</button>
+        <button class="prop-chip" data-pfilter="returned">Қайтарилган</button>
         <button class="prop-chip" data-pfilter="rejected">Рад этилган</button>
       </div>
     </div>
@@ -7476,11 +7497,13 @@ function renderProposalsPanel(){
   const all = getProposals();
   const pending = all.filter(p=>p.status==='pending').length;
   const approved = all.filter(p=>p.status==='approved').length;
+  const returned = all.filter(p=>p.status==='returned').length;
   const rejected = all.filter(p=>p.status==='rejected').length;
   const aCls = (k) => _propFilter === k ? ' active' : '';
   document.getElementById('propStats').innerHTML = `
     <div class="prop-stat wait${aCls('pending')}" data-pfilter="pending" title="Фақат кутилаётганлар"><div class="l">Кутилмоқда</div><div class="v">${fmt(pending)}</div></div>
     <div class="prop-stat ok${aCls('approved')}" data-pfilter="approved" title="Фақат тасдиқланганлар"><div class="l">Тасдиқланган</div><div class="v">${fmt(approved)}</div></div>
+    <div class="prop-stat ret${aCls('returned')}" data-pfilter="returned" title="Қайта ишлашга қайтарилган"><div class="l">Қайтарилган</div><div class="v">${fmt(returned)}</div></div>
     <div class="prop-stat rej${aCls('rejected')}" data-pfilter="rejected" title="Фақат рад этилганлар"><div class="l">Рад этилган</div><div class="v">${fmt(rejected)}</div></div>
   `;
   document.querySelectorAll('#propStats .prop-stat[data-pfilter]').forEach(el=>{
@@ -7507,17 +7530,45 @@ function renderProposalsList(){
     if(pr(a)!==pr(b)) return pr(a)-pr(b);
     return (b.createdAt||0) - (a.createdAt||0);
   });
+  const admin = (typeof isAppAdmin==='function') && isAppAdmin();
   list.innerHTML = ordered.map(p=>{
     const st = p.status || 'pending';
-    const stLabel = st==='approved' ? '✓ Тасдиқланган' : st==='rejected' ? '✕ Рад этилган' : '⏳ Кутилмоқда';
-    const realIdx = getProposals().findIndex(x=>x.id===p.id);
-    const actions = st==='pending'
-      ? `<div class="prop-card-actions">
-           <button class="prop-btn approve" onclick="approveProposal('${p.id}')"><span class="pp-ic">✓</span> Тасдиқлаш</button>
-           <button class="prop-btn reject" onclick="rejectProposal('${p.id}')"><span class="pp-ic">✕</span> Рад этиш</button>
-         </div>` : '';
-    const rej = (st==='rejected' && p.rejectReason) ? `<div class="prop-card-rej"><b>Сабаб:</b> ${escapeHtmlP(p.rejectReason)}</div>` : '';
+    const stLabel = st==='approved' ? '✓ Тасдиқланган'
+                  : st==='rejected' ? '✕ Рад этилган'
+                  : st==='returned' ? '↩ Қайта ишлашга қайтарилди'
+                  : '⏳ Кутилмоқда';
+    let actBtns = '';
+    if(admin && st==='pending'){
+      actBtns = `<button class="prop-btn approve" onclick="approveProposal('${p.id}')"><span class="pp-ic">✓</span> Тасдиқлаш</button>
+           <button class="prop-btn ret" onclick="returnProposal('${p.id}')"><span class="pp-ic">↩</span> Қайта ишлашга</button>
+           <button class="prop-btn reject" onclick="rejectProposal('${p.id}')"><span class="pp-ic">✕</span> Рад этиш</button>`;
+    }
+    if(st==='returned'){
+      // Туман ходими (ёки админ) тузатиб қайта юборади
+      actBtns += `<button class="prop-btn resub" onclick="resubmitProposal('${p.id}')"><span class="pp-ic">↻</span> Тузатиб қайта юбориш</button>`;
+    }
+    const actions = actBtns ? `<div class="prop-card-actions">${actBtns}</div>` : '';
+    const rej = (st==='rejected' && p.rejectReason) ? `<div class="prop-card-rej"><b>Рад сабаби:</b> ${escapeHtmlP(p.rejectReason)}</div>` : '';
     const note = p.notes ? `<div class="prop-card-note">💬 ${escapeHtmlP(p.notes)}</div>` : '';
+    // Изоҳ ёзишмаси (админ ↔ туман)
+    const cmts = Array.isArray(p.comments) ? p.comments : [];
+    const cmtHtml = cmts.map(c=>{
+      const isAdm = (c.role==='admin');
+      const when = c.ts ? (typeof __timeAgo==='function'? __timeAgo(c.ts) : new Date(c.ts).toLocaleString('uz-UZ')) : '';
+      return `<div class="prop-msg ${isAdm?'admin':'staff'}">
+        <span class="pm-who">${isAdm?'🛡 Админ':'🏢 Туман/шаҳар'} · ${escapeHtmlP(c.name||'')}</span>
+        <span class="pm-tx">${escapeHtmlP(c.text||'')}</span>
+        <span class="pm-tm">${escapeHtmlP(when)}</span>
+      </div>`;
+    }).join('');
+    const thread = `<div class="prop-thread">
+      <div class="prop-thread-h">Ёзишма (админ ↔ туман)</div>
+      ${cmtHtml || '<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Ҳозирча изоҳ йўқ.</div>'}
+      <div class="prop-cmt-box">
+        <input id="pc-${p.id}" type="text" placeholder="Изоҳ ёзиш..." onkeydown="if(event.key==='Enter')addProposalComment('${p.id}')">
+        <button onclick="addProposalComment('${p.id}')">Юбориш</button>
+      </div>
+    </div>`;
     return `<div class="prop-card ${st}" data-id="${p.id}">
       <div class="prop-card-head">
         <div>
@@ -7537,6 +7588,7 @@ function renderProposalsList(){
       ${rej}
       ${p.author ? `<div class="prop-card-meta">✍ ${escapeHtmlP(p.author)}</div>` : ''}
       ${actions}
+      ${thread}
     </div>`;
   }).join('');
 }
@@ -7771,7 +7823,64 @@ function __refreshAfterProposalChange(){
   try { if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict); } catch(e){}
   try { if(typeof refreshExportBtn === 'function') refreshExportBtn(); } catch(e){}
 }
+function _pushProposalComment(p, text, system){
+  if(!p) return;
+  if(!Array.isArray(p.comments)) p.comments = [];
+  const prof = (typeof currentProfile==='function') ? currentProfile() : null;
+  p.comments.push({
+    text: String(text||''),
+    by: prof ? (prof.uid||'') : '',
+    name: system ? 'Тизим' : (prof ? (prof.fullName||prof.username||'') : ''),
+    role: prof ? (prof.role||'') : '',
+    ts: Date.now()
+  });
+}
+function addProposalComment(id){
+  const inp = document.getElementById('pc-'+id);
+  const text = inp ? inp.value.trim() : '';
+  if(!text){ showToast('Изоҳ матнини ёзинг'); return; }
+  const all = getProposals();
+  const p = all.find(x=>x.id===id);
+  if(!p) return;
+  _pushProposalComment(p, text);
+  saveProposals(all);
+  try{ logAudit('Таклифга изоҳ', p.district + ' / ' + (p.name||''), text.slice(0,120)); }catch(e){}
+  if(inp) inp.value='';
+  renderProposalsPanel();
+  showToast('💬 Изоҳ юборилди');
+}
+function returnProposal(id){
+  if(typeof isAppAdmin==='function' && !isAppAdmin()){ showToast('⛔ Бу амал фақат админда'); return; }
+  const reason = prompt('Қайта ишлашга қайтариш сабаби / нима тузатилсин:');
+  if(reason===null) return;
+  const all = getProposals();
+  const p = all.find(x=>x.id===id);
+  if(!p) return;
+  p.status = 'returned';
+  p.reviewedAt = Date.now();
+  _pushProposalComment(p, 'Қайта ишлашга қайтарилди: ' + (reason||'(сабаб кўрсатилмади)'));
+  saveProposals(all);
+  __refreshAfterProposalChange();
+  try{ logAudit('Таклиф қайта ишлашга қайтарилди', p.district + ' / ' + (p.name||''), {id:p.id, reason:reason||''}); }catch(e){}
+  showToast('↩ Таклиф туманга қайта ишлашга қайтарилди');
+}
+function resubmitProposal(id){
+  const all = getProposals();
+  const p = all.find(x=>x.id===id);
+  if(!p) return;
+  if(p.status !== 'returned'){ showToast('Фақат қайтарилган таклифни қайта юбориш мумкин'); return; }
+  const note = prompt('Қандай ўзгартириш/тузатиш киритилди? (изоҳ):');
+  if(note===null) return;
+  p.status = 'pending';
+  p.resubmittedAt = Date.now();
+  _pushProposalComment(p, 'Тузатиб қайта юборилди: ' + (note||'(изоҳ йўқ)'));
+  saveProposals(all);
+  __refreshAfterProposalChange();
+  try{ logAudit('Таклиф тузатиб қайта юборилди', p.district + ' / ' + (p.name||''), note.slice(0,120)); }catch(e){}
+  showToast('↻ Таклиф қайта юборилди — админ кўриб чиқади');
+}
 function approveProposal(id){
+  if(typeof isAppAdmin==='function' && !isAppAdmin()){ showToast('⛔ Бу амал фақат админда'); return; }
   const all = getProposals();
   const p = all.find(x=>x.id===id);
   if(!p) return;
@@ -7783,12 +7892,14 @@ function approveProposal(id){
   showToast('✓ Тасдиқланди — «Ҳукумат комиссиясига таклифлар»га ўтказилди');
 }
 function rejectProposal(id){
+  if(typeof isAppAdmin==='function' && !isAppAdmin()){ showToast('⛔ Бу амал фақат админда'); return; }
   const reason = prompt('Рад этиш сабабини киритинг:');
   if(reason===null) return;
   const all = getProposals();
   const p = all.find(x=>x.id===id);
   if(!p) return;
   p.status = 'rejected';
+  _pushProposalComment(p, 'Рад этилди: ' + (reason||'(сабаб йўқ)'));
   p.rejectReason = reason || '';
   p.reviewedAt = Date.now();
   saveProposals(all);
