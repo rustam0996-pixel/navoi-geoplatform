@@ -2269,7 +2269,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
             </label>
             <span class="pf-file-name" id="pf-letterfile-name">Файл бириктирилмаган</span>
           </div>
-          <div class="pf-file-hint">Туман/шаҳар расмий хати сканер-нусхаси (макс. 3 МБ). Усиз таклиф юборилмайди.</div>
+          <div class="pf-file-hint">Туман/шаҳар расмий хати сурати ёки скани (макс. 10 МБ). Суратлар автоматик сиқилади. Йирик кўп саҳифали PDF ўрнига аниқ сурат юборинг. Усиз таклиф юборилмайди.</div>
         </div>
       </div>
       <div class="pf-row">
@@ -7592,11 +7592,46 @@ function closeProposalForm(){
 /* Расмий хат файли — Firebase Storage'га юкланади (base64 эмас).
    Файлнинг ўзи юборилгунча хотирада File сифатида турады. */
 let _proposalLetterFile = null;
-function handleProposalLetterFile(input){
+/* Расм файлини браузерда сиқиш — телефон сурати (2–5 МБ) ~300–600 КБ га
+   тушади, Firestore заҳирасига сиғади (Blaze/Storage керак бўлмайди). */
+function _loadImage(src){
+  return new Promise((resolve,reject)=>{ const im=new Image(); im.onload=()=>resolve(im); im.onerror=()=>reject(new Error('image load')); im.src=src; });
+}
+async function compressImageFile(file, targetBytes){
+  try{
+    if(!file || !file.type || file.type.indexOf('image/') !== 0) return file; // расм эмас — ўзгартирмаймиз
+    targetBytes = targetBytes || 600*1024;
+    const durl = await _fileToDataUrl(file);
+    const img  = await _loadImage(durl);
+    let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+    if(!w || !h) return file;
+    let dim = Math.max(w,h);
+    let scale = dim > 2200 ? 2200/dim : 1;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    let blob = null;
+    for(let attempt=0; attempt<6; attempt++){
+      canvas.width  = Math.max(1, Math.round(w*scale));
+      canvas.height = Math.max(1, Math.round(h*scale));
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img, 0,0, canvas.width, canvas.height);
+      const q = [0.82,0.7,0.6,0.5,0.42,0.35][attempt];
+      blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', q));
+      if(blob && blob.size <= targetBytes) break;
+      scale *= 0.82; // ҳажм катта бўлса — ўлчамни ҳам кичрайтирамиз
+    }
+    if(!blob) return file;
+    if(blob.size >= file.size) return file; // сиқиш фойда бермаса — асл файл
+    const base = String(file.name||'xat').replace(/\.[^.]+$/,'');
+    return new File([blob], base + '.jpg', { type:'image/jpeg' });
+  }catch(e){ console.warn('compress failed', e); return file; }
+}
+async function handleProposalLetterFile(input){
   const nameEl = document.getElementById('pf-letterfile-name');
   const f = input.files && input.files[0];
   if(!f){ _proposalLetterFile = null; if(nameEl){ nameEl.textContent='Файл бириктирилмаган'; nameEl.classList.remove('ok'); } return; }
-  const MAX = 10 * 1024 * 1024; // 10 MB (Storage'да сақланади)
+  const MAX = 10 * 1024 * 1024; // 10 MB
   if(f.size > MAX){
     _proposalLetterFile = null;
     input.value = '';
@@ -7604,8 +7639,22 @@ function handleProposalLetterFile(input){
     showToast('⚠️ Файл ҳажми 10 МБ дан ошмаслиги керак');
     return;
   }
-  _proposalLetterFile = { name: f.name, type: f.type || 'application/octet-stream', size: f.size, file: f };
-  if(nameEl){ nameEl.textContent = f.name + ' (' + Math.round(f.size/1024) + ' КБ)'; nameEl.classList.add('ok'); }
+  const isImg = f.type && f.type.indexOf('image/') === 0;
+  if(isImg && nameEl){ nameEl.textContent = 'Сурат сиқилмоқда…'; nameEl.classList.remove('ok'); }
+  let useFile = f;
+  if(isImg){
+    try{ useFile = await compressImageFile(f, 600*1024); }catch(e){ useFile = f; }
+  }
+  _proposalLetterFile = { name: useFile.name, type: useFile.type || f.type || 'application/octet-stream', size: useFile.size, file: useFile };
+  if(nameEl){
+    const kb = Math.round(useFile.size/1024);
+    const shrunk = isImg && useFile.size < f.size ? ' ✓ сиқилди' : '';
+    nameEl.textContent = useFile.name + ' (' + kb + ' КБ)' + shrunk;
+    nameEl.classList.add('ok');
+  }
+  if(isImg && useFile.size > 700*1024){
+    showToast('ℹ️ Сурат ҳали ҳам каттароқ — иложи бўлса аниқроқ, кичикроқ сурат юборинг');
+  }
 }
 /* File'ни base64'га ўқиш (Storage ишламаса, кичик файллар учун заҳира) */
 function _fileToDataUrl(file){
