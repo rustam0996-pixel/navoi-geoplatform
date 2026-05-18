@@ -7532,7 +7532,7 @@ function renderProposalsList(){
         <div class="prop-card-field"><div class="l">Ташаббускор</div><div class="v">${escapeHtmlP(p.initiator || '—')}</div></div>
       </div>
       ${p.coords ? `<div class="prop-card-field"><div class="l">Координата</div><div class="v">${escapeHtmlP(p.coords)}</div></div>` : ''}
-      ${p.letterFile && p.letterFile.dataUrl ? `<div class="prop-card-field"><div class="l">Расмий хат файли</div><div class="v"><a class="prop-file-link" href="${p.letterFile.dataUrl}" download="${escapeHtmlP(p.letterFile.name||'rasmiy-xat')}" target="_blank" rel="noopener">📎 ${escapeHtmlP(p.letterFile.name||'Хат файли')} (${Math.round((p.letterFile.size||0)/1024)} КБ)</a></div></div>` : ''}
+      ${p.letterFile && letterFileHref(p.letterFile) ? `<div class="prop-card-field"><div class="l">Расмий хат файли</div><div class="v"><a class="prop-file-link" href="${letterFileHref(p.letterFile)}" ${p.letterFile.url?'':`download="${escapeHtmlP(p.letterFile.name||'rasmiy-xat')}"`} target="_blank" rel="noopener">📎 ${escapeHtmlP(p.letterFile.name||'Хат файли')} (${Math.round((p.letterFile.size||0)/1024)} КБ)</a></div></div>` : ''}
       ${note}
       ${rej}
       ${p.author ? `<div class="prop-card-meta">✍ ${escapeHtmlP(p.author)}</div>` : ''}
@@ -7589,32 +7589,36 @@ function openProposalForm(){
 function closeProposalForm(){
   document.getElementById('propFormWrap').style.display = 'none';
 }
-/* Расмий хат файли — base64 data-URL сифатида ўқиб, юборишгача сақланади. */
+/* Расмий хат файли — Firebase Storage'га юкланади (base64 эмас).
+   Файлнинг ўзи юборилгунча хотирада File сифатида турады. */
 let _proposalLetterFile = null;
 function handleProposalLetterFile(input){
   const nameEl = document.getElementById('pf-letterfile-name');
   const f = input.files && input.files[0];
   if(!f){ _proposalLetterFile = null; if(nameEl){ nameEl.textContent='Файл бириктирилмаган'; nameEl.classList.remove('ok'); } return; }
-  const MAX = 3 * 1024 * 1024; // 3 MB
+  const MAX = 10 * 1024 * 1024; // 10 MB (Storage'да сақланади)
   if(f.size > MAX){
     _proposalLetterFile = null;
     input.value = '';
-    if(nameEl){ nameEl.textContent='Файл 3 МБ дан катта — бошқа файл танланг'; nameEl.classList.remove('ok'); }
-    showToast('⚠️ Файл ҳажми 3 МБ дан ошмаслиги керак');
+    if(nameEl){ nameEl.textContent='Файл 10 МБ дан катта — бошқа файл танланг'; nameEl.classList.remove('ok'); }
+    showToast('⚠️ Файл ҳажми 10 МБ дан ошмаслиги керак');
     return;
   }
-  const reader = new FileReader();
-  reader.onload = () => {
-    _proposalLetterFile = { name: f.name, type: f.type || 'application/octet-stream', size: f.size, dataUrl: String(reader.result) };
-    if(nameEl){ nameEl.textContent = f.name + ' (' + Math.round(f.size/1024) + ' КБ)'; nameEl.classList.add('ok'); }
-  };
-  reader.onerror = () => {
-    _proposalLetterFile = null;
-    if(nameEl){ nameEl.textContent='Файлни ўқишда хатолик'; nameEl.classList.remove('ok'); }
-  };
-  reader.readAsDataURL(f);
+  _proposalLetterFile = { name: f.name, type: f.type || 'application/octet-stream', size: f.size, file: f };
+  if(nameEl){ nameEl.textContent = f.name + ' (' + Math.round(f.size/1024) + ' КБ)'; nameEl.classList.add('ok'); }
 }
-function submitProposal(){
+/* File'ни base64'га ўқиш (Storage ишламаса, кичик файллар учун заҳира) */
+function _fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(String(r.result));
+    r.onerror=()=>reject(r.error||new Error('read failed'));
+    r.readAsDataURL(file);
+  });
+}
+/* Хат файли ҳаволаси — янги (url) ёки эски (dataUrl) форматни қўллайди */
+function letterFileHref(lf){ return lf ? (lf.url || lf.dataUrl || '') : ''; }
+async function submitProposal(){
   try{ if(typeof getAdminSettings==='function' && getAdminSettings().proposalsOff){ showToast('ℹ️ Ҳозирча янги таклиф қабули админ томонидан вақтинча ўчирилган'); return; } }catch(e){}
   const v = (id)=>document.getElementById(id).value.trim();
   const district = v('pf-district');
@@ -7650,6 +7654,35 @@ function submitProposal(){
   const all = getProposals();
   const now = Date.now();
   const id = 'p_' + now + '_' + Math.random().toString(36).slice(2,8);
+  // Расмий хат файлини Firebase Storage'га юклаймиз
+  const sendBtn = document.querySelector('#propFormWrap .prop-btn.primary');
+  const _restoreBtn = ()=>{ if(sendBtn){ sendBtn.disabled=false; sendBtn.textContent='📨 Юбориш'; } };
+  if(sendBtn){ sendBtn.disabled=true; sendBtn.textContent='Файл юкланмоқда…'; }
+  let letterFileMeta = { name:_proposalLetterFile.name, type:_proposalLetterFile.type, size:_proposalLetterFile.size };
+  try{
+    let up = { ok:false };
+    if(typeof window.__uploadLetterFile === 'function' && _proposalLetterFile.file){
+      up = await window.__uploadLetterFile(id, _proposalLetterFile.file);
+    }
+    if(up && up.ok){
+      letterFileMeta.url = up.url;
+      letterFileMeta.path = up.path;
+    } else {
+      // Storage ишламади — кичик файл учун base64 заҳира (Firestore 1МБ)
+      if(_proposalLetterFile.size <= 700*1024 && _proposalLetterFile.file){
+        letterFileMeta.dataUrl = await _fileToDataUrl(_proposalLetterFile.file);
+      } else {
+        _restoreBtn();
+        showToast('⚠️ Файлни юклаб бўлмади. Firebase Storage ёқилмаган бўлиши мумкин — админга хабар беринг (ёки 700 КБ дан кичик файл танланг).');
+        return;
+      }
+    }
+  }catch(e){
+    _restoreBtn();
+    showToast('⚠️ Файл юклашда хатолик: ' + (e && e.message ? e.message : e));
+    return;
+  }
+  _restoreBtn();
   all.push({
     id, district, mfy, name, contour,
     area: Number(area) || 0,
@@ -7657,7 +7690,7 @@ function submitProposal(){
     cost: Number(cost) || 0,
     jobs: Number(jobs) || 0,
     initiator, letter, coords, notes, author,
-    letterFile: _proposalLetterFile,
+    letterFile: letterFileMeta,
     status: 'pending',
     createdAt: now,
     date: new Date(now).toLocaleDateString('uz-UZ')
@@ -10483,6 +10516,9 @@ if(document.readyState === 'loading'){
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
     createUserWithEmailAndPassword, setPersistence, browserLocalPersistence
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    getStorage, ref as storageRef, uploadBytes, getDownloadURL
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB_ouaIV15tOJyqHACLRDalnEvPpqTzPq0",
@@ -10501,6 +10537,24 @@ if(document.readyState === 'loading'){
     const COL = collection(db, 'proposals');
     window.firebaseApp = app;
     window.firebaseDb  = db;
+
+    /* ---- Firebase Storage — расмий хат файли (base64 ўрнига) ---- */
+    let _storage = null;
+    function _getStorage(){ if(!_storage){ try{ _storage = getStorage(app); }catch(e){ _storage = null; } } return _storage; }
+    window.__uploadLetterFile = async function(proposalId, file){
+      try{
+        const st = _getStorage();
+        if(!st) return { ok:false, error:'storage-unavailable' };
+        const safe = String(file.name||'xat').replace(/[^\w.\-]+/g,'_').slice(-80);
+        const path = 'proposalLetters/' + proposalId + '/' + Date.now() + '_' + safe;
+        const r = storageRef(st, path);
+        await uploadBytes(r, file, { contentType: file.type || 'application/octet-stream' });
+        const url = await getDownloadURL(r);
+        return { ok:true, url, path };
+      }catch(err){
+        return { ok:false, error:(err && (err.code||err.message)) || 'upload-failed' };
+      }
+    };
 
     /* ============================================================
        FIREBASE AUTHENTICATION — бутун сайт логин остида
