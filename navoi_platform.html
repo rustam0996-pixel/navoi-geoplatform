@@ -1793,7 +1793,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       <span>Таклиф / Шикоят</span>
     </button>
-    <button class="tb-btn admin-tb" id="adminBtn" type="button" title="Админ бошқарув маркази" onclick="openAdminCenter()">
+    <button class="tb-btn admin-tb" id="adminBtn" type="button" title="Админ бошқарув маркази" onclick="openAdminCenter()" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
       <span>Админ</span>
       <span class="admin-tb-badge" id="adminBadge" hidden>0</span>
@@ -3658,6 +3658,13 @@ function rowMatchesStage(sec, row, stageKey){
 }
 function plotItemMatchesStage(item, stageKey){
   if(!stageKey) return true;
+  // Approved-proposal parcels (injected into HK as _fromProposal) belong to the
+  // «Янги таклиф» (proposal) stage — their generic HK status would otherwise
+  // never map to 'proposal', so the pin disappeared under that filter.
+  const cands = item && (item.candidates || (item.primary ? [item.primary] : []));
+  const isProposal = Array.isArray(cands) && cands.some(c => c && c.row && c.row._fromProposal);
+  if(isProposal) return stageKey === 'proposal';
+  if(stageKey === 'proposal') return false;
   const status = item && (item.status || (item.candidates ? currentParcelStatus(item.candidates) : null));
   if(!status) return false;
   const k = plotStatusKind(status.label);
@@ -7549,9 +7556,34 @@ function setAdminUnlocked(ok, name){
 }
 function adminName(){ try{ return sessionStorage.getItem(ADMIN_SESS+'_n') || 'Админ'; }catch(e){ return 'Админ'; } }
 
+/* «Админ» тугмаси оддий фойдаланувчиларга кўринмайди — фақат админ уни
+   яширин йўл (Ctrl+Shift+A ёки #admin URL) орқали очади, ёки сессияда
+   аллақачон кирган бўлса. */
+const ADMIN_REVEAL = 'navoi_admin_reveal_v1';
+function _adminUrlHint(){
+  try{
+    const h = (location.hash||'').toLowerCase();
+    const s = (location.search||'').toLowerCase();
+    return h.indexOf('admin') >= 0 || s.indexOf('admin') >= 0;
+  }catch(e){ return false; }
+}
+function refreshAdminBtnVisibility(){
+  const b = document.getElementById('adminBtn');
+  if(!b) return;
+  let revealed = false;
+  try{ revealed = sessionStorage.getItem(ADMIN_REVEAL) === '1'; }catch(e){}
+  const show = revealed || isAdminUnlocked() || _adminUrlHint();
+  b.style.display = show ? '' : 'none';
+  if(show){ try{ sessionStorage.setItem(ADMIN_REVEAL,'1'); }catch(e){} }
+}
+function revealAdminButton(){
+  try{ sessionStorage.setItem(ADMIN_REVEAL,'1'); }catch(e){}
+  refreshAdminBtnVisibility();
+}
 function openAdminCenter(){
   const ov = document.getElementById('adminOverlay');
   if(!ov) return;
+  revealAdminButton();
   ov.style.display = 'flex';
   _renderAdminGate();
 }
@@ -7593,7 +7625,9 @@ function adminLoginSubmit(ev){
 }
 function adminLogout(){
   setAdminUnlocked(false);
-  _renderAdminGate();
+  try{ sessionStorage.removeItem(ADMIN_REVEAL); }catch(e){}
+  closeAdminCenter();
+  refreshAdminBtnVisibility();
   showToast('Админ сессияси якунланди');
 }
 function switchAdminTab(which){
@@ -7825,6 +7859,15 @@ function dismissSiteNotice(){
 /* Esc + backdrop yopish — admin/feedback/user modallari */
 (function wireAdminDismiss(){
   function bind(){
+    try{ refreshAdminBtnVisibility(); }catch(e){}
+    window.addEventListener('hashchange', ()=>{ try{ refreshAdminBtnVisibility(); }catch(e){} });
+    // Яширин админ киришу: Ctrl+Shift+A
+    document.addEventListener('keydown', (e)=>{
+      if((e.ctrlKey||e.metaKey) && e.shiftKey && (e.key==='A'||e.key==='a'||e.code==='KeyA')){
+        e.preventDefault();
+        if(typeof openAdminCenter==='function') openAdminCenter();
+      }
+    });
     document.addEventListener('keydown', (e)=>{
       if(e.key!=='Escape') return;
       const uf=document.getElementById('userFormWrap');
@@ -10038,7 +10081,7 @@ function boot(){
   // Active-filter crumb + topbar Excel count (P1 simplification)
   if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
   if(typeof refreshExportBtn === 'function') refreshExportBtn();
-  try { getUsers(); applyAdminSettingsUI(); applySiteNotice(); updateAdminBadge(); } catch(e){ console.warn('admin init', e); }
+  try { getUsers(); applyAdminSettingsUI(); applySiteNotice(); updateAdminBadge(); refreshAdminBtnVisibility(); } catch(e){ console.warn('admin init', e); }
   setTimeout(()=>document.getElementById('loader').classList.add('hidden'), 500);
   // Onboarding — show once on first visit (after a short delay so the
   // map can settle behind the overlay)
