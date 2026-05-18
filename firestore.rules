@@ -36,5 +36,19 @@ service cloud.firestore {
       allow create: if signedIn();
       allow read, update, delete: if isAdmin();
     }
+
+    // Ер маълумотлари таҳрирлари — барча кўради, фақат админ ёзади
+    match /landEdits/{id} {
+      allow read:   if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Аудит изи — append-only: ҳар ким ёза олади (ўз амали),
+    // фақат админ ўқийди, ҳеч ким ўзгартира/ўчира олмайди
+    match /audit/{id} {
+      allow create: if signedIn();
+      allow read:   if isAdmin();
+      allow update, delete: if false;
+    }
   }
 }

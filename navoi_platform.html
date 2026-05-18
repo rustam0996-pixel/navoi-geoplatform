@@ -2383,6 +2383,10 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Созламалар
         </button>
+        <button class="adm-tab" data-atab="audit" onclick="switchAdminTab('audit')">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Аудит изи
+        </button>
       </div>
       <div class="adm-body">
         <!-- USERS -->
@@ -2437,6 +2441,17 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
               <div style="margin-top:9px"><button class="adm-act-btn" onclick="saveAdminNotice()">Эълонни сақлаш</button></div>
             </div>
           </div>
+        </div>
+        <!-- AUDIT -->
+        <div class="adm-pane" data-apane="audit">
+          <div class="adm-pane-head">
+            <div>
+              <h4>Аудит изи</h4>
+              <p>Ким қачон нима қилди — барча муҳим амаллар қайди (ўзгартириб бўлмайди)</p>
+            </div>
+            <button class="adm-mini" onclick="renderAdminAudit()">↻ Янгилаш</button>
+          </div>
+          <div id="admAuditWrap"><div class="adm-empty"><span class="ic">🗂</span>Юкланмоқда…</div></div>
         </div>
       </div>
     </div>
@@ -3800,6 +3815,57 @@ function syncApprovedProposalsToHK(){
     }
   }
 }
+/* ===== ЕР ТАҲРИРЛАРИ — давомий сақланиши =====
+   Админ ХК/тоифаси ўзгарган ва б. бўлимлардаги ёзувни таҳрирласа, у
+   Firestore `landEdits` коллекциясида сақланади ва ҳар юкланганда
+   статик маълумот устига қўлланади (йўқолмайди, барча қурилмада кўринади). */
+function landRowKey(row){
+  return String((row && (row._row != null ? row._row : row.id)) || '');
+}
+function getLandEdits(){
+  try{ const r = localStorage.getItem('navoi_land_edits_v1'); if(r) return JSON.parse(r)||[]; }catch(e){}
+  return [];
+}
+function applyLandEdits(){
+  if(typeof SECTIONS_RAW === 'undefined' || !SECTIONS_RAW) return;
+  const edits = getLandEdits();
+  for(const e of edits){
+    if(!e || !e.section || !e.patch) continue;
+    // Таклиф ёзувлари ўз йўли (p._hkRow) билан тикланади — уларни ўтказамиз
+    if(String(e.rowKey).indexOf('P_') === 0) continue;
+    const arr = SECTIONS_RAW[e.section];
+    if(!Array.isArray(arr)) continue;
+    const row = arr.find(r => landRowKey(r) === String(e.rowKey));
+    if(row) Object.assign(row, e.patch);
+  }
+}
+window.__onLandEditsSynced = function(){
+  try{ applyLandEdits(); }catch(e){}
+  try{ if(typeof buildUnifiedStats==='function') buildUnifiedStats(); }catch(e){}
+  try{ if(typeof buildCategoryStats==='function') buildCategoryStats(); }catch(e){}
+  try{ if(typeof buildStageStats==='function') buildStageStats(); }catch(e){}
+  try{ if(typeof renderKpis==='function') renderKpis(); }catch(e){}
+  try{ if(typeof renderBubbles==='function') renderBubbles(); }catch(e){}
+  try{ if(currentDistrict && typeof renderDrawer==='function') renderDrawer(currentDistrict); }catch(e){}
+};
+
+/* ===== АУДИТ ИЗИ — ким қачон нима қилди ===== */
+function logAudit(action, target, details){
+  try{
+    const p = (typeof currentProfile === 'function') ? currentProfile() : null;
+    const entry = {
+      action: String(action||''),
+      target: String(target||''),
+      details: details ? (typeof details === 'string' ? details : JSON.stringify(details)) : '',
+      actorUid: p ? (p.uid||'') : '',
+      actorName: p ? (p.fullName || p.username || '') : '',
+      actorRole: p ? (p.role||'') : '',
+      ts: Date.now()
+    };
+    if(typeof window.__logAudit === 'function') window.__logAudit(entry);
+  }catch(e){ console.warn('logAudit', e); }
+}
+
 /* Filter predicate against current STAGE_STATE.
    Items can be either a section row (sec, row) or a plot item with .candidates. */
 function activeStageFilter(){
@@ -7584,6 +7650,7 @@ function submitProposal(){
   closeProposalForm();
   renderProposalsPanel();
   renderKpis();
+  try{ logAudit('Янги таклиф юборилди', district + ' / ' + name, {mfy, area}); }catch(e){}
   showToast('📨 Таклиф юборилди — админ кўриб чиқиши кутилмоқда');
 }
 /* Rebuild every derived dataset + UI after a proposal status change. */
@@ -7608,6 +7675,7 @@ function approveProposal(id){
   p.reviewedAt = Date.now();
   saveProposals(all);
   __refreshAfterProposalChange();
+  try{ logAudit('Таклиф тасдиқланди', p.district + ' / ' + (p.name||''), {id:p.id}); }catch(e){}
   showToast('✓ Тасдиқланди — «Ҳукумат комиссиясига таклифлар»га ўтказилди');
 }
 function rejectProposal(id){
@@ -7621,6 +7689,7 @@ function rejectProposal(id){
   p.reviewedAt = Date.now();
   saveProposals(all);
   __refreshAfterProposalChange();
+  try{ logAudit('Таклиф рад этилди', p.district + ' / ' + (p.name||''), {id:p.id, reason:reason||''}); }catch(e){}
   showToast('✕ Рад этилди');
 }
 
@@ -7815,6 +7884,30 @@ function switchAdminTab(which){
   if(which==='users') renderAdminUsers();
   if(which==='feedback') renderAdminFeedback();
   if(which==='settings') loadAdminSettingsIntoForm();
+  if(which==='audit') renderAdminAudit();
+}
+async function renderAdminAudit(){
+  const wrap = document.getElementById('admAuditWrap');
+  if(!wrap) return;
+  wrap.innerHTML = '<div class="adm-empty"><span class="ic">🗂</span>Юкланмоқда…</div>';
+  let rows = [];
+  try{ if(typeof window.__loadAudit === 'function') rows = await window.__loadAudit(250); }catch(e){}
+  if(!rows || !rows.length){
+    wrap.innerHTML = '<div class="adm-empty"><span class="ic">🗂</span>Ҳозирча аудит ёзувлари йўқ.</div>';
+    return;
+  }
+  const esc = (typeof escapeHtmlP==='function') ? escapeHtmlP : (s)=>String(s==null?'':s);
+  const when = (ts)=>{ try{ return new Date(ts).toLocaleString('uz-UZ'); }catch(e){ return ''; } };
+  const roleLbl = (r)=> r==='admin'?'Админ':r==='district'?'Туман/шаҳар':r==='dept'?'Бошқарма':r==='viewer'?'Кузатувчи':(r||'');
+  wrap.innerHTML = `<table class="adm-table"><thead><tr>
+      <th>Сана/вақт</th><th>Ким</th><th>Амал</th><th>Объект</th><th>Тафсилот</th>
+    </tr></thead><tbody>` + rows.map(a=>`<tr>
+      <td style="white-space:nowrap;font-size:11.5px">${esc(when(a.ts))}</td>
+      <td><b>${esc(a.actorName||'—')}</b><div style="font-size:10.5px;color:var(--muted)">${esc(roleLbl(a.actorRole))}</div></td>
+      <td><span class="adm-pill role-district">${esc(a.action||'')}</span></td>
+      <td style="font-size:11.5px">${esc(a.target||'—')}</td>
+      <td style="font-size:11px;color:var(--muted);max-width:260px;word-break:break-word">${esc(a.details||'')}</td>
+    </tr>`).join('') + '</tbody></table>';
 }
 function roleLabel(r){
   return r==='admin' ? 'Админ' : r==='district' ? 'Туман/шаҳар' : r==='dept' ? 'Бошқарма' : 'Кузатувчи';
@@ -7904,6 +7997,7 @@ async function saveUserForm(){
     if(btn){ btn.disabled=false; btn.textContent='💾 Сақлаш'; }
     if(!r.ok){ showToast('⚠️ '+(r.error||'Сақлашда хатолик')); return; }
     if(typeof window.__refreshUsersMirror==='function') window.__refreshUsersMirror();
+    try{ logAudit('Ходим маълумоти таҳрирланди', username||fullName, {role, district, status}); }catch(e){}
     closeUserForm();
     setTimeout(()=>{ renderAdminUsers(); updateAdminTabCounts(); }, 600);
     showToast('💾 Ходим маълумоти янгиланди');
@@ -7921,6 +8015,7 @@ async function saveUserForm(){
   if(btn){ btn.disabled=false; btn.textContent='💾 Сақлаш'; }
   if(!r.ok){ showToast('⚠️ '+(r.error||'Яратишда хатолик')); return; }
   if(typeof window.__refreshUsersMirror==='function') window.__refreshUsersMirror();
+  try{ logAudit('Янги ходим қўшилди', username, {role, district, fullName}); }catch(e){}
   closeUserForm();
   setTimeout(()=>{ renderAdminUsers(); updateAdminTabCounts(); }, 700);
   showToast('✓ Янги ходимга доступ берилди — логин: '+username);
@@ -7941,6 +8036,7 @@ async function toggleUserStatus(id){
   const r = await window.__auth.updateProfileDoc(u.uid||u.id, { status:newStatus });
   if(!r.ok){ showToast('⚠️ '+(r.error||'Хатолик')); return; }
   if(typeof window.__refreshUsersMirror==='function') window.__refreshUsersMirror();
+  try{ logAudit(newStatus==='active'?'Ходим фаоллаштирилди':'Ходим блокланди', u.username||u.fullName||'', {role:u.role}); }catch(e){}
   setTimeout(()=>renderAdminUsers(), 500);
   showToast(newStatus==='active' ? '✓ Ходим фаоллаштирилди' : '⛔ Ходим блокланди');
 }
@@ -7995,6 +8091,7 @@ function resolveFeedback(id){
   const all=getFeedback(); const f=all.find(x=>x.id===id); if(!f) return;
   f.status='resolved'; f.resolvedAt=Date.now();
   saveFeedback(all); renderAdminFeedback(); updateAdminTabCounts();
+  try{ logAudit('Мурожаат кўрилди', f.subject||'', {type:f.type}); }catch(e){}
   showToast('✓ Мурожаат кўрилган деб белгиланди');
 }
 function reopenFeedback(id){
@@ -8030,6 +8127,7 @@ function onAdminSettingChange(){
   const sf=document.getElementById('set-feedback');  if(sf) s.feedbackOff  = !sf.checked;
   saveAdminSettings(s);
   applyAdminSettingsUI();
+  try{ logAudit('Созлама ўзгартирилди', '', {proposalsOff:s.proposalsOff, feedbackOff:s.feedbackOff}); }catch(e){}
   showToast('⚙️ Созлама сақланди');
 }
 function saveAdminNotice(){
@@ -9519,23 +9617,29 @@ function saveEditRecord(){
     const maybeNumber = Number(raw);
     row[field] = (!Number.isNaN(maybeNumber) && /^-?\d+(\.\d+)?$/.test(raw)) ? maybeNumber : raw;
   });
-  // Таклифдан келган ХК ёзуви — админ таҳрирларини таклиф объектига
-  // сақлаймиз (булутга — барча қурилмаларга етади, қайта юкланса тикланади).
+  // Таҳрирланган майдонлар тўплами (ички калитлардан ташқари)
+  const _snap = {};
+  Object.keys(row).forEach(k => {
+    if(['_row','id','_fromProposal','_proposalId','_letterFile'].includes(k)) return;
+    _snap[k] = row[k];
+  });
+  const _prof = (typeof currentProfile==='function') ? currentProfile() : null;
   if(row && row._fromProposal && row._proposalId && typeof getProposals === 'function'){
+    // Таклифдан келган ХК ёзуви — таклиф объектига сақлаймиз
     try{
       const all = getProposals();
       const p = all.find(x => x && x.id === row._proposalId);
-      if(p){
-        const snap = {};
-        Object.keys(row).forEach(k => {
-          if(['_row','id','_fromProposal','_proposalId','_letterFile'].includes(k)) return;
-          snap[k] = row[k];
-        });
-        p._hkRow = snap;
-        p.hkUpdatedAt = Date.now();
-        saveProposals(all);
-      }
+      if(p){ p._hkRow = _snap; p.hkUpdatedAt = Date.now(); saveProposals(all); }
     }catch(e){ console.error('persist proposal hk edit', e); }
+    try{ logAudit('Таклиф ёзуви таҳрири', section + ' / ' + (row._proposalId||''), { name: row['Жойлашган участка номи']||row['Лойиҳа номи']||'' }); }catch(e){}
+  } else if(row && typeof window.__saveLandEdit === 'function'){
+    // Оддий ер ёзуви — Firestore landEdits'га давомий сақлаймиз
+    try{
+      window.__saveLandEdit(section, landRowKey(row), _snap, {
+        by: _prof ? (_prof.uid||'') : '', name: _prof ? (_prof.fullName||_prof.username||'') : ''
+      });
+    }catch(e){ console.error('persist land edit', e); }
+    try{ logAudit('Ер ёзуви таҳрири', section + ' / ' + landRowKey(row), { name: row['Жойлашган участка номи']||row['Лойиҳа номи']||row['МФЙ номи']||'' }); }catch(e){}
   }
   // Rebuild stats to reflect changes
   try { buildUnifiedStats(); } catch(e){ console.error('rebuild stats',e); }
@@ -10308,6 +10412,8 @@ function boot(){
   }
   // Inject already-approved proposals into HK before stats are built
   try { if(typeof syncApprovedProposalsToHK === 'function') syncApprovedProposalsToHK(); } catch(e){ console.error('sync approved', e); }
+  // Apply persisted land-data edits on top of the static dataset
+  try { if(typeof applyLandEdits === 'function') applyLandEdits(); } catch(e){ console.error('apply land edits', e); }
   try {
     buildUnifiedStats();
   } catch(e){ console.error('unified stats', e); }
@@ -10347,7 +10453,8 @@ if(document.readyState === 'loading'){
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAnalytics, isSupported as analyticsSupported } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
   import {
-    getFirestore, collection, getDocs, getDoc, setDoc, deleteDoc, doc, onSnapshot
+    getFirestore, collection, getDocs, getDoc, setDoc, deleteDoc, doc, onSnapshot,
+    addDoc, query, orderBy, limit, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import {
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
@@ -10661,11 +10768,48 @@ if(document.readyState === 'loading'){
     window.__syncUsersToCloud   = function(){ /* no-op: per-doc writes via __auth */ };
     window.__refreshUsersMirror = function(){ try{ usrSync.pull(); }catch(e){} };
 
+    /* ---- ЕР ТАҲРИРЛАРИ (landEdits) — ҳар таҳрир алоҳида ҳужжат,
+       boot'да SECTIONS_RAW устига қўлланади ---- */
+    const leSync = makeCloudSync('landEdits', 'navoi_land_edits_v1', '__onLandEditsSynced', true);
+    window.__saveLandEdit = async function(section, rowKey, patch, meta){
+      const id = section + '__' + String(rowKey);
+      const rec = { id, section, rowKey: String(rowKey), patch: patch||{},
+                    updatedAt: Date.now(),
+                    updatedBy: (meta&&meta.by)||'', updatedByName:(meta&&meta.name)||'' };
+      try{
+        // локал кўзгуни ҳам дарров янгилаймиз
+        let arr=[]; try{ arr=JSON.parse(localStorage.getItem('navoi_land_edits_v1'))||[]; }catch(e){}
+        const i=arr.findIndex(x=>x&&x.id===id); if(i>=0) arr[i]=rec; else arr.push(rec);
+        localStorage.setItem('navoi_land_edits_v1', JSON.stringify(arr));
+      }catch(e){}
+      try{ await setDoc(doc(db,'landEdits',id), rec, {merge:true}); return {ok:true}; }
+      catch(err){ return {ok:false, error:(err&&err.message)||'Хатолик'}; }
+    };
+    window.__refreshLandEdits = function(){ try{ leSync.pull(); }catch(e){} };
+
+    /* ---- АУДИТ ИЗИ (audit) — append-only ---- */
+    window.__logAudit = async function(entry){
+      try{
+        await addDoc(collection(db,'audit'), Object.assign({
+          ts: Date.now(), at: serverTimestamp()
+        }, entry||{}));
+        return {ok:true};
+      }catch(err){ console.warn('[audit] log failed:', err&&err.message); return {ok:false}; }
+    };
+    window.__loadAudit = async function(max){
+      try{
+        const q = query(collection(db,'audit'), orderBy('ts','desc'), limit(max||200));
+        const snap = await getDocs(q);
+        const out=[]; snap.forEach(d=>out.push(Object.assign({_id:d.id}, d.data())));
+        return out;
+      }catch(err){ console.warn('[audit] load failed:', err&&err.message); return []; }
+    };
+
     // Pull once DOM is interactive so boot() render functions exist
     if(document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', () => setTimeout(()=>{ pullCloud(); fbSync.pull(); usrSync.pull(); }, 400));
+      document.addEventListener('DOMContentLoaded', () => setTimeout(()=>{ pullCloud(); fbSync.pull(); usrSync.pull(); leSync.pull(); }, 400));
     } else {
-      setTimeout(()=>{ pullCloud(); fbSync.pull(); usrSync.pull(); }, 400);
+      setTimeout(()=>{ pullCloud(); fbSync.pull(); usrSync.pull(); leSync.pull(); }, 400);
     }
   } catch(err) {
     console.error('[firebase] init failed:', err);
