@@ -2294,8 +2294,9 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
         </div>
       </div>
       <div class="pf-row">
-        <div class="pf-group"><label>Координата рақамлари <span class="req">*</span></label>
-          <textarea id="pf-coords" rows="3" placeholder="1. 40°30'12.3&quot;С 65°25'15.7&quot;В&#10;2. 40°30'15.1&quot;С 65°25'20.4&quot;В&#10;… (ҳар нуқта янги қаторда)"></textarea></div>
+        <div class="pf-group"><label>Координата рақамлари <span class="req">*</span>
+          <button type="button" onclick="openDrawMap()" style="float:right;border:0;border-radius:7px;background:linear-gradient(135deg,#0e7490,#0891b2);color:#fff;font-size:11px;font-weight:800;padding:5px 11px;cursor:pointer">🗺 Харитада чизиш</button></label>
+          <textarea id="pf-coords" rows="3" placeholder="1. 40°30'12.3&quot;С 65°25'15.7&quot;В&#10;2. 40°30'15.1&quot;С 65°25'20.4&quot;В&#10;… (ҳар нуқта янги қаторда)&#10;Ёки «Харитада чизиш» тугмасидан фойдаланинг"></textarea></div>
       </div>
       <div class="pf-row">
         <div class="pf-group"><label>Асослантириш / изоҳ</label>
@@ -2309,6 +2310,29 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
     <div class="prop-form-foot">
       <button class="prop-btn ghost" onclick="closeProposalForm()">Бекор қилиш</button>
       <button class="prop-btn primary" onclick="submitProposal()">📨 Юбориш</button>
+    </div>
+  </div>
+</div>
+
+<!-- DRAW MAP MODAL (харитадан полигон чизиш) -->
+<div id="drawMapWrap" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(15,26,54,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:18px">
+  <div style="width:min(820px,97vw);height:min(86vh,720px);background:#fff;border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 70px -22px rgba(15,26,54,.55)">
+    <div style="padding:14px 20px;background:linear-gradient(135deg,#0e7490,#0891b2);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div>
+        <div style="font-size:15px;font-weight:850">🗺 Харитада участка чизиш</div>
+        <div style="font-size:11.5px;color:rgba(255,255,255,.85);margin-top:2px">Харитага кетма-кет нуқталарни босиб участка чегарасини белгиланг (камида 3 нуқта)</div>
+      </div>
+      <button onclick="closeDrawMap()" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;font-size:18px;cursor:pointer">×</button>
+    </div>
+    <div id="drawMap" style="flex:1;min-height:0"></div>
+    <div style="padding:12px 20px;border-top:1px solid #e5ecf5;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div id="drawMapInfo" style="font-size:12px;font-weight:700;color:#475569">Нуқталар: 0</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="prop-btn ghost" onclick="drawMapUndo()">↩ Охиргисини бекор</button>
+        <button class="prop-btn ghost" onclick="drawMapClear()">🗑 Тозалаш</button>
+        <button class="prop-btn ghost" onclick="closeDrawMap()">Бекор қилиш</button>
+        <button class="prop-btn primary" style="background:linear-gradient(135deg,#0e7490,#0891b2)" onclick="drawMapApply()">✓ Тайёр — координатани олиш</button>
+      </div>
     </div>
   </div>
 </div>
@@ -7658,6 +7682,63 @@ function openProposalForm(){
 }
 function closeProposalForm(){
   document.getElementById('propFormWrap').style.display = 'none';
+}
+
+/* ===== ХАРИТАДА ПОЛИГОН ЧИЗИШ ===== */
+let _drawMap=null, _drawPts=[], _drawLayer=null;
+function _decToDMS(dec, isLat){
+  const hemi = isLat ? (dec>=0?'С':'Ж') : (dec>=0?'В':'Ғ'); // С-Шимол, Ж-Жануб, В-Шарқ, Ғ-Ғарб
+  let v=Math.abs(dec);
+  const d=Math.floor(v); v=(v-d)*60;
+  const m=Math.floor(v); const s=((v-m)*60);
+  return d+'°'+m+'\''+s.toFixed(1)+'"'+hemi;
+}
+function _drawRedraw(){
+  if(!_drawMap) return;
+  if(_drawLayer){ _drawMap.removeLayer(_drawLayer); _drawLayer=null; }
+  _drawLayer = L.layerGroup().addTo(_drawMap);
+  _drawPts.forEach((pt,i)=>{
+    L.circleMarker(pt,{radius:6,color:'#0891b2',weight:2,fillColor:'#22d3ee',fillOpacity:.9}).addTo(_drawLayer)
+      .bindTooltip(String(i+1),{permanent:true,direction:'top',className:'dm-tip'});
+  });
+  if(_drawPts.length>=2) L.polyline(_drawPts,{color:'#0e7490',weight:2,dashArray:'5,4'}).addTo(_drawLayer);
+  if(_drawPts.length>=3) L.polygon(_drawPts,{color:'#0891b2',weight:2,fillColor:'#06b6d4',fillOpacity:.18}).addTo(_drawLayer);
+  const info=document.getElementById('drawMapInfo');
+  if(info) info.textContent='Нуқталар: '+_drawPts.length+(_drawPts.length>=3?' — тайёр':' (камида 3 та керак)');
+}
+function openDrawMap(){
+  const w=document.getElementById('drawMapWrap'); if(!w) return;
+  w.style.display='flex';
+  _drawPts=[];
+  setTimeout(()=>{
+    if(!_drawMap){
+      _drawMap = L.map('drawMap',{zoomControl:true});
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(_drawMap);
+      _drawMap.on('click',(e)=>{ _drawPts.push([e.latlng.lat,e.latlng.lng]); _drawRedraw(); });
+    }
+    // Навоий вилоятига марказлаш
+    try{
+      if(typeof districtBounds!=='undefined'){
+        const b=L.latLngBounds([]);
+        for(const k in districtBounds) b.extend(districtBounds[k]);
+        if(b.isValid()){ _drawMap.fitBounds(b,{padding:[30,30]}); _drawMap.invalidateSize(); _drawRedraw(); return; }
+      }
+    }catch(e){}
+    _drawMap.setView([40.4,65.0],8);
+    _drawMap.invalidateSize();
+    _drawRedraw();
+  },120);
+}
+function closeDrawMap(){ const w=document.getElementById('drawMapWrap'); if(w) w.style.display='none'; }
+function drawMapUndo(){ _drawPts.pop(); _drawRedraw(); }
+function drawMapClear(){ _drawPts=[]; _drawRedraw(); }
+function drawMapApply(){
+  if(_drawPts.length<3){ showToast('⚠️ Камида 3 нуқта белгиланг'); return; }
+  const lines=_drawPts.map((pt,i)=>(i+1)+'. '+_decToDMS(pt[0],true)+' '+_decToDMS(pt[1],false));
+  const ta=document.getElementById('pf-coords');
+  if(ta) ta.value=lines.join('\n');
+  closeDrawMap();
+  showToast('✓ '+_drawPts.length+' нуқта координатага ёзилди');
 }
 /* Расмий хат файли — Firebase Storage'га юкланади (base64 эмас).
    Файлнинг ўзи юборилгунча хотирада File сифатида турады. */
