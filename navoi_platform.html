@@ -9693,8 +9693,9 @@ function showRowDetail(section, rowIdx){
   const row = arr.find(r => r._row == rowIdx);
   if(!row) { showToast('Ёзув топилмади (row=' + rowIdx + ')'); return; }
   // rowIdx таклиф ёзувлари учун матн бўлади ('P_p_...') — onclick'да
-  // тирноқсиз қўйилса JS хатоси беради. Хавфсиз литерал ясаймиз.
-  const ridJs = JSON.stringify(String(rowIdx));
+  // тирноқсиз қўйилса JS хатоси беради. onclick атрибути қўш тирноқда
+  // бўлгани учун БИР тирноқли литерал ясаймиз (JSON.stringify эмас).
+  const ridJs = "'" + String(rowIdx).replace(/\\/g,'\\\\').replace(/'/g,"\\'") + "'";
   const cols = meta.columns || [];
   const allKeys = Object.keys(row).filter(k => k !== 'id' && k !== '_row');
   const displayKeys = allKeys.length > 0 ? allKeys : cols.map(c=>c.key);
@@ -9756,7 +9757,7 @@ function showRowDetail(section, rowIdx){
       <div style="padding:16px 20px;overflow-y:auto;flex:1">${detailHtml}</div>
       <div style="padding:12px 20px;border-top:1px solid #e5ecf5;display:flex;gap:6px;justify-content:flex-end">
         ${points.length ? `<button class="rs-action-btn" onclick="downloadRowKml('${section}',${ridJs})" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> KML</button>` : ''}
-        ${(typeof isAppAdmin==='function' && isAppAdmin()) ? `<button class="rs-action-btn" onclick="document.getElementById('rowDetailModal').remove();openEditModal('${section}',${ridJs})" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Таҳрирлаш</button>` : '<span style="font-size:11px;color:#94a3b8;align-self:center">Кўриш режими — таҳрирлаш фақат админда</span>'}
+        ${(typeof isAppAdmin==='function' && !isAppAdmin()) ? '<span style="font-size:11px;color:#94a3b8;align-self:center">Кўриш режими — таҳрирлаш фақат админда</span>' : ''}
       </div>
     </div>`;
   modal.style.display = 'flex';
