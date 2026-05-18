@@ -10217,12 +10217,73 @@ function showRowDetail(section, rowIdx){
       </div>
       <div style="padding:16px 20px;overflow-y:auto;flex:1">${detailHtml}</div>
       <div style="padding:12px 20px;border-top:1px solid #e5ecf5;display:flex;gap:6px;justify-content:flex-end">
+        <button class="rs-action-btn" onclick="showParcelHistory('${section}',${ridJs})" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Тарих</button>
         ${points.length ? `<button class="rs-action-btn" onclick="downloadRowKml('${section}',${ridJs})" style="padding:6px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> KML</button>` : ''}
         ${(typeof isAppAdmin==='function' && !isAppAdmin()) ? '<span style="font-size:11px;color:#94a3b8;align-self:center">Кўриш режими — таҳрирлаш фақат админда</span>' : ''}
       </div>
     </div>`;
   modal.style.display = 'flex';
   modal.onclick = (e) => { if(e.target === modal) modal.remove(); };
+}
+
+/* ===== УЧАСТКА ТАРИХИ (timeline) — босқичма-босқич ўзгаришлар ===== */
+async function showParcelHistory(section, rowIdx){
+  const arr = (typeof SECTIONS_RAW!=='undefined' && SECTIONS_RAW[section]) ? SECTIONS_RAW[section] : [];
+  const row = arr.find(r => String(r && r._row) === String(rowIdx)) || arr.find(r=>r && r.id===rowIdx) || {};
+  const title = row['Жойлашган участка номи'] || row['Лойиҳа номи'] || row['МФЙ номи'] || ('Ёзув #'+rowIdx);
+  const key = String((row && (row._row!=null?row._row:row.id)) || rowIdx);
+  const events = [];
+  const when = (ts)=>{ try{ return new Date(ts).toLocaleString('uz-UZ'); }catch(e){ return ''; } };
+  // Таклиф ҳаёт цикли
+  try{
+    if(row._fromProposal && row._proposalId && typeof getProposals==='function'){
+      const p = (getProposals()||[]).find(x=>x && x.id===row._proposalId);
+      if(p){
+        if(p.createdAt) events.push({ts:p.createdAt, ic:'📨', t:'Таклиф юборилди', d:(p.author||p.district||'')});
+        (p.comments||[]).forEach(c=> events.push({ts:c.ts, ic:(c.role==='admin'?'🛡':'🏢'), t:(c.role==='admin'?'Админ изоҳи':'Туман изоҳи')+' — '+(c.name||''), d:c.text||''}));
+        if(p.resubmittedAt) events.push({ts:p.resubmittedAt, ic:'↻', t:'Тузатиб қайта юборилди', d:''});
+        if(p.reviewedAt){
+          const lbl = p.status==='approved'?'Тасдиқланди':p.status==='rejected'?'Рад этилди':p.status==='returned'?'Қайта ишлашга қайтарилди':'Кўриб чиқилди';
+          events.push({ts:p.reviewedAt, ic:'⚖', t:lbl, d:p.rejectReason||''});
+        }
+      }
+    }
+  }catch(e){}
+  // Аудит изидан шу участкага оид амаллар
+  let auditRows = [];
+  try{ if(typeof window.__loadAudit==='function') auditRows = await window.__loadAudit(500); }catch(e){}
+  const needle1 = section + ' / ' + key;
+  const needle2 = row._proposalId || '';
+  (auditRows||[]).forEach(a=>{
+    const tg = String(a.target||'');
+    if(tg.indexOf(needle1)>=0 || (needle2 && tg.indexOf(needle2)>=0)){
+      events.push({ts:a.ts, ic:'✏', t:(a.action||'Амал')+' — '+(a.actorName||''), d:a.details||''});
+    }
+  });
+  events.sort((x,y)=>(x.ts||0)-(y.ts||0));
+  let modal = document.getElementById('parcelHistModal');
+  if(modal) modal.remove();
+  modal = document.createElement('div');
+  modal.id = 'parcelHistModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:5200;background:rgba(15,26,54,.5);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+  const items = events.length ? events.map(e=>`
+    <div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #eef2f8">
+      <div style="font-size:16px;line-height:1.2">${e.ic}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12.5px;font-weight:800;color:#0f1a36">${escHtml(e.t)}</div>
+        ${e.d?`<div style="font-size:11.5px;color:#475569;white-space:pre-wrap;word-break:break-word;margin-top:2px">${escHtml(e.d)}</div>`:''}
+        <div style="font-size:10.5px;color:#94a3b8;margin-top:2px">${escHtml(when(e.ts))}</div>
+      </div>
+    </div>`).join('') : '<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">Бу участка бўйича ҳозирча қайд этилган тарих йўқ.<br><span style="font-size:11px">(Тарих — таклиф ҳаракати ва аудит изи асосида тузилади)</span></div>';
+  modal.innerHTML = `<div style="background:#fff;border-radius:16px;box-shadow:0 24px 56px -20px rgba(15,26,54,.4);max-width:520px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1px solid #e5ecf5;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="min-width:0"><div style="font-weight:850;font-size:15px;color:#0f1a36">🕘 Участка тарихи</div><div style="font-size:11.5px;color:#6b7a99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(String(title))}</div></div>
+        <button onclick="document.getElementById('parcelHistModal').remove()" style="width:32px;height:32px;border-radius:8px;background:#f2f5fa;border:0;font-size:18px;cursor:pointer;color:#6b7a99">×</button>
+      </div>
+      <div style="padding:10px 20px;overflow-y:auto;flex:1">${items}</div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = (e)=>{ if(e.target===modal) modal.remove(); };
 }
 
 /* ================= OFFICIAL EXCEL EXPORT & PRINT ================= */
