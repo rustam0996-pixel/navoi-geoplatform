@@ -7626,9 +7626,71 @@ if(typeof window !== 'undefined' && !window.__spMTBound){
     });
   });
 }
+/* ===== ХОДИМ ХАБАРНОМАСИ — таклиф ҳолати ўзгарса ===== */
+function _propSeenKey(){
+  const p=(typeof currentProfile==='function')?currentProfile():null;
+  return 'navoi_prop_seen_'+((p&&p.uid)||'anon');
+}
+function getPropSeen(){ try{ return Number(localStorage.getItem(_propSeenKey()))||0; }catch(e){ return 0; } }
+function setPropSeen(ts){ try{ localStorage.setItem(_propSeenKey(), String(ts||Date.now())); }catch(e){} }
+function _propLastEvent(p){
+  let t = p.createdAt||0;
+  if(p.reviewedAt) t=Math.max(t,p.reviewedAt);
+  if(p.resubmittedAt) t=Math.max(t,p.resubmittedAt);
+  if(Array.isArray(p.comments)) p.comments.forEach(c=>{ if(c.ts) t=Math.max(t,c.ts); });
+  return t;
+}
+function _staffRelevant(p){
+  const prof=(typeof currentProfile==='function')?currentProfile():null;
+  if(!prof) return false;
+  if(prof.role==='admin') return false;            // админда алоҳида билдиришнома маркази бор
+  if(prof.role==='district' && prof.district) return p.district===prof.district;
+  return true;                                     // бошқарма/кузатувчи — барчаси
+}
+function checkStaffProposalUpdates(){
+  try{
+    const prof=(typeof currentProfile==='function')?currentProfile():null;
+    if(!prof || prof.role==='admin') { _hideStaffNotif(); return; }
+    const seen=getPropSeen();
+    const rel=(getProposals()||[]).filter(_staffRelevant);
+    const upd=rel.filter(p=>['approved','returned','rejected'].includes(p.status) && _propLastEvent(p)>seen);
+    if(!upd.length){ _hideStaffNotif(); return; }
+    const a=upd.filter(p=>p.status==='approved').length;
+    const r=upd.filter(p=>p.status==='returned').length;
+    const x=upd.filter(p=>p.status==='rejected').length;
+    const parts=[];
+    if(a) parts.push(a+' тасдиқланди');
+    if(r) parts.push(r+' қайта ишлашга қайтарилди');
+    if(x) parts.push(x+' рад этилди');
+    _showStaffNotif('📢 Таклифларингиз бўйича янгилик: '+parts.join(', '));
+  }catch(e){}
+}
+function _showStaffNotif(msg){
+  let el=document.getElementById('staffNotif');
+  if(!el){
+    el=document.createElement('div');
+    el.id='staffNotif';
+    el.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:1700;background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;padding:11px 16px;border-radius:12px;box-shadow:0 14px 34px -12px rgba(79,70,229,.6);font-size:13px;font-weight:700;display:flex;align-items:center;gap:12px;max-width:92vw';
+    document.body.appendChild(el);
+  }
+  el.innerHTML='<span>'+msg+'</span>'
+    +'<button onclick="openProposalsPanel()" style="border:0;background:#fff;color:#3730a3;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;cursor:pointer">Кўриш</button>'
+    +'<button onclick="_dismissStaffNotif()" style="border:0;background:rgba(255,255,255,.2);color:#fff;font-size:14px;font-weight:800;width:26px;height:26px;border-radius:7px;cursor:pointer">×</button>';
+  el.style.display='flex';
+}
+function _hideStaffNotif(){ const el=document.getElementById('staffNotif'); if(el) el.style.display='none'; }
+function _dismissStaffNotif(){ setPropSeen(Date.now()); _hideStaffNotif(); }
+window.__onProposalsSynced = (function(prev){
+  return function(){
+    try{ if(typeof prev==='function') prev(); }catch(e){}
+    try{ checkStaffProposalUpdates(); }catch(e){}
+  };
+})(window.__onProposalsSynced);
 function openProposalsPanel(){
   const ov = document.getElementById('propOverlay');
   if(!ov) return;
+  setPropSeen(Date.now());
+  _hideStaffNotif();
   ov.style.display = 'flex';
   renderProposalsPanel();
   document.querySelectorAll('#propOverlay .prop-chip').forEach(c=>{
@@ -7682,12 +7744,14 @@ function renderProposalsList(){
     return (b.createdAt||0) - (a.createdAt||0);
   });
   const admin = (typeof isAppAdmin==='function') && isAppAdmin();
+  const _seen = (typeof getPropSeen==='function') ? getPropSeen() : 0;
   list.innerHTML = ordered.map(p=>{
     const st = p.status || 'pending';
-    const stLabel = st==='approved' ? '✓ Тасдиқланган'
+    const _isNew = (typeof _propLastEvent==='function') && _propLastEvent(p) > _seen;
+    const stLabel = (_isNew?'🆕 ':'') + (st==='approved' ? '✓ Тасдиқланган'
                   : st==='rejected' ? '✕ Рад этилган'
                   : st==='returned' ? '↩ Қайта ишлашга қайтарилди'
-                  : '⏳ Кутилмоқда';
+                  : '⏳ Кутилмоқда');
     let actBtns = '';
     if(admin && st==='pending'){
       actBtns = `<button class="prop-btn approve" onclick="approveProposal('${p.id}')"><span class="pp-ic">✓</span> Тасдиқлаш</button>
@@ -8367,9 +8431,11 @@ window.__onAuthResolved = function(profile){
     if(chip) chip.hidden=false;
     try{ if(typeof window.__refreshUsersMirror==='function') window.__refreshUsersMirror(); }catch(e){}
     try{ _startIdleWatch(); }catch(e){}
+    try{ setTimeout(()=>{ try{ checkStaffProposalUpdates(); }catch(e){} }, 1800); }catch(e){}
   } else {
     if(chip) chip.hidden=true;
     try{ _stopIdleWatch(); }catch(e){}
+    try{ _hideStaffNotif(); }catch(e){}
     closeAdminCenter();
   }
   try{ refreshAdminBtnVisibility(); }catch(e){}
