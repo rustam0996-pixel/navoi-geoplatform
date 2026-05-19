@@ -472,6 +472,11 @@ body.has-selection .home-pill{display:inline-flex}
 .prop-form-title{font-size:17px;font-weight:800}
 .prop-form-sub{font-size:11.5px;color:rgba(255,255,255,.82);margin-top:3px;max-width:520px;line-height:1.4}
 .prop-form-body{padding:18px 22px;overflow-y:auto;flex:1;background:#f7f9fd}
+.pf-invalid,.pf-group.pf-invalid input,.pf-group.pf-invalid select,.pf-group.pf-invalid textarea{
+  border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,.16)!important;background:#fff5f5!important}
+.pf-invalid-msg{color:#dc2626;font-size:10.5px;font-weight:700;margin-top:3px}
+.pf-draft-bar{display:flex;align-items:center;gap:10px;justify-content:space-between;background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;font-size:12px;font-weight:700;padding:9px 13px;border-radius:10px;margin-bottom:12px}
+.pf-draft-bar button{border:0;background:#4f46e5;color:#fff;font-size:11px;font-weight:800;padding:6px 11px;border-radius:7px;cursor:pointer}
 .pf-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:10px}
 .pf-group{display:flex;flex-direction:column;gap:4px;min-width:0}
 .pf-group label{font-size:11px;font-weight:800;color:var(--ink-2);text-transform:uppercase;letter-spacing:.25px}
@@ -2318,6 +2323,10 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       <button class="prop-close" onclick="closeProposalForm()">×</button>
     </div>
     <div class="prop-form-body">
+      <div id="pfDraftBar" class="pf-draft-bar" style="display:none">
+        <span>📝 Сақланган лойиҳа тикланди — давом этинг ёки тозаланг.</span>
+        <button type="button" onclick="clearProposalDraftAndForm()">Тозалаб бошлаш</button>
+      </div>
       <div class="pf-row">
         <div class="pf-group"><label>Туман / шаҳар <span class="req">*</span></label>
           <select id="pf-district"></select></div>
@@ -7761,6 +7770,59 @@ function populateProposalMfy(){
   mSel.innerHTML = '<option value="">— танланг —</option>' +
     mfys.map(m=>`<option value="${escapeHtmlP(m)}">${escapeHtmlP(m)}</option>`).join('');
 }
+/* ===== ТАКЛИФ ФОРМАСИ — автосақлаш (draft) ва хато майдонни белгилаш ===== */
+const PROPOSAL_FIELDS = ['pf-district','pf-mfy','pf-name','pf-contour','pf-area','pf-current','pf-target','pf-cost','pf-jobs','pf-initiator','pf-letter','pf-coords','pf-notes','pf-author'];
+const PF_DRAFT_KEY = 'navoi_proposal_draft_v1';
+let _pfDraftT = null;
+function _pfClearInvalid(){
+  PROPOSAL_FIELDS.forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.classList.remove('pf-invalid');
+    const g=el.closest('.pf-group'); if(g) g.classList.remove('pf-invalid');
+  });
+}
+function _pfMarkInvalid(ids){
+  let first=null;
+  ids.forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const g=el.closest('.pf-group'); if(g) g.classList.add('pf-invalid'); else el.classList.add('pf-invalid');
+    if(!first) first=el;
+  });
+  if(first){ try{ first.scrollIntoView({behavior:'smooth',block:'center'}); first.focus({preventScroll:true}); }catch(e){} }
+}
+function saveProposalDraft(){
+  try{
+    const vals={};
+    PROPOSAL_FIELDS.forEach(id=>{ const el=document.getElementById(id); if(el) vals[id]=el.value; });
+    localStorage.setItem(PF_DRAFT_KEY, JSON.stringify({ts:Date.now(), vals}));
+  }catch(e){}
+}
+function _pfDraftDebounced(){ clearTimeout(_pfDraftT); _pfDraftT=setTimeout(saveProposalDraft, 600); }
+function clearProposalDraft(){ try{ localStorage.removeItem(PF_DRAFT_KEY); }catch(e){} }
+function clearProposalDraftAndForm(){
+  clearProposalDraft();
+  PROPOSAL_FIELDS.forEach(id=>{ const el=document.getElementById(id); if(el){ if(el.tagName==='SELECT') el.selectedIndex=0; else el.value=''; } });
+  populateProposalMfy();
+  const b=document.getElementById('pfDraftBar'); if(b) b.style.display='none';
+  _pfClearInvalid();
+  showToast('Форма тозаланди');
+}
+function _restoreProposalDraft(){
+  let d=null;
+  try{ const r=localStorage.getItem(PF_DRAFT_KEY); if(r) d=JSON.parse(r); }catch(e){}
+  if(!d || !d.vals) return false;
+  // 7 кундан эски черновикни ташлаймиз
+  if(d.ts && (Date.now()-d.ts) > 7*864e5){ clearProposalDraft(); return false; }
+  const hasContent = Object.values(d.vals).some(x=>String(x||'').trim()!=='');
+  if(!hasContent) return false;
+  const dSel=document.getElementById('pf-district');
+  if(dSel && d.vals['pf-district']) dSel.value=d.vals['pf-district'];
+  populateProposalMfy();
+  PROPOSAL_FIELDS.forEach(id=>{ if(id==='pf-district'||id==='pf-mfy') return; const el=document.getElementById(id); if(el && d.vals[id]!=null) el.value=d.vals[id]; });
+  const mSel=document.getElementById('pf-mfy'); if(mSel && d.vals['pf-mfy']) mSel.value=d.vals['pf-mfy'];
+  const b=document.getElementById('pfDraftBar'); if(b) b.style.display='flex';
+  return true;
+}
 function openProposalForm(){
   const wrap = document.getElementById('propFormWrap');
   // Populate district select
@@ -7773,6 +7835,16 @@ function openProposalForm(){
     sel.addEventListener('change', populateProposalMfy);
   }
   populateProposalMfy();
+  // Автосақлашни уламиз (бир марта)
+  const body = wrap.querySelector('.prop-form-body');
+  if(body && !body._draftWired){
+    body._draftWired = true;
+    body.addEventListener('input', _pfDraftDebounced);
+    body.addEventListener('change', _pfDraftDebounced);
+  }
+  _pfClearInvalid();
+  const b=document.getElementById('pfDraftBar'); if(b) b.style.display='none';
+  _restoreProposalDraft();
   wrap.style.display = 'flex';
 }
 function closeProposalForm(){
@@ -7930,20 +8002,26 @@ async function submitProposal(){
   const coords = v('pf-coords');
   const notes = v('pf-notes');
   const author = v('pf-author');
-  // Мажбурий майдонлар текшируви
-  if(!district || !mfy || !name || !contour || !area || !target || !cost || !jobs || !letter || !coords){
-    showToast('⚠️ Барча мажбурий майдонларни (*) тўлдиринг — координата ва контур ҳам мажбурий');
-    return;
-  }
-  if(!_proposalLetterFile){
-    showToast('⚠️ Расмий хат файлини бириктиринг — усиз таклиф админга юборилмайди');
+  // Мажбурий майдонлар текшируви — хато майдонлар қизил белгиланади
+  _pfClearInvalid();
+  const reqMap = {'pf-district':district,'pf-mfy':mfy,'pf-name':name,'pf-contour':contour,'pf-area':area,'pf-target':target,'pf-cost':cost,'pf-jobs':jobs,'pf-letter':letter,'pf-coords':coords};
+  const missing = Object.keys(reqMap).filter(k=>!String(reqMap[k]||'').trim());
+  if(missing.length){
+    _pfMarkInvalid(missing);
+    showToast('⚠️ Қизил белгиланган '+missing.length+' та мажбурий майдонни тўлдиринг');
     return;
   }
   // Координата ҳақиқатан парсерланишини текширамиз
   let parsedPts = [];
   try { parsedPts = (typeof parseCoordinatePoints === 'function') ? parseCoordinatePoints(coords) : []; } catch(e){}
   if(!parsedPts.length){
-    showToast('⚠️ Координата рақамлари нотўғри форматда — масалан: 40°30\'12.3"С 65°25\'15.7"В');
+    _pfMarkInvalid(['pf-coords']);
+    showToast('⚠️ Координата нотўғри форматда. «🗺 Харитада чизиш»дан фойдаланинг ёки: 40°30\'12.3"С 65°25\'15.7"В');
+    return;
+  }
+  if(!_proposalLetterFile){
+    _pfMarkInvalid(['pf-letter']);
+    showToast('⚠️ Расмий хат файлини бириктиринг — усиз таклиф юборилмайди');
     return;
   }
   const all = getProposals();
@@ -7991,6 +8069,9 @@ async function submitProposal(){
     date: new Date(now).toLocaleDateString('uz-UZ')
   });
   saveProposals(all);
+  clearProposalDraft();
+  _pfClearInvalid();
+  const _db=document.getElementById('pfDraftBar'); if(_db) _db.style.display='none';
   ['pf-district','pf-mfy','pf-name','pf-contour','pf-area','pf-current','pf-target','pf-cost','pf-jobs','pf-initiator','pf-letter','pf-coords','pf-notes','pf-author'].forEach(id=>{const el=document.getElementById(id);if(el){if(el.tagName==='SELECT')el.selectedIndex=0;else el.value='';}});
   _proposalLetterFile = null;
   const lfName = document.getElementById('pf-letterfile-name');
