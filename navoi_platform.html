@@ -534,6 +534,19 @@ body.has-selection .home-pill{display:inline-flex}
   radial-gradient(circle at 62% 8%,rgba(168,85,247,.22),transparent 40%);
   animation:agAurora 16s ease-in-out infinite alternate}
 @keyframes agAurora{0%{transform:translate3d(-2%,-1%,0) scale(1)}100%{transform:translate3d(2%,2%,0) scale(1.09)}}
+/* «Тизим текширилмоқда» — платформа орқада кўриниб турсин (frosted overlay),
+   алоҳида қора экран эмас. Логин ҳолатида эса хавфсизлик учун тўлиқ ёпиқ. */
+#authGate.ag-checking .ag-bg{
+  background:linear-gradient(135deg,rgba(15,23,42,.42),rgba(30,27,75,.40) 60%,rgba(15,23,42,.46));
+  -webkit-backdrop-filter:blur(7px) saturate(115%);backdrop-filter:blur(7px) saturate(115%);
+}
+#authGate.ag-checking .ag-bg::before,
+#authGate.ag-checking .ag-bg::after{display:none}
+#authGate.ag-checking .ag-card{
+  width:min(420px,92vw);padding:28px 30px 20px;
+  background:rgba(255,255,255,.97);
+  box-shadow:0 30px 70px -22px rgba(0,0,0,.55),0 0 0 1px rgba(99,102,241,.12),inset 0 1px 0 rgba(255,255,255,.75);
+}
 .ag-card{position:relative;width:min(440px,94vw);background:rgba(255,255,255,.985);border:1px solid rgba(255,255,255,.55);border-radius:24px;padding:34px 34px 22px;
   box-shadow:0 40px 90px -24px rgba(0,0,0,.66),0 0 0 1px rgba(99,102,241,.10),inset 0 1px 0 rgba(255,255,255,.7);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:agIn .55s cubic-bezier(.2,.9,.3,1.12)}
@@ -550,18 +563,27 @@ body.has-selection .home-pill{display:inline-flex}
 .ag-t1{font-size:17px;font-weight:850;color:#0f1a36;letter-spacing:-.2px}
 .ag-t2{font-size:12px;color:#64748b;margin-top:2px;font-weight:600}
 /* Текширилмоқда — замонавий лоадер */
-.ag-state{display:flex;flex-direction:column;align-items:center;gap:15px;padding:26px 0 22px}
+.ag-state{position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;padding:30px 0 24px}
 .ag-state[hidden]{display:none}
-.ag-loader{position:relative;width:52px;height:52px}
+.ag-loader{position:relative;width:58px;height:58px;display:flex;align-items:center;justify-content:center}
 .ag-loader::before,.ag-loader::after{content:"";position:absolute;border-radius:50%;border:3px solid transparent}
-.ag-loader::before{inset:0;border-top-color:#4f46e5;border-right-color:#6366f1;animation:agSpin 1s linear infinite}
-.ag-loader::after{inset:9px;border-bottom-color:#38bdf8;border-left-color:#0ea5e9;animation:agSpin 1.5s linear infinite reverse}
-.ag-st-tx{font-size:13.5px;font-weight:750;color:#334155;letter-spacing:.2px}
+.ag-loader::before{inset:0;border-top-color:#4f46e5;border-right-color:#6366f1;animation:agSpin 1s cubic-bezier(.5,.15,.4,.85) infinite;
+  filter:drop-shadow(0 0 5px rgba(79,70,229,.45))}
+.ag-loader::after{inset:10px;border-bottom-color:#38bdf8;border-left-color:#0ea5e9;animation:agSpin 1.5s linear infinite reverse}
+/* Марказдаги нозик пульс ядро */
+.ag-loader i{position:absolute;width:13px;height:13px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#818cf8,#4f46e5);box-shadow:0 0 10px rgba(79,70,229,.6);
+  animation:agCore 1.6s ease-in-out infinite}
+@keyframes agCore{0%,100%{transform:scale(.78);opacity:.7}50%{transform:scale(1.12);opacity:1}}
+.ag-st-tx{font-size:14px;font-weight:800;color:#1e293b;letter-spacing:.2px}
 .ag-st-tx::after{content:"";animation:agDots 1.5s steps(1,end) infinite}
 @keyframes agDots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
-.ag-bar{width:210px;max-width:62%;height:4px;border-radius:999px;background:#e7ebf3;overflow:hidden}
-.ag-bar i{display:block;height:100%;width:38%;border-radius:999px;background:linear-gradient(90deg,#4f46e5,#38bdf8);animation:agBar 1.35s ease-in-out infinite}
-@keyframes agBar{0%{transform:translateX(-130%)}100%{transform:translateX(330%)}}
+.ag-bar{position:relative;width:220px;max-width:64%;height:5px;border-radius:999px;
+  background:#e9edf5;overflow:hidden;box-shadow:inset 0 1px 2px rgba(15,23,42,.08)}
+.ag-bar i{display:block;height:100%;width:42%;border-radius:999px;
+  background:linear-gradient(90deg,#4f46e5,#6366f1 40%,#38bdf8);
+  box-shadow:0 0 10px rgba(79,70,229,.55);animation:agBar 1.3s cubic-bezier(.4,.0,.2,1) infinite}
+@keyframes agBar{0%{transform:translateX(-130%)}100%{transform:translateX(360%)}}
 @keyframes agSpin{to{transform:rotate(360deg)}}
 .ag-form[hidden],.ag-help[hidden],.ag-help-toggle[hidden]{display:none}
 /* Ходим қўшиш/таҳрир ва фикр формаси админ маркази (z:1700) устида чиқсин */
@@ -1838,7 +1860,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 </div>
 
 <!-- ================= AUTH GATE (бутун сайт логин остида) ================= -->
-<div class="authgate" id="authGate">
+<div class="authgate ag-checking" id="authGate">
   <div class="ag-bg" aria-hidden="true"></div>
   <div class="ag-card" role="dialog" aria-label="Тизимга кириш">
     <div class="ag-brand">
@@ -1849,7 +1871,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       </div>
     </div>
     <div class="ag-state" id="agState">
-      <div class="ag-loader" aria-hidden="true"></div>
+      <div class="ag-loader" aria-hidden="true"><i></i></div>
       <div class="ag-st-tx">Тизим текширилмоқда</div>
       <div class="ag-bar" aria-hidden="true"><i></i></div>
     </div>
@@ -11000,9 +11022,11 @@ if(document.readyState === 'loading'){
         if(fm) fm.hidden = false;
         const e = gateEl('ag-err'); if(e) e.textContent = msg || '';
         const u = gateEl('ag-user'); if(u) setTimeout(()=>u.focus(), 150);
-      } else { // 'checking'
+        if(g){ g.classList.add('ag-login'); g.classList.remove('ag-checking'); }
+      } else { // 'checking' — платформа орқада кўриниб турсин (frosted)
         if(st) st.hidden = false;
         if(fm) fm.hidden = true;
+        if(g){ g.classList.add('ag-checking'); g.classList.remove('ag-login'); }
       }
       document.body.classList.add('auth-locked');
     }
