@@ -1878,6 +1878,28 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ===== MASTER REGISTRY (Рўйхат) ===== */
+.mr-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(15,26,54,.05);transition:box-shadow .15s,transform .12s}
+.mr-card:hover{box-shadow:0 8px 22px -10px rgba(15,26,54,.18)}
+.mr-card-top{display:flex;align-items:flex-start;gap:12px}
+.mr-num{flex-shrink:0;width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#eef2ff,#e0e7ff);color:#4338ca;font-weight:850;font-size:13px;display:flex;align-items:center;justify-content:center}
+.mr-card-main{flex:1;min-width:0}
+.mr-title{font-size:14px;font-weight:800;color:#0f1a36;line-height:1.3}
+.mr-sub{font-size:11.5px;color:#64748b;margin-top:2px}
+.mr-badge{flex-shrink:0;font-size:10px;font-weight:800;padding:4px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.3px}
+.mr-badge.hk{background:#dbeafe;color:#1e40af}
+.mr-badge.changed{background:#cffafe;color:#0e7490}
+.mr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 14px;margin-top:11px;padding-top:11px;border-top:1px dashed #e8edf4}
+.mr-f{min-width:0}
+.mr-f .l{font-size:9.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px}
+.mr-f .v{font-size:12.5px;font-weight:700;color:#0f1a36;margin-top:1px;word-break:break-word}
+.mr-acts{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;padding-top:11px;border-top:1px dashed #e8edf4}
+.mr-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid #d7e0ed;background:#f8fafc;color:#334155;font-size:11.5px;font-weight:800;padding:7px 12px;border-radius:8px;cursor:pointer;transition:all .14s}
+.mr-btn:hover{background:#eef2ff;border-color:#a5b4fc;color:#4338ca}
+.mr-btn.edit:hover{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+.mr-btn.coord:hover{background:#dcfce7;border-color:#86efac;color:#15803d}
+.mr-empty{text-align:center;color:#94a3b8;font-size:13.5px;padding:50px 20px}
+
 </style>
 </head>
 <body>
@@ -2385,6 +2407,29 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
       </div>
     </div>
   </div>
+</div>
+
+<!-- MASTER REGISTRY (Рўйхат — ХК + тоифаси ўзгарган барча участкалар) -->
+<div id="masterRegWrap" style="display:none;position:fixed;inset:0;z-index:1850;background:#f1f5f9;flex-direction:column">
+  <div style="background:linear-gradient(135deg,#1d4ed8,#4f46e5);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+    <div style="min-width:0">
+      <div style="font-size:16px;font-weight:850">📋 Ер участкалари рўйхати</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.85);margin-top:2px">Ҳукумат комиссиясига таклифлар ва тоифаси ўзгарган участкалар</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <input id="mrSearch" type="text" placeholder="Қидириш: участка, МФЙ, контур..." oninput="renderMasterRegistry()" style="border:0;border-radius:9px;padding:9px 13px;font-size:13px;min-width:230px;outline:none;color:#0f1a36">
+      <select id="mrSec" onchange="renderMasterRegistry()" style="border:0;border-radius:9px;padding:9px 11px;font-size:12.5px;font-weight:700;color:#0f1a36;cursor:pointer">
+        <option value="all">Барча бўлимлар</option>
+        <option value="hk">Ҳукумат комиссиясига таклифлар</option>
+        <option value="changed">Тоифаси ўзгарган</option>
+      </select>
+      <select id="mrDist" onchange="renderMasterRegistry()" style="border:0;border-radius:9px;padding:9px 11px;font-size:12.5px;font-weight:700;color:#0f1a36;cursor:pointer"></select>
+      <button onclick="exportMasterRegistryExcel()" style="border:0;border-radius:9px;background:#10b981;color:#fff;font-size:12.5px;font-weight:800;padding:9px 14px;cursor:pointer">⬇ Excel</button>
+      <button onclick="closeMasterRegistry()" style="border:1px solid rgba(255,255,255,.35);border-radius:9px;background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;font-weight:800;padding:9px 14px;cursor:pointer">✕ Харитага қайтиш</button>
+    </div>
+  </div>
+  <div id="mrStat" style="padding:10px 22px;background:#fff;border-bottom:1px solid #e2e8f0;font-size:12.5px;font-weight:700;color:#475569"></div>
+  <div id="mrList" style="flex:1;overflow-y:auto;padding:16px 22px"></div>
 </div>
 
 <!-- FEEDBACK FORM (таклиф / шикоят — сайт бўйича) -->
@@ -9327,26 +9372,138 @@ function setViewMode(mode){
     b.setAttribute('aria-selected', active ? 'true' : 'false');
   });
   if(mode === 'list'){
-    // Open registry: if a district is selected, show its records; else show all
-    if(currentDistrict){
-      if(typeof openDistrictFilteredResults === 'function'){
-        openDistrictFilteredResults(currentDistrict, currentSection || 'all');
-      } else if(typeof openResultsPanel === 'function'){
-        openResultsPanel();
-      } else {
-        const rp = document.getElementById('resultsPanel');
-        if(rp){ rp.classList.add('open'); setResultsOpenState(true); }
-      }
-    } else {
-      // No district selected: open global summary
-      if(typeof activateDistrictsMode === 'function') activateDistrictsMode();
-      const rp = document.getElementById('resultsPanel');
-      if(rp){ rp.classList.add('open'); setResultsOpenState(true); }
-    }
+    openMasterRegistry();
   } else {
-    // map mode: close registry
-    closeResultsPanel();
+    closeMasterRegistry();
+    try{ closeResultsPanel(); }catch(e){}
   }
+}
+/* ===== МУКАММАЛ РЎЙХАТ — ХК + тоифаси ўзгарган барча участкалар ===== */
+function _mrRows(){
+  const out = [];
+  const want = (document.getElementById('mrSec')||{}).value || 'all';
+  const secs = want === 'all' ? ['hk','changed'] : [want];
+  for(const sec of secs){
+    const arr = (typeof SECTIONS_RAW!=='undefined' && SECTIONS_RAW[sec]) ? SECTIONS_RAW[sec] : [];
+    for(const row of arr){
+      // ХК да тоифаси ўзгарган (+) бўлганлар «changed»да кўрсатилади, такрорламаймиз
+      if(sec==='hk' && row['Тоифаси ўзгаргани (+/-)'] && String(row['Тоифаси ўзгаргани (+/-)']).trim()==='+') continue;
+      out.push({sec, row});
+    }
+  }
+  return out;
+}
+function openMasterRegistry(){
+  const w = document.getElementById('masterRegWrap');
+  if(!w) return;
+  // Туман фильтри рўйхатини тўлдириш
+  const dsel = document.getElementById('mrDist');
+  if(dsel && dsel.options.length<=0){
+    const ds = (typeof DISTRICTS!=='undefined'?DISTRICTS:[]);
+    dsel.innerHTML = '<option value="all">Барча туманлар</option>' + ds.map(d=>`<option value="${escHtml(d.label)}">${escHtml(d.label)}</option>`).join('');
+  }
+  w.style.display = 'flex';
+  renderMasterRegistry();
+}
+function closeMasterRegistry(){
+  const w = document.getElementById('masterRegWrap'); if(w) w.style.display='none';
+  document.querySelectorAll('.mode-switch .ms-btn').forEach(b=>{
+    const isMap = b.dataset.mode==='map';
+    b.classList.toggle('active', isMap);
+    b.setAttribute('aria-selected', isMap?'true':'false');
+  });
+}
+function _mrStageLabel(sec,row){
+  try{
+    const k = (typeof rowStageKey==='function') ? rowStageKey(sec,row) : '';
+    const d = (typeof STAGE_DEFS!=='undefined') ? STAGE_DEFS.find(x=>x.key===k) : null;
+    return d ? d.label : (sec==='changed'?'Тоифаси ўзгарган':'Жараёнда');
+  }catch(e){ return ''; }
+}
+function _mrItems(){
+  const q = ((document.getElementById('mrSearch')||{}).value||'').trim().toLowerCase();
+  const dist = (document.getElementById('mrDist')||{}).value || 'all';
+  return _mrRows().map(({sec,row})=>{
+    const title = (typeof plotTitle==='function') ? plotTitle(sec,row,null) : (row['Жойлашган участка номи']||row['Лойиҳа номи']||'Участка');
+    const d = (typeof rowDistrict==='function') ? rowDistrict(sec,row) : (row['Ҳудуд номи']||'');
+    const dLabel = (typeof distByKey!=='undefined' && distByKey[d]) ? distByKey[d].label : (row['Ҳудуд номи']||d||'');
+    const mfy = (typeof rowMfy==='function') ? rowMfy(sec,row) : (row['МФЙ номи']||'');
+    const area = (typeof rowArea==='function') ? rowArea(sec,row) : (row['Жами ер майдони (га)']||0);
+    const contour = row['Контур рақами'] || row['Контур'] || '';
+    const ctext = (typeof getCoordinateText==='function') ? getCoordinateText(row) : (row['Координаталари']||'');
+    let pts = 0; try{ pts = (typeof parseCoordinatePoints==='function') ? parseCoordinatePoints(ctext).length : 0; }catch(e){}
+    const curCat = row['Жорий тоифаси'] || row['Ер тоифаси'] || row['currentCat'] || '';
+    const newCat = row['Янги тоифаси'] || row['targetCat'] || '';
+    const stage = _mrStageLabel(sec,row);
+    const blob = (title+' '+dLabel+' '+mfy+' '+contour+' '+stage+' '+newCat).toLowerCase();
+    return {sec,row,title,dLabel,mfy,area,contour,pts,curCat,newCat,stage,
+      _ok: (!q || blob.indexOf(q)>=0) && (dist==='all' || dLabel===dist)};
+  }).filter(x=>x._ok);
+}
+function renderMasterRegistry(){
+  const list = document.getElementById('mrList');
+  const stat = document.getElementById('mrStat');
+  if(!list) return;
+  const items = _mrItems();
+  const admin = (typeof isAppAdmin==='function') && isAppAdmin();
+  if(stat){
+    const ha = items.reduce((s,x)=>s+(Number(x.area)||0),0);
+    stat.textContent = `Жами: ${items.length} та участка · ${(typeof fmt==='function'?fmt(Math.round(ha)):Math.round(ha))} га`;
+  }
+  if(!items.length){
+    list.innerHTML = '<div class="mr-empty">🔍 Мос участка топилмади. Фильтр ёки қидирувни ўзгартиринг.</div>';
+    return;
+  }
+  const esc = (typeof escHtml==='function')?escHtml:(s)=>String(s==null?'':s);
+  const ridJs = (r)=> "'" + String((r._row!=null?r._row:r.id)).replace(/'/g,"\\'") + "'";
+  list.innerHTML = items.map((x,i)=>{
+    const secCls = x.sec==='changed'?'changed':'hk';
+    const secLbl = x.sec==='changed'?'Тоифаси ўзгарган':'Ҳукумат комиссияси';
+    const rid = ridJs(x.row);
+    return `<div class="mr-card">
+      <div class="mr-card-top">
+        <div class="mr-num">${i+1}</div>
+        <div class="mr-card-main">
+          <div class="mr-title">${esc(String(x.title))}</div>
+          <div class="mr-sub">📍 ${esc(x.dLabel||'—')}${x.mfy?' · '+esc(x.mfy):''}</div>
+        </div>
+        <span class="mr-badge ${secCls}">${secLbl}</span>
+      </div>
+      <div class="mr-grid">
+        <div class="mr-f"><div class="l">Майдон</div><div class="v">${esc((typeof fmtArea==='function'?fmtArea(x.area):x.area))} га</div></div>
+        <div class="mr-f"><div class="l">Контур</div><div class="v">${esc(x.contour||'—')}</div></div>
+        <div class="mr-f"><div class="l">Тоифа (ҳозирги → янги)</div><div class="v">${esc(x.curCat||'—')} → ${esc(x.newCat||'—')}</div></div>
+        <div class="mr-f"><div class="l">Босқич</div><div class="v">${esc(x.stage||'—')}</div></div>
+        <div class="mr-f"><div class="l">Координата</div><div class="v">${x.pts?(x.pts+' нуқта'):'—'}</div></div>
+      </div>
+      <div class="mr-acts">
+        <button class="mr-btn" onclick="showRowDetail('${x.sec}',${rid})">👁 Кўриш</button>
+        ${admin?`<button class="mr-btn edit" onclick="openEditModal('${x.sec}',${rid})">✏ Таҳрирлаш</button>`:''}
+        ${x.pts?`<button class="mr-btn coord" onclick="downloadRowKml('${x.sec}',${rid})">📍 Координата (KML)</button>`:''}
+        <button class="mr-btn" onclick="showParcelHistory('${x.sec}',${rid})">🕘 Тарих</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function exportMasterRegistryExcel(){
+  const items = _mrItems();
+  if(!items.length){ showToast('Экспорт учун маълумот йўқ'); return; }
+  const esc=(s)=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const th='style="background:#1e40af;color:#fff;font-weight:bold;border:1px solid #94a3b8;padding:6px"';
+  const td='style="border:1px solid #cbd5e1;padding:5px"';
+  const html = `<html><head><meta charset="utf-8"></head><body>
+    <h2>Навоий вилояти — ер участкалари рўйхати</h2>
+    <div>ХК таклифлар + тоифаси ўзгарган · Сана: ${new Date().toLocaleDateString('uz-UZ')}</div><br>
+    <table border="1" style="border-collapse:collapse">
+      <tr><th ${th}>№</th><th ${th}>Бўлим</th><th ${th}>Участка / Лойиҳа</th><th ${th}>Туман/шаҳар</th><th ${th}>МФЙ</th><th ${th}>Майдон (га)</th><th ${th}>Контур</th><th ${th}>Ҳозирги тоифа</th><th ${th}>Янги тоифа</th><th ${th}>Босқич</th><th ${th}>Координата (нуқта)</th></tr>
+      ${items.map((x,i)=>`<tr><td ${td}>${i+1}</td><td ${td}>${esc(x.sec==='changed'?'Тоифаси ўзгарган':'Ҳукумат комиссияси')}</td><td ${td}>${esc(x.title)}</td><td ${td}>${esc(x.dLabel)}</td><td ${td}>${esc(x.mfy)}</td><td ${td}>${(Number(x.area)||0).toFixed(2)}</td><td ${td}>${esc(x.contour)}</td><td ${td}>${esc(x.curCat)}</td><td ${td}>${esc(x.newCat)}</td><td ${td}>${esc(x.stage)}</td><td ${td}>${x.pts||0}</td></tr>`).join('')}
+    </table></body></html>`;
+  const blob = new Blob(['﻿'+html], {type:'application/vnd.ms-excel;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='er_uchastkalari_royxati_'+new Date().toISOString().slice(0,10)+'.xls';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  try{ logAudit('Рўйхат Excel экспорт', 'ХК + тоифаси ўзгарган', {jami:items.length}); }catch(e){}
+  showToast('⬇ Рўйхат Excel юклаб олинди');
 }
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.mode-switch .ms-btn').forEach(b => {
