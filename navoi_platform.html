@@ -2659,6 +2659,11 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
         <div class="pf-group"><label>Парол <span class="req">*</span></label>
           <input id="uf-password" placeholder="Камида 5 белги" autocomplete="new-password"></div>
       </div>
+      <div id="uf-reissue-box" style="display:none;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:11px 13px;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:800;color:#92400e;margin-bottom:3px">🔑 Логин/паролни қайта бериш</div>
+        <div style="font-size:11px;color:#78350f;line-height:1.5">Ходим паролини унутса — унга <b>янги логин ва янги парол</b> берасиз. Эски логин ишламай қолади. Янги логин эскисидан фарқли бўлиши шарт.</div>
+        <button type="button" onclick="reissueUserCredentials()" style="margin-top:8px;border:0;border-radius:7px;background:#d97706;color:#fff;font-size:11.5px;font-weight:800;padding:7px 13px;cursor:pointer">Янги логин/парол бериш</button>
+      </div>
       <div class="pf-row">
         <div class="pf-group"><label>Ҳолат</label>
           <select id="uf-status">
@@ -8585,6 +8590,7 @@ function openUserForm(id){
     set('uf-status',u.status||'active');
     const un=document.getElementById('uf-username'); if(un) un.disabled=true;          // логин ўзгармайди
     if(passGrp) passGrp.style.display='none';                                           // паролни клиентдан ўзгартириб бўлмайди
+    const rb=document.getElementById('uf-reissue-box'); if(rb) rb.style.display='block';
   } else {
     if(t) t.textContent = 'Янги ходим қўшиш';
     set('uf-fullname',''); set('uf-position','');
@@ -8593,11 +8599,49 @@ function openUserForm(id){
     set('uf-status','active');
     const un=document.getElementById('uf-username'); if(un) un.disabled=false;
     if(passGrp) passGrp.style.display='';
+    const rb=document.getElementById('uf-reissue-box'); if(rb) rb.style.display='none';
   }
   onUserRoleChange();
   const w=document.getElementById('userFormWrap'); if(w) w.style.display='flex';
 }
 function closeUserForm(){ const w=document.getElementById('userFormWrap'); if(w) w.style.display='none'; _editUserId=null; }
+/* Логин/паролни қайта бериш — янги аккаунт яратиб, профил кўчирилади,
+   эски профил ўчирилади (эски логин ишламай қолади). */
+async function reissueUserCredentials(){
+  if(typeof isAppAdmin==='function' && !isAppAdmin()){ showToast('⛔ Фақат админ'); return; }
+  if(!_editUserId){ showToast('Аввал ходимни танланг'); return; }
+  const u = getUsers().find(x=>x.id===_editUserId);
+  if(!u){ showToast('Ходим топилмади'); return; }
+  const me = (typeof currentProfile==='function')?currentProfile():null;
+  if(me && (me.uid===u.uid || me.uid===u.id)){ showToast('⚠️ Ўз аккаунтингизга бу амални қилманг'); return; }
+  const oldLogin = String(u.username||'').toLowerCase();
+  let nl = prompt('Янги логин (эскисидан фарқли бўлсин).\nЭски логин: '+oldLogin, '');
+  if(nl===null) return;
+  nl = String(nl).trim().toLowerCase();
+  if(!/^[a-z0-9._-]{3,}$/.test(nl)){ showToast('⚠️ Логин: камида 3 та лотин ҳарф/рақам (a-z,0-9,._-)'); return; }
+  if(nl===oldLogin){ showToast('⚠️ Янги логин эскисидан фарқли бўлиши шарт'); return; }
+  if(getUsers().some(x=>String(x.username||'').toLowerCase()===nl)){ showToast('⚠️ Бу логин банд'); return; }
+  let np = prompt('Янги вақтинча парол (камида 6 белги). Ходимга расмий етказинг:', '');
+  if(np===null) return;
+  np = String(np).trim();
+  if(np.length<6){ showToast('⚠️ Парол камида 6 белги'); return; }
+  if(!window.__auth || !window.__auth.createStaff){ showToast('Тизим ҳали юкланмоқда'); return; }
+  if(!confirm('Тасдиқлайсизми?\n«'+(u.fullName||oldLogin)+'» учун:\nЯнги логин: '+nl+'\nЯнги парол: '+np+'\n\nЭски логин («'+oldLogin+'») бундан кейин ишламайди.')) return;
+  showToast('⏳ Янги аккаунт яратилмоқда…');
+  const r = await window.__auth.createStaff({
+    username:nl, password:np,
+    fullName:u.fullName||'', position:u.position||'',
+    role:u.role||'viewer', district:u.district||'', status:u.status||'active'
+  });
+  if(!r.ok){ showToast('⚠️ '+(r.error||'Яратиб бўлмади')); return; }
+  // Эски профилни ўчирамиз — эски логин гейтдан ўтмайди + дарҳол чиқарилади
+  try{ if(window.__auth.deleteProfileDoc) await window.__auth.deleteProfileDoc(u.uid||u.id); }catch(e){}
+  if(typeof window.__refreshUsersMirror==='function') window.__refreshUsersMirror();
+  try{ logAudit('Логин/парол қайта берилди', (u.fullName||oldLogin), {eski:oldLogin, yangi:nl}); }catch(e){}
+  closeUserForm();
+  setTimeout(()=>{ renderAdminUsers(); updateAdminTabCounts(); }, 700);
+  alert('✓ Тайёр.\n\nХодимга етказинг:\nЛогин: '+nl+'\nПарол: '+np+'\n\nЭски логин энди ишламайди.');
+}
 async function saveUserForm(){
   if(!isAppAdmin()){ showToast('⛔ Сизда админ ҳуқуқи йўқ'); return; }
   const v=(i)=>{ const el=document.getElementById(i); return el? el.value.trim() : ''; };
@@ -11455,6 +11499,10 @@ if(document.readyState === 'loading'){
       },
       async updateProfileDoc(uid, patch){
         try{ await setDoc(doc(db, 'users', uid), patch, { merge:true }); return { ok:true }; }
+        catch(err){ return { ok:false, error:(err&&err.message)||'Хатолик' }; }
+      },
+      async deleteProfileDoc(uid){
+        try{ await deleteDoc(doc(db, 'users', uid)); return { ok:true }; }
         catch(err){ return { ok:false, error:(err&&err.message)||'Хатолик' }; }
       },
       /* Биринчи админни созлаш коди билан яратиш (биринчи марта).
