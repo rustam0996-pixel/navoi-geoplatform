@@ -8182,8 +8182,44 @@ async function bootstrapAdminSubmit(){
 }
 async function appLogout(){
   if(!confirm('Тизимдан чиқишни тасдиқлайсизми?')) return;
+  _stopIdleWatch();
   closeAdminCenter();
   if(window.__auth && window.__auth.signOutNow) await window.__auth.signOutNow();
+}
+
+/* ===== ХАВФСИЗЛИК: 15 дақиқа фаолиятсизлик → автоматик чиқиш ===== */
+const IDLE_LIMIT_MS = 15 * 60 * 1000;   // 15 дақиқа
+const IDLE_WARN_MS  = 14 * 60 * 1000;   // 14-дақиқада огоҳлантириш
+let _idleT = null, _idleWarnT = null, _idleWired = false;
+function _idleEvents(){ return ['mousemove','mousedown','keydown','touchstart','scroll','click']; }
+function _onIdleTimeout(){
+  if(!(typeof currentProfile==='function' && currentProfile())) return;
+  _stopIdleWatch();
+  try{ showToast('🔒 15 дақиқа фаолиятсизлик — хавфсизлик учун тизимдан чиқарилдингиз'); }catch(e){}
+  closeAdminCenter();
+  if(window.__auth && window.__auth.signOutNow) window.__auth.signOutNow();
+}
+function _resetIdle(){
+  if(_idleT) clearTimeout(_idleT);
+  if(_idleWarnT) clearTimeout(_idleWarnT);
+  if(!(typeof currentProfile==='function' && currentProfile())) return;
+  _idleWarnT = setTimeout(()=>{
+    try{ showToast('⏳ 1 дақиқадан сўнг фаолиятсизлик туфайли тизимдан чиқасиз — ҳаракат қилинг'); }catch(e){}
+  }, IDLE_WARN_MS);
+  _idleT = setTimeout(_onIdleTimeout, IDLE_LIMIT_MS);
+}
+function _startIdleWatch(){
+  if(!_idleWired){
+    const h = ()=>_resetIdle();
+    _idleEvents().forEach(ev=>document.addEventListener(ev, h, {passive:true}));
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) _resetIdle(); });
+    _idleWired = true;
+  }
+  _resetIdle();
+}
+function _stopIdleWatch(){
+  if(_idleT) clearTimeout(_idleT); _idleT=null;
+  if(_idleWarnT) clearTimeout(_idleWarnT); _idleWarnT=null;
 }
 
 /* Кириш ҳал бўлганда — топбар чипи, админ тугмаси, кўзгу янгиланади */
@@ -8199,8 +8235,10 @@ window.__onAuthResolved = function(profile){
     if(rl) rl.textContent=roleLabel(profile.role);
     if(chip) chip.hidden=false;
     try{ if(typeof window.__refreshUsersMirror==='function') window.__refreshUsersMirror(); }catch(e){}
+    try{ _startIdleWatch(); }catch(e){}
   } else {
     if(chip) chip.hidden=true;
+    try{ _stopIdleWatch(); }catch(e){}
     closeAdminCenter();
   }
   try{ refreshAdminBtnVisibility(); }catch(e){}
