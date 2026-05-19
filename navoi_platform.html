@@ -1905,6 +1905,42 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 .mr-btn.coord:hover{background:#dcfce7;border-color:#86efac;color:#15803d}
 .mr-empty{text-align:center;color:#94a3b8;font-size:13.5px;padding:50px 20px}
 
+/* ===== KPI / ФИЛЬТР ДОКИ — хариta устидан олинган алоҳида панел ===== */
+/* Топбар энди 2 устун: бренд + амаллар (КПИ доке кўчди) */
+.topbar{grid-template-columns:max-content 1fr!important}
+.topbar .toolbar{grid-column:2!important;justify-self:end}
+.kpi-dock{
+  position:fixed; left:20px; top:156px; width:300px; max-width:44vw; z-index:740;
+  background:var(--panel,#fff); border:1px solid var(--line,#e2e8f0);
+  border-radius:14px; box-shadow:0 14px 34px -16px rgba(15,26,54,.32);
+  overflow:hidden; transition:transform .2s ease, opacity .2s ease;
+}
+.kdock-head{
+  width:100%; display:flex; align-items:center; gap:8px; cursor:pointer;
+  background:linear-gradient(135deg,#1d4ed8,#4f46e5); color:#fff;
+  border:0; padding:9px 12px; font-family:inherit; text-align:left;
+}
+.kdock-title{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:850;letter-spacing:.2px}
+.kdock-hint{margin-left:auto;font-size:10px;font-weight:600;color:rgba(255,255,255,.8);white-space:nowrap}
+.kdock-caret{flex-shrink:0;transition:transform .2s ease}
+.kpi-dock.collapsed .kdock-caret{transform:rotate(-90deg)}
+.kdock-body{max-height:calc(100vh - 130px);overflow-y:auto;padding:10px;transition:max-height .2s ease}
+.kpi-dock.collapsed .kdock-body{display:none}
+/* КПИ катаклари панелда тик устма-уст — фильтрлиги аниқ кўринсин */
+#kpiDock .kpis{display:block!important;grid-template-columns:none!important;padding:0!important;min-width:0}
+#kpiDock .kpi{width:100%!important;margin:0 0 6px 0!important;min-height:auto!important;cursor:pointer}
+#kpiDock .kpi:last-child{margin-bottom:0!important}
+/* Қидирув/панел очиқ ёки драйвер очиқ — доке халақит бермаслиги учун яширамиз */
+body.search-mode.sidepanel-open #kpiDock,
+body.sidepanel-open #kpiDock,
+body.drawer-open #kpiDock{ opacity:0; pointer-events:none; transform:translateX(-10px) }
+body[data-theme="map-only"] #kpiDock{ top:14px }
+@media (max-width:900px){
+  .kpi-dock{ left:10px; top:150px; width:220px; max-width:64vw }
+  .kpi-dock.collapsed{ width:auto }
+  .kdock-hint{display:none}
+}
+
 </style>
 </head>
 <body>
@@ -1985,7 +2021,6 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
     <kbd>Esc</kbd>
   </button>
 
-  <div class="kpis" id="kpis"></div>
 
   <div class="toolbar">
     <button class="tb-btn" id="openSearch" onclick="openSearchPanel()" title="Қидирув">
@@ -2056,6 +2091,19 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
     </button>
   </div>
   <div class="toast" id="toast"></div>
+</div>
+
+<!-- KPI / ФИЛЬТР ДОКИ (харита устидан олинган, алоҳида панел) -->
+<div id="kpiDock" class="kpi-dock">
+  <button id="kpiDockToggle" class="kdock-head" type="button" onclick="toggleKpiDock()" aria-expanded="true">
+    <span class="kdock-title">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M7 12h10M10 18h4"/></svg>
+      Тоифа бўйича фильтр
+    </span>
+    <span class="kdock-hint">танлаш учун катакни босинг</span>
+    <svg class="kdock-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="kdock-body"><div class="kpis" id="kpis"></div></div>
 </div>
 
 <!-- TAB BAR -->
@@ -9602,6 +9650,21 @@ function openMasterRegistry(){
   w.style.display = 'flex';
   renderMasterRegistry();
 }
+/* КПИ/фильтр докини йиғиш-очиш (ҳолат сақланади) */
+const KDOCK_KEY='navoi_kpidock_collapsed_v1';
+function toggleKpiDock(){
+  const d=document.getElementById('kpiDock'); if(!d) return;
+  const col=d.classList.toggle('collapsed');
+  const t=document.getElementById('kpiDockToggle'); if(t) t.setAttribute('aria-expanded', col?'false':'true');
+  try{ localStorage.setItem(KDOCK_KEY, col?'1':'0'); }catch(e){}
+}
+function _initKpiDock(){
+  const d=document.getElementById('kpiDock'); if(!d) return;
+  let col=false; try{ col = localStorage.getItem(KDOCK_KEY)==='1'; }catch(e){}
+  if(window.innerWidth<=900 && localStorage.getItem(KDOCK_KEY)==null) col=true; // телефонда дастлаб йиғиқ
+  d.classList.toggle('collapsed', col);
+  const t=document.getElementById('kpiDockToggle'); if(t) t.setAttribute('aria-expanded', col?'false':'true');
+}
 function closeMasterRegistry(){
   const w = document.getElementById('masterRegWrap'); if(w) w.style.display='none';
   document.querySelectorAll('.mode-switch .ms-btn').forEach(b=>{
@@ -11399,6 +11462,7 @@ function boot(){
   if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
   if(typeof refreshExportBtn === 'function') refreshExportBtn();
   try { getUsers(); applyAdminSettingsUI(); applySiteNotice(); updateAdminBadge(); refreshAdminBtnVisibility(); applyDistrictScope(); } catch(e){ console.warn('admin init', e); }
+  try { _initKpiDock(); } catch(e){}
   setTimeout(()=>document.getElementById('loader').classList.add('hidden'), 500);
   // Onboarding — show once on first visit (after a short delay so the
   // map can settle behind the overlay)
