@@ -2023,7 +2023,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
         </div>
       </div>
     </div>
-    <button class="tb-btn" id="themeToggle" type="button" title="Режимни ўзгартириш: Кундузги · Тунги · Шом · Хариталик">
+    <button class="tb-btn" id="themeToggle" type="button" title="Режим: Кундузги ↔ Тунги">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" id="themeIcon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
       <span id="themeLabel">Кундузги</span>
     </button>
@@ -4949,7 +4949,8 @@ function closeNotifPanel(markSeen){
 /* ================= THEME SWITCHER =================
    4 режим — Кундузги (light, default) · Тунги (dark) · Шом (sepia) ·
    Хариталик (map-only). Топбардаги «Режим» тугмаси циклда ўтади. */
-const THEME_ORDER = ['light', 'dark', 'sepia', 'map-only'];
+/* Соддалаштирилди: фақат 2 режим — Кундузги (light) ва Тунги (dark) */
+const THEME_ORDER = ['light', 'dark'];
 const THEME_META = {
   'light':    { label:'Кундузги',  iconPath:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>' },
   'dark':     { label:'Тунги',     iconPath:'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>' },
@@ -4958,6 +4959,8 @@ const THEME_META = {
 };
 const THEME_KEY = 'navoi_theme_v1';
 function applyTheme(theme){
+  // Эски сақланган режимлар (sepia/map-only) энди йўқ — кундузгига ўтказамиз
+  if(THEME_ORDER.indexOf(theme) < 0) theme = 'light';
   if(!THEME_META[theme]) theme = 'light';
   if(theme === 'light'){
     document.body.removeAttribute('data-theme');
