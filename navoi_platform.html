@@ -542,11 +542,39 @@ body.has-selection .home-pill{display:inline-flex}
 }
 #authGate.ag-checking .ag-bg::before,
 #authGate.ag-checking .ag-bg::after{display:none}
+/* Текширув ҳолати — КАРТОЧКАСИЗ, замонавий марказий композиция */
 #authGate.ag-checking .ag-card{
-  width:min(420px,92vw);padding:28px 30px 20px;
-  background:rgba(255,255,255,.97);
-  box-shadow:0 30px 70px -22px rgba(0,0,0,.55),0 0 0 1px rgba(99,102,241,.12),inset 0 1px 0 rgba(255,255,255,.75);
+  width:auto;max-width:90vw;padding:0;background:transparent;border:0;
+  box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  animation:agFade .5s ease;
 }
+#authGate.ag-checking .ag-card::before{display:none}
+@keyframes agFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#authGate.ag-checking .ag-brand{
+  flex-direction:column;gap:14px;border-bottom:0;padding:0;margin:0 0 6px;
+}
+#authGate.ag-checking .ag-brand>div:last-child{display:flex;flex-direction:column;align-items:center}
+#authGate.ag-checking .ag-logo{
+  width:84px;height:84px;border-radius:26px;font-size:30px;
+  box-shadow:0 18px 44px -14px rgba(79,70,229,.75),inset 0 1px 0 rgba(255,255,255,.4);
+}
+#authGate.ag-checking .ag-logo::after{inset:-9px;border-radius:33px;border-width:2px;border-color:rgba(165,180,252,.6)}
+/* Логотип атрофида айланувчи нуқта (орбита) */
+#authGate.ag-checking .ag-logo::before{
+  content:"";position:absolute;inset:-16px;border-radius:50%;
+  border:1.5px dashed rgba(199,210,254,.45);animation:agOrbit 9s linear infinite;
+}
+@keyframes agOrbit{to{transform:rotate(360deg)}}
+#authGate.ag-checking .ag-t1{font-size:21px;font-weight:850;color:#fff;letter-spacing:-.3px;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+#authGate.ag-checking .ag-t2{font-size:13px;color:rgba(226,232,240,.9);margin-top:3px;font-weight:600;text-shadow:0 1px 8px rgba(0,0,0,.3)}
+#authGate.ag-checking .ag-state{padding:22px 0 6px;gap:18px}
+#authGate.ag-checking .ag-st-tx{color:#eef2ff;text-shadow:0 1px 8px rgba(0,0,0,.3)}
+#authGate.ag-checking .ag-bar{background:rgba(255,255,255,.18);box-shadow:none}
+#authGate.ag-checking .ag-foot{
+  margin-top:22px;padding-top:0;border-top:0;color:rgba(226,232,240,.7);
+}
+#authGate.ag-checking .ag-loader::after{border-bottom-color:#7dd3fc;border-left-color:#38bdf8}
 .ag-card{position:relative;width:min(440px,94vw);background:rgba(255,255,255,.985);border:1px solid rgba(255,255,255,.55);border-radius:24px;padding:34px 34px 22px;
   box-shadow:0 40px 90px -24px rgba(0,0,0,.66),0 0 0 1px rgba(99,102,241,.10),inset 0 1px 0 rgba(255,255,255,.7);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:agIn .55s cubic-bezier(.2,.9,.3,1.12)}
