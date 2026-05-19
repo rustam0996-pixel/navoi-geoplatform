@@ -9313,6 +9313,7 @@ function renderChangedRowsTable(rows, opts){
 }
 
 function openAllocationResults(type){
+  if(typeof openMasterRegistry === 'function'){ openMasterRegistry(); return; }
   const filterLabel = allocationFilterLabel(type);
   const dLabel = currentDistrict ? (distByKey[currentDistrict]||{label:currentDistrict}).label : 'Барча ҳудудлар';
   const rows = filterSectionRows('changed', currentDistrict || null, {year: currentYear, allocation: type});
@@ -9395,6 +9396,8 @@ function openAllocationResults(type){
 }
 
 function openResultsPanel(sectionOverride){
+  // Ягона рўйхат: эски натижалар панели ўрнига мукаммал «Рўйхат»
+  if(typeof openMasterRegistry === 'function'){ openMasterRegistry(); return; }
   const sec = sectionOverride || currentSection || 'all';
   const secMeta = SECTIONS.find(s=>s.key===sec) || SECTIONS[0];
   const dLabel = currentDistrict ? (distByKey[currentDistrict]||{label:currentDistrict}).label : 'Барча ҳудудлар';
@@ -10498,10 +10501,11 @@ function saveEditRecord(){
   if(currentDistrict) renderDrawer(currentDistrict);
   closeEditModal();
   showToast('Ёзув сақланди');
-  // Re-open the results panel to show updated data
-  if(document.getElementById('resultsPanel').classList.contains('open')){
-    openResultsPanel(currentSection || 'all');
-  }
+  // «Рўйхат» очиқ бўлса — янгилаймиз
+  try{
+    const mr=document.getElementById('masterRegWrap');
+    if(mr && mr.style.display!=='none' && typeof renderMasterRegistry==='function') renderMasterRegistry();
+  }catch(e){}
 }
 
 /* ================= ROW DETAIL MODAL ================= */
