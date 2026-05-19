@@ -9617,6 +9617,17 @@ function _mrStageLabel(sec,row){
     return d ? d.label : (sec==='changed'?'Тоифаси ўзгарган':'Жараёнда');
   }catch(e){ return ''; }
 }
+/* Соф рақамни ажратиб олиш — сана/матнга айланиб кетган қийматларни рад этади */
+function _mrNum(v){
+  if(v==null || v==='') return null;
+  if(typeof v==='number') return isFinite(v)?v:null;
+  let s=String(v).trim().replace(/\s+/g,'').replace(',', '.');
+  return /^-?\d+(\.\d+)?$/.test(s) ? parseFloat(s) : null;
+}
+function _mrPick(row, keys){
+  for(const k of keys){ const n=_mrNum(row[k]); if(n!=null) return n; }
+  return null;
+}
 function _mrItems(){
   const q = ((document.getElementById('mrSearch')||{}).value||'').trim().toLowerCase();
   const dist = (document.getElementById('mrDist')||{}).value || 'all';
@@ -9625,15 +9636,14 @@ function _mrItems(){
     const d = (typeof rowDistrict==='function') ? rowDistrict(sec,row) : (row['Ҳудуд номи']||'');
     const dLabel = (typeof distByKey!=='undefined' && distByKey[d]) ? distByKey[d].label : (row['Ҳудуд номи']||d||'');
     const mfy = (typeof rowMfy==='function') ? rowMfy(sec,row) : (row['МФЙ номи']||'');
-    const area = (typeof rowArea==='function') ? rowArea(sec,row) : (row['Жами ер майдони (га)']||0);
-    const contour = row['Контур рақами'] || row['Контур'] || '';
+    const area = _mrPick(row, ['Жами ер майдони (га)','Жами ер майдони','Майдон (га)','Жами ер майдон (гектар)','Майдони, га','Гектар']);
+    const cost = _mrPick(row, ['Лойиҳа қиймати (млн. долл.)','Лойиҳа қиймати (млн.долл)','Лойиҳа қиймати']);
+    const jobs = _mrPick(row, ['Иш ўрни (нафар)','Иш ўрни','Иш ўринлари']);
     const ctext = (typeof getCoordinateText==='function') ? getCoordinateText(row) : (row['Координаталари']||'');
     let pts = 0; try{ pts = (typeof parseCoordinatePoints==='function') ? parseCoordinatePoints(ctext).length : 0; }catch(e){}
-    const curCat = row['Жорий тоифаси'] || row['Ер тоифаси'] || row['currentCat'] || '';
-    const newCat = row['Янги тоифаси'] || row['targetCat'] || '';
     const stage = _mrStageLabel(sec,row);
-    const blob = (title+' '+dLabel+' '+mfy+' '+contour+' '+stage+' '+newCat).toLowerCase();
-    return {sec,row,title,dLabel,mfy,area,contour,pts,curCat,newCat,stage,
+    const blob = (title+' '+dLabel+' '+mfy+' '+stage).toLowerCase();
+    return {sec,row,title,dLabel,mfy,area,cost,jobs,pts,stage,
       _ok: (!q || blob.indexOf(q)>=0) && (dist==='all' || dLabel===dist)};
   }).filter(x=>x._ok);
 }
@@ -9667,11 +9677,10 @@ function renderMasterRegistry(){
         <span class="mr-badge ${secCls}">${secLbl}</span>
       </div>
       <div class="mr-grid">
-        <div class="mr-f"><div class="l">Майдон</div><div class="v">${esc((typeof fmtArea==='function'?fmtArea(x.area):x.area))} га</div></div>
-        <div class="mr-f"><div class="l">Контур</div><div class="v">${esc(x.contour||'—')}</div></div>
-        <div class="mr-f"><div class="l">Тоифа (ҳозирги → янги)</div><div class="v">${esc(x.curCat||'—')} → ${esc(x.newCat||'—')}</div></div>
-        <div class="mr-f"><div class="l">Босқич</div><div class="v">${esc(x.stage||'—')}</div></div>
-        <div class="mr-f"><div class="l">Координата</div><div class="v">${x.pts?(x.pts+' нуқта'):'—'}</div></div>
+        <div class="mr-f"><div class="l">Майдон (га)</div><div class="v">${x.area!=null?esc((typeof fmtArea==='function'?fmtArea(x.area):x.area)):'—'}</div></div>
+        <div class="mr-f"><div class="l">Лойиҳа қиймати</div><div class="v">${x.cost!=null?esc(x.cost)+' млн.$':'—'}</div></div>
+        <div class="mr-f"><div class="l">Иш ўрни</div><div class="v">${x.jobs!=null?esc(x.jobs):'—'}</div></div>
+        <div class="mr-f"><div class="l">Босқич / ҳолат</div><div class="v">${esc(x.stage||'—')}</div></div>
       </div>
       <div class="mr-acts">
         <button class="mr-btn" onclick="showRowDetail('${x.sec}',${rid})">👁 Кўриш</button>
@@ -9685,22 +9694,49 @@ function renderMasterRegistry(){
 function exportMasterRegistryExcel(){
   const items = _mrItems();
   if(!items.length){ showToast('Экспорт учун маълумот йўқ'); return; }
-  const esc=(s)=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  const th='style="background:#1e40af;color:#fff;font-weight:bold;border:1px solid #94a3b8;padding:6px"';
-  const td='style="border:1px solid #cbd5e1;padding:5px"';
-  const html = `<html><head><meta charset="utf-8"></head><body>
-    <h2>Навоий вилояти — ер участкалари рўйхати</h2>
-    <div>ХК таклифлар + тоифаси ўзгарган · Сана: ${new Date().toLocaleDateString('uz-UZ')}</div><br>
-    <table border="1" style="border-collapse:collapse">
-      <tr><th ${th}>№</th><th ${th}>Бўлим</th><th ${th}>Участка / Лойиҳа</th><th ${th}>Туман/шаҳар</th><th ${th}>МФЙ</th><th ${th}>Майдон (га)</th><th ${th}>Контур</th><th ${th}>Ҳозирги тоифа</th><th ${th}>Янги тоифа</th><th ${th}>Босқич</th><th ${th}>Координата (нуқта)</th></tr>
-      ${items.map((x,i)=>`<tr><td ${td}>${i+1}</td><td ${td}>${esc(x.sec==='changed'?'Тоифаси ўзгарган':'Ҳукумат комиссияси')}</td><td ${td}>${esc(x.title)}</td><td ${td}>${esc(x.dLabel)}</td><td ${td}>${esc(x.mfy)}</td><td ${td}>${(Number(x.area)||0).toFixed(2)}</td><td ${td}>${esc(x.contour)}</td><td ${td}>${esc(x.curCat)}</td><td ${td}>${esc(x.newCat)}</td><td ${td}>${esc(x.stage)}</td><td ${td}>${x.pts||0}</td></tr>`).join('')}
+  const esc=(s)=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const NCOL = 9;
+  // Excel рақамни санага айлантирмаслиги учун — mso-number-format
+  const NFMT = {0:'0', 1:'0.0', 2:'0.00'};
+  const numCell = (n, dec)=> n==null
+    ? `<td style="border:1px solid #c7d2e0;padding:5px 7px"></td>`
+    : `<td style="border:1px solid #c7d2e0;padding:5px 7px;mso-number-format:'${NFMT[dec||0]}';text-align:right">${Number(n).toFixed(dec||0)}</td>`;
+  const txt = (s, extra)=> `<td style="border:1px solid #c7d2e0;padding:5px 8px;mso-number-format:'\\@';${extra||''}">${esc(s)}</td>`;
+  const th = (s)=> `<th style="background:#1e40af;color:#fff;font-weight:bold;border:1px solid #1e3a8a;padding:7px 8px;text-align:center">${esc(s)}</th>`;
+  let tA=0,tC=0,tJ=0, nA=0,nC=0,nJ=0;
+  items.forEach(x=>{ if(x.area!=null){tA+=x.area;nA++;} if(x.cost!=null){tC+=x.cost;nC++;} if(x.jobs!=null){tJ+=x.jobs;nJ++;} });
+  const today = new Date().toLocaleDateString('uz-UZ');
+  const rows = items.map((x,i)=>`<tr style="background:${i%2?'#f6f8fc':'#ffffff'}">
+      <td style="border:1px solid #c7d2e0;padding:5px;text-align:center">${i+1}</td>
+      ${txt(x.dLabel)}
+      ${txt(x.mfy)}
+      ${txt(x.title)}
+      ${numCell(x.area,2)}
+      ${numCell(x.cost,1)}
+      ${numCell(x.jobs,0)}
+      ${txt(x.stage)}
+      ${txt(x.sec==='changed'?'Тоифаси ўзгарган':'Ҳукумат комиссияси')}
+    </tr>`).join('');
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8">
+    <style>td,th{font-family:'Times New Roman',serif;font-size:11pt} br{mso-data-placement:same-cell}</style></head><body>
+    <table border="0" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
+      <colgroup><col width="42"><col width="150"><col width="150"><col width="320"><col width="90"><col width="110"><col width="90"><col width="180"><col width="170"></colgroup>
+      <tr><td colspan="${NCOL}" style="font-size:15pt;font-weight:bold;text-align:center;padding:10px;border:1px solid #1e3a8a;background:#1d4ed8;color:#fff">НАВОИЙ ВИЛОЯТИ — ЕР УЧАСТКАЛАРИ РЎЙХАТИ</td></tr>
+      <tr><td colspan="${NCOL}" style="font-size:10.5pt;text-align:center;padding:6px;border:1px solid #c7d2e0;background:#eef2ff">Ҳукумат комиссиясига таклифлар ва тоифаси ўзгарган участкалар · Сана: ${esc(today)} · Жами: ${items.length} та</td></tr>
+      <tr>${th('№')}${th('Туман/шаҳар')}${th('МФЙ')}${th('Участка / Лойиҳа номи')}${th('Майдон (га)')}${th('Лойиҳа қиймати (млн.$)')}${th('Иш ўрни (нафар)')}${th('Босқич / ҳолат')}${th('Бўлим')}</tr>
+      ${rows}
+      <tr style="background:#dbe4f5;font-weight:bold">
+        <td colspan="4" style="border:1px solid #94a3b8;padding:6px 8px;text-align:right">ЖАМИ:</td>
+        ${numCell(nA?tA:null,2)}${numCell(nC?tC:null,1)}${numCell(nJ?tJ:null,0)}
+        <td colspan="2" style="border:1px solid #94a3b8"></td>
+      </tr>
     </table></body></html>`;
   const blob = new Blob(['﻿'+html], {type:'application/vnd.ms-excel;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='er_uchastkalari_royxati_'+new Date().toISOString().slice(0,10)+'.xls';
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   try{ logAudit('Рўйхат Excel экспорт', 'ХК + тоифаси ўзгарган', {jami:items.length}); }catch(e){}
-  showToast('⬇ Рўйхат Excel юклаб олинди');
+  showToast('⬇ Раҳбарият учун тайёр Excel юклаб олинди');
 }
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.mode-switch .ms-btn').forEach(b => {
