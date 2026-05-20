@@ -8147,6 +8147,17 @@ async function submitProposal(){
     showToast('⚠️ Координата нотўғри форматда. «🗺 Харитада чизиш»дан фойдаланинг ёки: 40°30\'12.3"С 65°25\'15.7"В');
     return;
   }
+  // Мавжуд участкалар билан устма-уст тушиш текшируви
+  try{
+    const overlaps = (typeof checkProposalOverlap==='function') ? checkProposalOverlap(parsedPts) : [];
+    if(overlaps.length){
+      const list = overlaps.map((c,i)=>(i+1)+') '+c.dLabel+' — '+c.title).join('\n');
+      const more = overlaps.length>=5 ? '\n…ва бошқалар бўлиши мумкин' : '';
+      const ok = confirm('⚠️ ДИҚҚАТ: киритилган координаталар қуйидаги мавжуд ер участка(лар)и устига тушмоқда:\n\n'+list+more+'\n\nКоординатани қайта текширишингизни тавсия қиламиз.\n\nШунга қарамай юборишни хоҳлайсизми?');
+      if(!ok){ _pfMarkInvalid(['pf-coords']); return; }
+      try{ logAudit('Таклиф устма-уст огоҳлантирилди', district+' / '+name, list); }catch(e){}
+    }
+  }catch(e){ console.warn('overlap check', e); }
   if(!_proposalLetterFile){
     _pfMarkInvalid(['pf-letter']);
     showToast('⚠️ Расмий хат файлини бириктиринг — усиз таклиф юборилмайди');
@@ -9849,6 +9860,73 @@ document.addEventListener('DOMContentLoaded', () => {
     mo.observe(rp, {attributes:true, attributeFilter:['class']});
   }
 });
+
+/* ===== ПОЛИГОН УСТМА-УСТ ТУШИШНИ ТЕКШИРИШ =====
+   Янги таклиф координатаси мавжуд участкалар билан кесишса огоҳлантирамиз. */
+function _polyBBox(points){
+  let mnLa=Infinity,mxLa=-Infinity,mnLo=Infinity,mxLo=-Infinity;
+  for(const p of points){
+    const la = Array.isArray(p)?p[0]:p.lat, lo = Array.isArray(p)?p[1]:p.lon;
+    if(la<mnLa)mnLa=la; if(la>mxLa)mxLa=la;
+    if(lo<mnLo)mnLo=lo; if(lo>mxLo)mxLo=lo;
+  }
+  return {mnLa,mxLa,mnLo,mxLo};
+}
+function _bboxOverlap(a,b){
+  return !(a.mxLa<b.mnLa || a.mnLa>b.mxLa || a.mxLo<b.mnLo || a.mnLo>b.mxLo);
+}
+function _pointInPoly(pt, poly){ // pt=[lat,lon]; poly=[[lat,lon],...]
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const yi=poly[i][0], xi=poly[i][1], yj=poly[j][0], xj=poly[j][1];
+    const dy = (yj-yi) || 1e-12;
+    const intersect = ((yi>pt[0])!=(yj>pt[0])) && (pt[1] < (xj-xi)*(pt[0]-yi)/dy + xi);
+    if(intersect) inside = !inside;
+  }
+  return inside;
+}
+function _polyOverlap(A, B, bA, bB){
+  if(!_bboxOverlap(bA,bB)) return false;
+  for(const p of A){ if(_pointInPoly(p,B)) return true; }
+  for(const p of B){ if(_pointInPoly(p,A)) return true; }
+  return false;
+}
+function _buildExistingPolygons(){
+  const out = [];
+  if(typeof SECTIONS_RAW==='undefined') return out;
+  for(const sec of ['hk','changed']){
+    const arr = SECTIONS_RAW[sec] || [];
+    for(const row of arr){
+      try{
+        const ctext = getCoordinateText(row);
+        if(!ctext) continue;
+        const pts = parseCoordinatePoints(ctext);
+        if(!pts || pts.length<3) continue;
+        const arrPts = pts.map(p=>[p.lat,p.lon]);
+        const bbox = _polyBBox(arrPts);
+        const title = (typeof plotTitle==='function')?plotTitle(sec,row,null):(row['Жойлашган участка номи']||row['Лойиҳа номи']||'Участка');
+        const d = (typeof rowDistrict==='function')?rowDistrict(sec,row):(row['Ҳудуд номи']||'');
+        const dLabel = (typeof distByKey!=='undefined' && distByKey[d])?distByKey[d].label:(row['Ҳудуд номи']||d||'');
+        out.push({sec,row,points:arrPts,bbox,title,dLabel});
+      }catch(e){}
+    }
+  }
+  return out;
+}
+function checkProposalOverlap(parsedPts){
+  if(!parsedPts || parsedPts.length<3) return [];
+  const newPoly = parsedPts.map(p=>[p.lat,p.lon]);
+  const newBox  = _polyBBox(newPoly);
+  const polys   = _buildExistingPolygons();
+  const conflicts = [];
+  for(const ex of polys){
+    if(_polyOverlap(newPoly, ex.points, newBox, ex.bbox)){
+      conflicts.push({title:ex.title, dLabel:ex.dLabel, sec:ex.sec});
+      if(conflicts.length>=5) break;
+    }
+  }
+  return conflicts;
+}
 
 /* ================= COORDINATE & KML FUNCTIONS ================= */
 function getCoordinateText(row){
