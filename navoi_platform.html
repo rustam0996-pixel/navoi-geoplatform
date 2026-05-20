@@ -1905,10 +1905,8 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 .mr-btn.coord:hover{background:#dcfce7;border-color:#86efac;color:#15803d}
 .mr-empty{text-align:center;color:#94a3b8;font-size:13.5px;padding:50px 20px}
 
-/* ===== KPI / ФИЛЬТР ДОКИ — хариta устидан олинган алоҳида панел ===== */
-/* Топбар энди 2 устун: бренд + амаллар (КПИ доке кўчди) */
-.topbar{grid-template-columns:max-content 1fr!important}
-.topbar .toolbar{grid-column:2!important;justify-self:end}
+/* ===== (Эски) КПИ доке стиллари — энди ишлатилмаяпди, КПИлар топбарда =====
+   Тегишли қоидалар #kpiDock'га боғлиқ, шунинг учун қолса ҳам зарар йўқ. */
 .kpi-dock{
   position:fixed; left:14px; top:158px; width:228px; max-width:42vw; z-index:740;
   background:var(--panel,#fff); border:1px solid var(--line,#e2e8f0);
@@ -2038,6 +2036,7 @@ body[data-theme="map-only"] #kpiDock{ top:14px }
     <kbd>Esc</kbd>
   </button>
 
+  <div class="kpis" id="kpis"></div>
 
   <div class="toolbar">
     <button class="tb-btn" id="openSearch" onclick="openSearchPanel()" title="Қидирув">
@@ -2108,19 +2107,6 @@ body[data-theme="map-only"] #kpiDock{ top:14px }
     </button>
   </div>
   <div class="toast" id="toast"></div>
-</div>
-
-<!-- KPI / ФИЛЬТР ДОКИ (харита устидан олинган, алоҳида панел) -->
-<div id="kpiDock" class="kpi-dock">
-  <button id="kpiDockToggle" class="kdock-head" type="button" onclick="toggleKpiDock()" aria-expanded="true">
-    <span class="kdock-title">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M7 12h10M10 18h4"/></svg>
-      Тоифа бўйича фильтр
-    </span>
-    <span class="kdock-hint">танлаш учун катакни босинг</span>
-    <svg class="kdock-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-  </button>
-  <div class="kdock-body"><div class="kpis" id="kpis"></div></div>
 </div>
 
 <!-- TAB BAR -->
