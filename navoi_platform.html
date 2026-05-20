@@ -2101,10 +2101,8 @@ body[data-theme="map-only"] #kpiDock{ top:14px }
       <span>Ҳисобот</span>
       <span class="excel-tb-count" id="topbarExportCount">744</span>
     </button>
-    <button class="tb-btn primary" id="openPlatform">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-      Платформага ўтиш
-    </button>
+    <!-- «Платформага ўтиш» тугмаси олиб ташланди: пастдаги «Рўйхат»
+         тугмаси билан бир хил вазифани бажарар эди -->
   </div>
   <div class="toast" id="toast"></div>
 </div>
@@ -9075,7 +9073,7 @@ function wireEvents(){
   const openPlat = ()=>{
     openResultsPanel(currentSection);
   };
-  document.getElementById('openPlatform').onclick = openPlat;
+  { const _op=document.getElementById('openPlatform'); if(_op) _op.onclick = openPlat; }
   document.getElementById('openPlatform2').onclick = openPlat;
   document.getElementById('drOpen').onclick = openPlat;
   document.getElementById('drOpen').textContent = 'Номма-ном маълумотни очиш';
