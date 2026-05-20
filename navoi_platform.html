@@ -6042,6 +6042,13 @@ function makePlotCandidate(section, row, coordText, rawChanged){
   const declaredDist = rowDistrict(section, row) || canonDistrict(rawChanged && rawChanged.t);
   const declaredMfy = rowMfy(section, row) || cleanPlotText(rawChanged && rawChanged.m);
   const geo = resolveGeoLocation(center);
+  // Координата Навоий вилояти полигонларидан бирортасига тушмаса — пинни
+  // нотўғри жойда кўрсатмаймиз (эълон қилинган туман эса бошқа). Уни тушириб
+  // юборамиз — таҳрирлаб тузатилгач, қайта чиқаверади.
+  if(!geo && declaredDist){
+    try{ console.warn('[geo] парcel coords outside Navoi polygons — hidden:', section, row && (row._row||row.id)); }catch(e){}
+    return null;
+  }
   const distKey = (geo && geo.distKey) || declaredDist;
   const mfy = (geo && geo.mfy) || declaredMfy;
   if(currentDistrict && distKey !== currentDistrict) return null;
@@ -10012,13 +10019,18 @@ function __normCoordText(raw){
    - Else if SWAPPED (lon,lat) falls inside → quietly correct (source data
      sometimes carries С/В or N/E labels in reversed order)
    - Otherwise → drop. */
+/* Навоий вилояти тахминий бbox: lat 38.5–44.0, lon 61.0–67.5.
+   Олдинги кенг (35–47, 55–73) фильтр Хоразм/Бухоро ҳудудидаги нуқталарни ҳам
+   ўтказиб юбораётган эди — шу боис баъзи участкалар Навоийдан ташқарига
+   тушиб қолар эди. Энди торроқ ҳудуд чегараси қўлланилади. */
 function __navoiRangeFilter(points){
   const out = [];
+  const inNavoi = (la, lo) => (la>=38.5 && la<=44.0 && lo>=61.0 && lo<=67.5);
   for(const p of points){
-    if(p.lat >= 35 && p.lat <= 47 && p.lon >= 55 && p.lon <= 73){ out.push(p); continue; }
-    if(p.lon >= 35 && p.lon <= 47 && p.lat >= 55 && p.lat <= 73){
-      out.push({lat: p.lon, lon: p.lat}); continue;
-    }
+    if(inNavoi(p.lat, p.lon)){ out.push(p); continue; }
+    // C/В нотўғри ёзилган бўлса — алмаштириб кўрамиз
+    if(inNavoi(p.lon, p.lat)){ out.push({lat:p.lon, lon:p.lat}); continue; }
+    // Навоий ҳудудидан буткул ташқарида — тушириб юборамиз
   }
   return out;
 }
