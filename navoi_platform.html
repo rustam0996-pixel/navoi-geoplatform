@@ -1910,7 +1910,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 .topbar{grid-template-columns:max-content 1fr!important}
 .topbar .toolbar{grid-column:2!important;justify-self:end}
 .kpi-dock{
-  position:fixed; left:20px; top:156px; width:300px; max-width:44vw; z-index:740;
+  position:fixed; left:14px; top:158px; width:228px; max-width:42vw; z-index:740;
   background:var(--panel,#fff); border:1px solid var(--line,#e2e8f0);
   border-radius:14px; box-shadow:0 14px 34px -16px rgba(15,26,54,.32);
   overflow:hidden; transition:transform .2s ease, opacity .2s ease;
@@ -1928,15 +1928,23 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 .kpi-dock.collapsed .kdock-body{display:none}
 /* КПИ катаклари панелда тик устма-уст — фильтрлиги аниқ кўринсин */
 #kpiDock .kpis{display:block!important;grid-template-columns:none!important;padding:0!important;min-width:0}
-#kpiDock .kpi{width:100%!important;margin:0 0 6px 0!important;min-height:auto!important;cursor:pointer}
+#kpiDock .kpi{width:100%!important;margin:0 0 5px 0!important;min-height:0!important;padding:7px 22px 7px 12px!important;cursor:pointer}
 #kpiDock .kpi:last-child{margin-bottom:0!important}
+/* Ёзувлар тўлиқ кўринсин — кесилмасин, ўралсин */
+#kpiDock .kpi .label{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:8.5px!important;line-height:1.25!important;padding-right:0!important}
+#kpiDock .kpi .val{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:14px!important;line-height:1.15!important;padding-right:0!important}
+#kpiDock .kpi-sub{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:9.5px!important;line-height:1.25!important}
+#kpiDock .kpi.propose .val{font-size:12.5px!important;padding-right:24px!important}
+#kpiDock .kpi.propose .label{padding-right:24px!important}
+/* Ўнгдаги «→» стрелка ва «+» иконкаси кичикроқ панелда жой эгалламасин */
+#kpiDock .kpi.clickable::after{right:6px;width:11px;height:11px;background-size:9px}
 /* Қидирув/панел очиқ ёки драйвер очиқ — доке халақит бермаслиги учун яширамиз */
 body.search-mode.sidepanel-open #kpiDock,
 body.sidepanel-open #kpiDock,
 body.drawer-open #kpiDock{ opacity:0; pointer-events:none; transform:translateX(-10px) }
 body[data-theme="map-only"] #kpiDock{ top:14px }
 @media (max-width:900px){
-  .kpi-dock{ left:10px; top:150px; width:220px; max-width:64vw }
+  .kpi-dock{ left:8px; top:148px; width:184px; max-width:60vw }
   .kpi-dock.collapsed{ width:auto }
   .kdock-hint{display:none}
 }
