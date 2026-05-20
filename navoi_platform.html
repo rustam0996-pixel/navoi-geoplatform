@@ -4300,6 +4300,8 @@ function buildExportRow(rec, idx){
   const aucSold     = __pickField(row, ['Бино-иншоот аукцион савдоларида сотилган ер майдони (га)','Ер қаъри аукционда сотилган (га)']);
   const aucPut      = __pickField(row, ['Бино-иншоот аукцион савдоларига чиқарилган (га)','Ер қаъри аукционга чиқарилган (га)']);
   const direct      = __pickField(row, ['Доимий фойдаланишга ажратилган бино-иншоот (га)','Ер қаъри участкаларини корхоналарга тўғридан-тўғри келишув асосида Ажратилган (га)']);
+  // Раҳбарият учун — фақат керакли устунлар. Манбалар (техник тэглар),
+  // контур (узун рақамлар), хом DMS координата матни — олиб ташланди.
   return {
     '№': idx + 1,
     'Туман / Шаҳар': dist || '',
@@ -4309,7 +4311,6 @@ function buildExportRow(rec, idx){
     'Ташаббускор / Корхона': initiator,
     'Категория': catLabel,
     'Босқич': stageLabel,
-    'Манбалар': sourceLabels,
     'Майдон (га)': area,
     'Лойиҳа қиймати (млн. долл.)': investment,
     'Иш ўрни (нафар)': jobs,
@@ -4319,10 +4320,30 @@ function buildExportRow(rec, idx){
     'Аукционда сотилган (га)': aucSold,
     'Тўғридан-тўғри (га)': direct,
     'АСОС / Ҳужжат': plotBasis(row),
-    'Контур': plotContour(row),
-    'Координаталари': (row['Координаталари']||row['Координата рақами']||'').toString().replace(/\s+/g,' ').trim(),
     'Бўлим': sectionLabel(sec) || sec
   };
+}
+/* Excel сарлавҳалари учун ёрдамчилар */
+function _xlsxReportTitle(){
+  const secKey = (typeof currentSection !== 'undefined' && currentSection && currentSection!=='all') ? currentSection : null;
+  const secLbl = secKey ? (sectionLabel(secKey) || secKey).toUpperCase() : 'БАРЧА БЎЛИМЛАР';
+  return 'НАВОИЙ ВИЛОЯТИ — ' + secLbl + ' БЎЙИЧА ҲИСОБОТ';
+}
+function _xlsxReportSubtitle(rows){
+  const dLbl = (typeof currentDistrict !== 'undefined' && currentDistrict)
+    ? ((distByKey[currentDistrict]||{}).label || currentDistrict)
+    : 'Барча туманлар';
+  const parts = ['Туман/шаҳар: '+dLbl];
+  if(typeof CAT_STATE !== 'undefined' && CAT_STATE.selected && CAT_STATE.selected!=='all'){
+    parts.push('Йўналиш: ' + ((CATEGORY_META[CAT_STATE.selected]||{}).label||CAT_STATE.selected));
+  }
+  if(typeof STAGE_STATE !== 'undefined' && STAGE_STATE.selected && STAGE_STATE.selected!=='all'){
+    parts.push('Босқич: ' + ((STAGE_DEFS.find(d=>d.key===STAGE_STATE.selected)||{}).label||STAGE_STATE.selected));
+  }
+  parts.push('Жами: '+(rows?rows.length:0)+' та участка');
+  const d = new Date();
+  parts.push('Сана: '+String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear());
+  return parts.join(' · ');
 }
 
 /* ===== Excel-style helpers (xlsx-js-style cell styling) ===== */
@@ -4609,8 +4630,8 @@ function buildTitleSheet(rows){
   const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
   const aoa = [];
-  aoa.push(['НАВОИЙ ВИЛОЯТИ']);
-  aoa.push(['ЕР РЕСУРСЛАРИ — РАҲБАРИЯТ ҲИСОБОТИ']);
+  aoa.push([_xlsxReportTitle()]);
+  aoa.push([_xlsxReportSubtitle(rows)]);
   aoa.push([]);
   aoa.push(['Ҳужжат тузилган сана:', `${dateStr}   ${timeStr}`]);
   aoa.push([]);
@@ -4812,25 +4833,42 @@ async function exportFilteredToExcel(){
 
     // — Sheet 4 — «Номма-ном рўйхат»
     const data = rows.map((r,i) => buildExportRow(r,i));
-    const wsList = XLSX_.utils.json_to_sheet(data, {cellDates:false});
     const colKeys = Object.keys(data[0]||{});
+    // Сарлавҳа банди + субсарлавҳа + бўш қатор + ҳосил жадвал
+    const listAoa = [
+      [_xlsxReportTitle()],
+      [_xlsxReportSubtitle(rows)],
+      [],
+      colKeys
+    ];
+    data.forEach(r => listAoa.push(colKeys.map(k => r[k])));
+    const wsList = XLSX_.utils.aoa_to_sheet(listAoa, {cellDates:false});
+    const NCOL = colKeys.length;
     wsList['!cols'] = colKeys.map(k => {
       const max = Math.max(k.length, ...data.map(r => String(r[k]||'').length));
       return { wch: Math.min(50, Math.max(8, max+2)) };
     });
-    wsList['!rows'] = [{hpt:30}];
-    wsList['!freeze'] = { xSplit: 0, ySplit: 1 };
-    // Header row
-    __styleRange(wsList, 0, 0, 0, colKeys.length-1, XLS_STYLE.tableH);
-    // Data rows
-    for(let r=1; r<=data.length; r++){
-      for(let c=0; c<colKeys.length; c++){
+    wsList['!rows'] = [{hpt:28},{hpt:20},{hpt:6},{hpt:30}];
+    wsList['!merges'] = [
+      {s:{r:0,c:0}, e:{r:0,c:NCOL-1}},
+      {s:{r:1,c:0}, e:{r:1,c:NCOL-1}}
+    ];
+    wsList['!freeze'] = { xSplit: 0, ySplit: 4 };
+    // Сарлавҳа стиллари
+    __styleRange(wsList, 0, 0, 0, NCOL-1, XLS_STYLE.title);
+    __styleRange(wsList, 1, 0, 1, NCOL-1, XLS_STYLE.subtitle);
+    // Жадвал боши
+    __styleRange(wsList, 3, 0, 3, NCOL-1, XLS_STYLE.tableH);
+    // Маълумот қаторлари (4 дан бошланади)
+    const HEAD_ROWS = 4;
+    for(let r=HEAD_ROWS; r<HEAD_ROWS+data.length; r++){
+      for(let c=0; c<NCOL; c++){
         const isNumericCol = ['№','Майдон (га)','Лойиҳа қиймати (млн. долл.)','Иш ўрни (нафар)','Аукционга чиқарилган (га)','Аукционда сотилган (га)','Тўғридан-тўғри (га)'].includes(colKeys[c]);
         __setCellStyle(wsList, XLSX_.utils.encode_cell({r,c}), isNumericCol ? XLS_STYLE.dataNum : XLS_STYLE.dataText);
       }
     }
-    __applyZebra(wsList, 1, data.length, 0, colKeys.length-1);
-    __applyPrintLayout(wsList, colKeys.length-1, {repeatHeader:true});
+    __applyZebra(wsList, HEAD_ROWS, HEAD_ROWS+data.length-1, 0, NCOL-1);
+    __applyPrintLayout(wsList, NCOL-1, {repeatHeader:true});
 
     const wb = XLSX_.utils.book_new();
     XLSX_.utils.book_append_sheet(wb, wsTitle,      'Титул');
