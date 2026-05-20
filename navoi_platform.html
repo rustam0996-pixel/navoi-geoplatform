@@ -5989,7 +5989,15 @@ function plotCoordKey(center){
   return `${Number(center[0]).toFixed(5)},${Number(center[1]).toFixed(5)}`;
 }
 function makePlotCandidate(section, row, coordText, rawChanged){
-  const points = parseCoordinatePoints(coordText || getCoordinateText(row));
+  let points = parseCoordinatePoints(coordText || getCoordinateText(row));
+  // Қўшимча хавфсизлик: марказ Навоий ҳудудидан ташқарига чиқиб қолмасин
+  if(points && points.length && typeof __navoiRangeFilter === 'function'){
+    const safe = __navoiRangeFilter(points);
+    if(safe.length < Math.ceil(points.length*0.6)){ // 60% дан кам ҳудуд ичида бўлса — кўрсатмаймиз
+      return null;
+    }
+    points = safe;
+  }
   const center = plotPointCenter(points);
   if(!center) return null;
   const declaredDist = rowDistrict(section, row) || canonDistrict(rawChanged && rawChanged.t);
@@ -9924,10 +9932,15 @@ function parseCoordinatePoints(raw){
     .filter(n=>Number.isFinite(n) && n > 0);
   for(let i=0;i<dmsBare.length-1;i+=2){
     const a = dmsBare[i], b = dmsBare[i+1];
-    if(a > 45 && b >= 35 && b <= 45) points.push({lat:Number(b.toFixed(8)), lon:Number(a.toFixed(8))});
-    else if(b > 45 && a >= 35 && a <= 45) points.push({lat:Number(a.toFixed(8)), lon:Number(b.toFixed(8))});
+    // Навоий ҳудуди: lat 35–47, lon 55–73 — ҳар иккала рақамда чегарасини текширамиз
+    if(a >= 55 && a <= 73 && b >= 35 && b <= 47) points.push({lat:Number(b.toFixed(8)), lon:Number(a.toFixed(8))});
+    else if(b >= 55 && b <= 73 && a >= 35 && a <= 47) points.push({lat:Number(a.toFixed(8)), lon:Number(b.toFixed(8))});
   }
-  if(points.length) return points;
+  if(points.length){
+    const fixed = __navoiRangeFilter(points);
+    if(fixed.length) return fixed;
+    points.length = 0;
+  }
   const lines = String(raw||'').split(/[\r\n;]+/);
   for(const line of lines){
     const nums = (line.match(/-?\d+(?:\.\d+)?/g) || []).map(Number).filter(n=>Number.isFinite(n));
