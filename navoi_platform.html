@@ -1910,7 +1910,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 .topbar{grid-template-columns:max-content 1fr!important}
 .topbar .toolbar{grid-column:2!important;justify-self:end}
 .kpi-dock{
-  position:fixed; left:14px; top:158px; width:228px; max-width:42vw; z-index:740;
+  position:fixed; left:14px; top:64px; width:228px; max-width:42vw; z-index:740;
   background:var(--panel,#fff); border:1px solid var(--line,#e2e8f0);
   border-radius:14px; box-shadow:0 14px 34px -16px rgba(15,26,54,.32);
   overflow:hidden; transition:transform .2s ease, opacity .2s ease;
@@ -1938,15 +1938,28 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 #kpiDock .kpi.propose .label{padding-right:24px!important}
 /* Ўнгдаги «→» стрелка ва «+» иконкаси кичикроқ панелда жой эгалламасин */
 #kpiDock .kpi.clickable::after{right:6px;width:11px;height:11px;background-size:9px}
+/* Тоифа дарахти (cat-tree) панелда — катаклар тик устма-уст, ёзувлар тўлиқ */
+#kpiDock .cat-row-t1, #kpiDock .cat-row-t2{grid-template-columns:1fr!important;padding-left:0!important}
+#kpiDock .cat-row-t2::before{display:none!important}
+#kpiDock .cat-label, #kpiDock .cat-hero-label{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.2!important}
+#kpiDock .cat-nums, #kpiDock .cat-hero-nums{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.25!important}
+#kpiDock .cat{padding:6px 9px!important;min-height:0!important}
+#kpiDock .cat-hero{padding:8px 11px!important}
+#kpiDock .cat-t1 .cat-label{font-size:11px!important}
+#kpiDock .cat-t2 .cat-label{font-size:10.5px!important}
 /* Қидирув/панел очиқ ёки драйвер очиқ — доке халақит бермаслиги учун яширамиз */
 body.search-mode.sidepanel-open #kpiDock,
 body.sidepanel-open #kpiDock,
 body.drawer-open #kpiDock{ opacity:0; pointer-events:none; transform:translateX(-10px) }
 body[data-theme="map-only"] #kpiDock{ top:14px }
+/* Доке энди топбар тагида чап чеккада — таббарни ўнгга суриб қўямиз,
+   тўқнашмасин */
+.tabbar{left:260px!important}
 @media (max-width:900px){
-  .kpi-dock{ left:8px; top:148px; width:184px; max-width:60vw }
+  .kpi-dock{ left:8px; top:58px; width:184px; max-width:60vw }
   .kpi-dock.collapsed{ width:auto }
   .kdock-hint{display:none}
+  .tabbar{left:200px!important}
 }
 
 </style>
