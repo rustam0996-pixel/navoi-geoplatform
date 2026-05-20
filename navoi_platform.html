@@ -1910,7 +1910,7 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 .topbar{grid-template-columns:max-content 1fr!important}
 .topbar .toolbar{grid-column:2!important;justify-self:end}
 .kpi-dock{
-  position:fixed; left:14px; top:64px; width:228px; max-width:42vw; z-index:740;
+  position:fixed; left:14px; top:158px; width:228px; max-width:42vw; z-index:740;
   background:var(--panel,#fff); border:1px solid var(--line,#e2e8f0);
   border-radius:14px; box-shadow:0 14px 34px -16px rgba(15,26,54,.32);
   overflow:hidden; transition:transform .2s ease, opacity .2s ease;
@@ -1952,14 +1952,10 @@ body.search-mode.sidepanel-open #kpiDock,
 body.sidepanel-open #kpiDock,
 body.drawer-open #kpiDock{ opacity:0; pointer-events:none; transform:translateX(-10px) }
 body[data-theme="map-only"] #kpiDock{ top:14px }
-/* Доке энди топбар тагида чап чеккада — таббарни ўнгга суриб қўямиз,
-   тўқнашмасин */
-.tabbar{left:260px!important}
 @media (max-width:900px){
-  .kpi-dock{ left:8px; top:58px; width:184px; max-width:60vw }
+  .kpi-dock{ left:8px; top:148px; width:184px; max-width:60vw }
   .kpi-dock.collapsed{ width:auto }
   .kdock-hint{display:none}
-  .tabbar{left:200px!important}
 }
 
 </style>
