@@ -496,7 +496,7 @@ body.has-selection .home-pill{display:inline-flex}
 .pf-file-btn:hover{transform:translateY(-1px);box-shadow:0 7px 14px -4px rgba(29,78,216,.5)}
 .pf-file-name{font-size:12px;font-weight:650;color:var(--ink-2);word-break:break-all}
 .pf-file-name.ok{color:#047857}
-.pf-file-name.ok::before{content:"📎 "}
+.pf-file-name.ok::before{content:"";display:inline-block;width:11px;height:11px;margin-right:5px;vertical-align:-1px;background:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48'/></svg>") center/contain no-repeat}
 .pf-file-hint{font-size:10.5px;color:var(--muted);font-weight:600;margin-top:4px}
 .prop-file-link{display:inline-flex;align-items:center;gap:4px;color:#1d4ed8;font-weight:800;text-decoration:none;font-size:12px}
 .prop-file-link:hover{text-decoration:underline}
@@ -1662,7 +1662,7 @@ body[data-theme="map-only"] .leaflet-top.leaflet-right{ margin-top:14px; }
   text-transform:uppercase;letter-spacing:.35px;color:#fff;white-space:nowrap;line-height:1.4
 }
 .sr-item-dist{font-size:10.5px;font-weight:700;color:#1e293b}
-.sr-item-dist::before{content:"📍";margin-right:3px;font-size:10px}
+.sr-item-dist::before{content:"";display:inline-block;width:9px;height:11px;margin-right:4px;vertical-align:-1px;background:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2'><path d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'/><circle cx='12' cy='10' r='3'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2'><path d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'/><circle cx='12' cy='10' r='3'/></svg>") center/contain no-repeat}
 .sr-item-title{font-size:12px;font-weight:750;color:#0f1a36;line-height:1.35}
 .sr-item-meta{font-size:10.5px;color:#64748b;display:flex;gap:10px;flex-wrap:wrap}
 .sr-item-meta span b{color:#1e293b;font-weight:700}
@@ -2178,7 +2178,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
         <div class="onb-step-p">Юқори ўнг бурчакдаги яшил <b>«Ҳисобот»</b> тугмаси орқали жорий фильтр бўйича раҳбариятга тайёр Excel ҳужжатини юклаб олинг.</div>
       </div>
     </div>
-    <div class="onb-tip">💡 Истагингизча фильтрлар бирга ишлайди. Танлаганингиз харита тепасида «Танланган: ...» қатори орқали кўриниб туради.</div>
+    <div class="onb-tip" style="display:flex;align-items:flex-start;gap:7px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg><span>Истагингизча фильтрлар бирга ишлайди. Танлаганингиз харита тепасида «Танланган: ...» қатори орқали кўриниб туради.</span></div>
     <div class="onb-actions">
       <label class="onb-noshow"><input type="checkbox" id="onbNoShow" checked> Бошқа кўрсатилмасин</label>
       <button class="onb-go" id="onbGo" type="button">Тушундим, бошлаймиз</button>
@@ -2363,7 +2363,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
   <div class="prop-panel" role="dialog" aria-labelledby="propPanelTitle">
     <div class="prop-head">
       <div>
-        <div class="prop-kicker">📩 Расмий таклифлар</div>
+        <div class="prop-kicker" style="display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 7l8 6 8-6"/></svg>Расмий таклифлар</div>
         <div class="prop-title" id="propPanelTitle">Ер тоифасини ўзгартириш таклифлари</div>
         <div class="prop-sub">Туман/шаҳар ваколатли ходимлари юборган янги ер участкалари — админ кўриб чиқиши кутилмоқда</div>
       </div>
@@ -2381,7 +2381,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
       </div>
     </div>
     <div class="prop-list" id="propList"></div>
-    <div class="prop-foot"><span>⚠️ Таклиф фақат туман/шаҳар расмий хати (кириш рақами билан) асосида юборилади.</span></div>
+    <div class="prop-foot"><span style="display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Таклиф фақат туман/шаҳар расмий хати (кириш рақами билан) асосида юборилади.</span></div>
   </div>
 </div>
 
@@ -2463,7 +2463,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
     </div>
     <div class="prop-form-foot">
       <button class="prop-btn ghost" onclick="closeProposalForm()">Бекор қилиш</button>
-      <button class="prop-btn primary" onclick="submitProposal()">📨 Юбориш</button>
+      <button class="prop-btn primary" onclick="submitProposal()" style="display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Юбориш</button>
     </div>
   </div>
 </div>
@@ -2482,10 +2482,10 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
     <div style="padding:12px 20px;border-top:1px solid #e5ecf5;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
       <div id="drawMapInfo" style="font-size:12px;font-weight:700;color:#475569">Нуқталар: 0</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="prop-btn ghost" onclick="drawMapUndo()">↩ Охиргисини бекор</button>
-        <button class="prop-btn ghost" onclick="drawMapClear()">🗑 Тозалаш</button>
+        <button class="prop-btn ghost" onclick="drawMapUndo()" style="display:inline-flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>Охиргисини бекор</button>
+        <button class="prop-btn ghost" onclick="drawMapClear()" style="display:inline-flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>Тозалаш</button>
         <button class="prop-btn ghost" onclick="closeDrawMap()">Бекор қилиш</button>
-        <button class="prop-btn primary" style="background:linear-gradient(135deg,#0e7490,#0891b2)" onclick="drawMapApply()">✓ Тайёр — координатани олиш</button>
+        <button class="prop-btn primary" style="background:linear-gradient(135deg,#0e7490,#0891b2);display:inline-flex;align-items:center;gap:6px" onclick="drawMapApply()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Тайёр — координатани олиш</button>
       </div>
     </div>
   </div>
@@ -2528,9 +2528,9 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
       <div class="pf-row">
         <div class="pf-group"><label>Мурожаат тури <span class="req">*</span></label>
           <select id="fb-type">
-            <option value="suggest">💡 Таклиф (яхшилаш фикри)</option>
-            <option value="complaint">⚠️ Шикоят</option>
-            <option value="bug">🐞 Сайтдаги хатолик / носозлик</option>
+            <option value="suggest">Таклиф (яхшилаш фикри)</option>
+            <option value="complaint">Шикоят</option>
+            <option value="bug">Сайтдаги хатолик / носозлик</option>
           </select></div>
         <div class="pf-group"><label>Мавзу <span class="req">*</span></label>
           <input id="fb-subject" placeholder="Қисқача мавзу — масалан: Харита секин юкланмоқда"></div>
@@ -2549,7 +2549,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
     </div>
     <div class="prop-form-foot">
       <button class="prop-btn ghost" onclick="closeFeedbackForm()">Бекор қилиш</button>
-      <button class="prop-btn primary" style="background:linear-gradient(135deg,#0e7490,#0891b2)" onclick="submitFeedback()">📨 Юбориш</button>
+      <button class="prop-btn primary" style="background:linear-gradient(135deg,#0e7490,#0891b2);display:inline-flex;align-items:center;gap:6px" onclick="submitFeedback()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Юбориш</button>
     </div>
   </div>
 </div>
@@ -2680,7 +2680,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
               <button class="adm-act-btn" onclick="exportProposalsReportExcel()"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Excel</button>
             </div>
           </div>
-          <div id="admReportsWrap"><div class="adm-empty"><span class="ic">📊</span>Юкланмоқда…</div></div>
+          <div id="admReportsWrap"><div class="adm-empty"><span class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="7"/><rect x="12" y="7" width="3" height="11"/><rect x="17" y="14" width="3" height="4"/></svg></span>Юкланмоқда…</div></div>
         </div>
         <!-- AUDIT -->
         <div class="adm-pane" data-apane="audit">
@@ -2691,7 +2691,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
             </div>
             <button class="adm-mini" onclick="renderAdminAudit()">↻ Янгилаш</button>
           </div>
-          <div id="admAuditWrap"><div class="adm-empty"><span class="ic">🗂</span>Юкланмоқда…</div></div>
+          <div id="admAuditWrap"><div class="adm-empty"><span class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v2"/><path d="M3 7h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Юкланмоқда…</div></div>
         </div>
       </div>
     </div>
@@ -2748,7 +2748,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
     </div>
     <div class="prop-form-foot">
       <button class="prop-btn ghost" onclick="closeUserForm()">Бекор қилиш</button>
-      <button class="prop-btn primary" style="background:linear-gradient(135deg,#3730a3,#4f46e5)" onclick="saveUserForm()">💾 Сақлаш</button>
+      <button class="prop-btn primary" style="background:linear-gradient(135deg,#3730a3,#4f46e5);display:inline-flex;align-items:center;gap:6px" onclick="saveUserForm()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Сақлаш</button>
     </div>
   </div>
 </div>
@@ -4978,10 +4978,12 @@ function renderNotifications(){
     const st = p.status || 'pending';
     const stLabel = st === 'approved' ? 'Тасдиқланган' : st === 'rejected' ? 'Рад этилган' : 'Кутилмоқда';
     return `<div class="notif-item ${unseen?'unseen':''}" data-pid="${escapeHtmlP(p.id)}">
-      <div class="notif-ic ${kind}">${kind==='auc'?'🔨':'🔄'}</div>
+      <div class="notif-ic ${kind}">${kind==='auc'
+        ? '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14 11l3-3 4 4-3 3M14 11l-9 9-3-3 9-9M14 11l-3-3M9 6l3 3"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>'}</div>
       <div class="notif-bd">
         <div class="notif-t">${escapeHtmlP(p.name || 'Ер участкаси')}</div>
-        <div class="notif-m">📍 ${escapeHtmlP(p.district||'—')}${p.mfy?' · '+escapeHtmlP(p.mfy):''}${p.area?' · '+escapeHtmlP(String(p.area))+' га':''}</div>
+        <div class="notif-m">${escapeHtmlP(p.district||'—')}${p.mfy?' · '+escapeHtmlP(p.mfy):''}${p.area?' · '+escapeHtmlP(String(p.area))+' га':''}</div>
         <div class="notif-m">${escapeHtmlP(p.author||'Номаълум')} юборди</div>
         <span class="notif-tag ${kind}">${kindLabel}</span>
         <span class="notif-tag ${st}">${stLabel}</span>
@@ -5223,7 +5225,7 @@ function renderFilterCrumb(){
       <button class="fc-x" type="button" data-clear="${p.key}" aria-label="Тозалаш">×</button>
     </span>`).join('') +
     // «Рўйхатга ўтиш» — when an allocation is previewed on the map, jump to the registry
-    (allocSel ? `<button class="fc-tolist" type="button" data-tolist="${allocSel}">📋 Рўйхатга ўтиш</button>` : '') +
+    (allocSel ? `<button class="fc-tolist" type="button" data-tolist="${allocSel}" style="display:inline-flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Рўйхатга ўтиш</button>` : '') +
     `<button class="fc-clear" type="button" data-clear="all">Барчасини тозалаш</button>`;
   host.innerHTML = html;
   host.querySelectorAll('[data-clear]').forEach(btn => {
@@ -7127,7 +7129,7 @@ function renderDrawer(key){
           <div class="n" style="position:relative">
             <div style="font-weight:700;color:var(--ink);white-space:normal;font-size:12.5px;line-height:1.35">${escHtml(title)}</div>
             ${sub?`<div style="font-size:11px;color:var(--muted);font-weight:500;margin-top:2px;white-space:normal">${escHtml(sub)}</div>`:''}
-            ${mfy?`<div style="font-size:10.5px;color:var(--ink-2);font-weight:600;margin-top:3px">📍 ${escHtml(mfy)}${yr?` • ${escHtml(yr)} йил`:''}</div>`:(yr?`<div style="font-size:10.5px;color:var(--ink-2);font-weight:600;margin-top:3px">${escHtml(yr)} йил</div>`:'')}
+            ${mfy?`<div style="font-size:10.5px;color:var(--ink-2);font-weight:600;margin-top:3px">${escHtml(mfy)}${yr?` • ${escHtml(yr)} йил`:''}</div>`:(yr?`<div style="font-size:10.5px;color:var(--ink-2);font-weight:600;margin-top:3px">${escHtml(yr)} йил</div>`:'')}
           </div>
           ${a>0?`<div class="c" style="position:relative;color:${secMeta.color}">${fmtArea(a)} га</div>`:''}
         </div>`;
@@ -7793,7 +7795,7 @@ function checkStaffProposalUpdates(){
     if(a) parts.push(a+' тасдиқланди');
     if(r) parts.push(r+' қайта ишлашга қайтарилди');
     if(x) parts.push(x+' рад этилди');
-    _showStaffNotif('📢 Таклифларингиз бўйича янгилик: '+parts.join(', '));
+    _showStaffNotif('Таклифларингиз бўйича янгилик: '+parts.join(', '));
   }catch(e){}
 }
 function _showStaffNotif(msg){
@@ -7865,7 +7867,7 @@ function renderProposalsList(){
   const all = getProposals();
   const filtered = _propFilter === 'all' ? all : all.filter(p=>p.status===_propFilter);
   if(!filtered.length){
-    list.innerHTML = `<div class="prop-empty"><span class="ic">📭</span>${all.length ? 'Бу тоифадаги таклифлар йўқ.' : 'Ҳозирча таклифлар йўқ. Биринчи таклифни юборинг!'}</div>`;
+    list.innerHTML = `<div class="prop-empty"><span class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span>${all.length ? 'Бу тоифадаги таклифлар йўқ.' : 'Ҳозирча таклифлар йўқ. Биринчи таклифни юборинг!'}</div>`;
     return;
   }
   // sort: pending first, then newest
@@ -7879,19 +7881,19 @@ function renderProposalsList(){
   list.innerHTML = ordered.map(p=>{
     const st = p.status || 'pending';
     const _isNew = (typeof _propLastEvent==='function') && _propLastEvent(p) > _seen;
-    const stLabel = (_isNew?'🆕 ':'') + (st==='approved' ? '✓ Тасдиқланган'
-                  : st==='rejected' ? '✕ Рад этилган'
-                  : st==='returned' ? '↩ Қайта ишлашга қайтарилди'
+    const stLabel = (_isNew?'<svg viewBox="0 0 8 8" width="7" height="7" style="vertical-align:1px;margin-right:3px"><circle cx="4" cy="4" r="4" fill="#dc2626"/></svg>':'') + (st==='approved' ? 'Тасдиқланган'
+                  : st==='rejected' ? 'Рад этилган'
+                  : st==='returned' ? 'Қайта ишлашга қайтарилди'
                   : '⏳ Кутилмоқда');
     let actBtns = '';
     if(admin && st==='pending'){
-      actBtns = `<button class="prop-btn approve" onclick="approveProposal('${p.id}')"><span class="pp-ic">✓</span> Тасдиқлаш</button>
-           <button class="prop-btn ret" onclick="returnProposal('${p.id}')"><span class="pp-ic">↩</span> Қайта ишлашга</button>
-           <button class="prop-btn reject" onclick="rejectProposal('${p.id}')"><span class="pp-ic">✕</span> Рад этиш</button>`;
+      actBtns = `<button class="prop-btn approve" onclick="approveProposal('${p.id}')"><svg class="pp-ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Тасдиқлаш</button>
+           <button class="prop-btn ret" onclick="returnProposal('${p.id}')"><svg class="pp-ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg> Қайта ишлашга</button>
+           <button class="prop-btn reject" onclick="rejectProposal('${p.id}')"><svg class="pp-ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg> Рад этиш</button>`;
     }
     if(st==='returned'){
       // Туман ходими (ёки админ) тузатиб қайта юборади
-      actBtns += `<button class="prop-btn resub" onclick="resubmitProposal('${p.id}')"><span class="pp-ic">↻</span> Тузатиб қайта юбориш</button>`;
+      actBtns += `<button class="prop-btn resub" onclick="resubmitProposal('${p.id}')"><svg class="pp-ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8"/></svg> Тузатиб қайта юбориш</button>`;
     }
     const actions = actBtns ? `<div class="prop-card-actions">${actBtns}</div>` : '';
     const rej = (st==='rejected' && p.rejectReason) ? `<div class="prop-card-rej"><b>Рад сабаби:</b> ${escapeHtmlP(p.rejectReason)}</div>` : '';
@@ -8654,7 +8656,7 @@ function renderAdminReports(){
   if(!wrap) return;
   const rows = _proposalsByDistrict();
   if(!rows.length){
-    wrap.innerHTML = '<div class="adm-empty"><span class="ic">📊</span>Ҳозирча таклифлар йўқ.</div>';
+    wrap.innerHTML = '<div class="adm-empty"><span class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="7"/><rect x="12" y="7" width="3" height="11"/><rect x="17" y="14" width="3" height="4"/></svg></span>Ҳозирча таклифлар йўқ.</div>';
     return;
   }
   const tot = rows.reduce((a,r)=>({total:a.total+r.total,pending:a.pending+r.pending,approved:a.approved+r.approved,returned:a.returned+r.returned,rejected:a.rejected+r.rejected,area:a.area+r.area,cost:a.cost+r.cost,jobs:a.jobs+r.jobs}),{total:0,pending:0,approved:0,returned:0,rejected:0,area:0,cost:0,jobs:0});
@@ -8679,7 +8681,12 @@ function renderAdminReports(){
       <div class="adm-set-card" style="flex:1;min-width:120px"><h5>Жами майдон</h5><div style="font-size:22px;font-weight:850;color:#0f1a36">${nf(tot.area)} га</div></div>
     </div>
     <div class="adm-set-card" style="margin-bottom:14px">
-      <h5 style="margin-bottom:10px">Туманлар бўйича (ранг: 🟢тасдиқ 🟠кутилмоқда 🟣қайтарилган 🔴рад)</h5>
+      <h5 style="margin-bottom:10px;display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px">Туманлар бўйича
+        <span style="display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:11px;color:var(--muted)"><i style="width:9px;height:9px;border-radius:2px;background:#10b981;display:inline-block"></i>тасдиқ</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:11px;color:var(--muted)"><i style="width:9px;height:9px;border-radius:2px;background:#f59e0b;display:inline-block"></i>кутилмоқда</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:11px;color:var(--muted)"><i style="width:9px;height:9px;border-radius:2px;background:#7c3aed;display:inline-block"></i>қайтарилган</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:11px;color:var(--muted)"><i style="width:9px;height:9px;border-radius:2px;background:#ef4444;display:inline-block"></i>рад</span>
+      </h5>
       ${bars}
     </div>
     <table class="adm-table"><thead><tr>
@@ -8724,11 +8731,11 @@ function exportProposalsReportExcel(){
 async function renderAdminAudit(){
   const wrap = document.getElementById('admAuditWrap');
   if(!wrap) return;
-  wrap.innerHTML = '<div class="adm-empty"><span class="ic">🗂</span>Юкланмоқда…</div>';
+  wrap.innerHTML = '<div class="adm-empty"><span class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v2"/><path d="M3 7h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Юкланмоқда…</div>';
   let rows = [];
   try{ if(typeof window.__loadAudit === 'function') rows = await window.__loadAudit(250); }catch(e){}
   if(!rows || !rows.length){
-    wrap.innerHTML = '<div class="adm-empty"><span class="ic">🗂</span>Ҳозирча аудит ёзувлари йўқ.</div>';
+    wrap.innerHTML = '<div class="adm-empty"><span class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v2"/><path d="M3 7h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Ҳозирча аудит ёзувлари йўқ.</div>';
     return;
   }
   const esc = (typeof escapeHtmlP==='function') ? escapeHtmlP : (s)=>String(s==null?'':s);
@@ -8753,7 +8760,7 @@ function renderAdminUsers(){
   const users = getUsers();
   const cnt = document.getElementById('admUsersCnt'); if(cnt) cnt.textContent = users.length;
   if(!users.length){
-    wrap.innerHTML = '<div class="adm-empty"><span class="ic">👥</span>Ҳозирча фойдаланувчилар йўқ. «Янги ходим қўшиш» орқали доступ беринг.</div>';
+    wrap.innerHTML = '<div class="adm-empty"><span class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Ҳозирча фойдаланувчилар йўқ. «Янги ходим қўшиш» орқали доступ беринг.</div>';
     return;
   }
   wrap.innerHTML = `<table class="adm-table"><thead><tr>
@@ -8868,7 +8875,7 @@ async function saveUserForm(){
     const r = await window.__auth.updateProfileDoc(u.uid||u.id, {
       fullName, position, role, district: role==='district'?district:'', status
     });
-    if(btn){ btn.disabled=false; btn.textContent='💾 Сақлаш'; }
+    if(btn){ btn.disabled=false; btn.textContent='Сақлаш'; }
     if(!r.ok){ showToast('⚠️ '+(r.error||'Сақлашда хатолик')); return; }
     if(typeof window.__refreshUsersMirror==='function') window.__refreshUsersMirror();
     try{ logAudit('Ходим маълумоти таҳрирланди', username||fullName, {role, district, status}); }catch(e){}
@@ -8931,7 +8938,7 @@ function renderAdminFeedback(){
   const filtered = _admFbFilter==='all' ? all : all.filter(f=>(f.status||'new')===(_admFbFilter==='resolved'?'resolved':'new'));
   setFbSeenAt(Date.now()); updateAdminBadge();
   if(!filtered.length){
-    wrap.innerHTML = '<div class="adm-empty"><span class="ic">📭</span>'+(all.length?'Бу тоифада мурожаат йўқ.':'Ҳозирча мурожаатлар йўқ.')+'</div>';
+    wrap.innerHTML = '<div class="adm-empty"><span class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span>'+(all.length?'Бу тоифада мурожаат йўқ.':'Ҳозирча мурожаатлар йўқ.')+'</div>';
     return;
   }
   const tLabel = (t)=> t==='complaint'?'Шикоят':t==='bug'?'Хатолик':'Таклиф';
@@ -8942,7 +8949,7 @@ function renderAdminFeedback(){
       <div class="fb-card-head">
         <div>
           <div class="fb-card-title">${escapeHtmlP(f.subject||'—')}</div>
-          <div class="fb-card-meta">📅 ${escapeHtmlP(f.date||'')} · ${__timeAgo(f.createdAt)}${f.name?' · ✍ '+escapeHtmlP(f.name):''}${f.contact?' · ☎ '+escapeHtmlP(f.contact):''}</div>
+          <div class="fb-card-meta">${escapeHtmlP(f.date||'')} · ${__timeAgo(f.createdAt)}${f.name?' · Исм: '+escapeHtmlP(f.name):''}${f.contact?' · Алоқа: '+escapeHtmlP(f.contact):''}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
           <span class="fb-tag ${f.type==='complaint'?'complaint':f.type==='bug'?'bug':'suggest'}">${tLabel(f.type)}</span>
@@ -8955,7 +8962,7 @@ function renderAdminFeedback(){
         <div class="adm-row-act">
           ${resolved
             ? `<button class="adm-mini warn" onclick="reopenFeedback('${f.id}')">Қайта очиш</button>`
-            : `<button class="adm-mini ok" onclick="resolveFeedback('${f.id}')">✓ Кўриб чиқилди деб белгилаш</button>`}
+            : `<button class="adm-mini ok" onclick="resolveFeedback('${f.id}')" style="display:inline-flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Кўриб чиқилди деб белгилаш</button>`}
         </div>
       </div>
     </div>`;
@@ -9148,7 +9155,7 @@ h1{font-size:20px;font-weight:800;margin-bottom:6px;color:#0f1a36}
 .print-bar button{padding:10px 18px;border-radius:10px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;border:0;font-weight:700;font-size:13px;cursor:pointer}
 @media print{.print-bar{display:none}body{padding:12px}}
 </style></head><body>
-<div class="print-bar"><button onclick="window.print()">🖨 Чоп этиш</button></div>
+<div class="print-bar"><button onclick="window.print()" style="display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Чоп этиш</button></div>
 <h1>${escHtml(title)}</h1>
 <div class="sub">Навоий вилояти ер ресурслари геоплатформаси</div>
 ${bodyHtml}
@@ -9826,7 +9833,7 @@ function renderMasterRegistry(){
     stat.textContent = `Жами: ${items.length} та участка · ${(typeof fmt==='function'?fmt(Math.round(ha)):Math.round(ha))} га`;
   }
   if(!items.length){
-    list.innerHTML = '<div class="mr-empty">🔍 Мос участка топилмади. Фильтр ёки қидирувни ўзгартиринг.</div>';
+    list.innerHTML = '<div class="mr-empty">Мос участка топилмади. Фильтр ёки қидирувни ўзгартиринг.</div>';
     return;
   }
   const esc = (typeof escHtml==='function')?escHtml:(s)=>String(s==null?'':s);
@@ -9840,7 +9847,7 @@ function renderMasterRegistry(){
         <div class="mr-num">${i+1}</div>
         <div class="mr-card-main">
           <div class="mr-title">${esc(String(x.title))}</div>
-          <div class="mr-sub">📍 ${esc(x.dLabel||'—')}${x.mfy?' · '+esc(x.mfy):''}</div>
+          <div class="mr-sub">${esc(x.dLabel||'—')}${x.mfy?' · '+esc(x.mfy):''}</div>
         </div>
         <span class="mr-badge ${secCls}">${secLbl}</span>
       </div>
@@ -10690,20 +10697,20 @@ function openEditModal(section, rowIdx){
           АЖРАТИШ ҲОЛАТИ (ҲАММА МАЙДОН — ГЕКТАРДА)
         </div>
         <div style="background:#f0f9ff;border:1px solid #bae6fd;border-top:0;border-radius:0 0 10px 10px;padding:14px">
-          <div style="font-size:11px;color:#075985;font-weight:700;margin-bottom:8px;padding:6px 10px;background:#e0f2fe;border-radius:6px">
-            🏢 Бино-иншоот ажратиши
+          <div style="font-size:11px;color:#075985;font-weight:700;margin-bottom:8px;padding:6px 10px;background:#e0f2fe;border-radius:6px;display:flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg>Бино-иншоот ажратиши
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:14px">
             ${BUILDING_FIELDS.map(fieldCell).join('')}
           </div>
-          <div style="font-size:11px;color:#075985;font-weight:700;margin-bottom:8px;padding:6px 10px;background:#e0f2fe;border-radius:6px">
-            ⛏ Ер қаъри (кон) ажратиши
+          <div style="font-size:11px;color:#075985;font-weight:700;margin-bottom:8px;padding:6px 10px;background:#e0f2fe;border-radius:6px;display:flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 11l7-7M11 4h9v9M3 21l8-8M5 14l5 5"/></svg>Ер қаъри (кон) ажратиши
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px">
             ${SUBSOIL_FIELDS.map(fieldCell).join('')}
           </div>
           <div style="margin-top:10px;padding:8px 11px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#78350f;font-weight:600;line-height:1.45">
-            💡 Маслаҳат: фақат тегишли бўлган майдонларни тўлдиринг. Бўш қолганлари «амалга оширилмаган» ҳисобланади. Тоифа автоматик равишда ўзгаради (Аукционга чиқарилган → Сотилган → Тўғридан-тўғри).
+            <b>Маслаҳат:</b> фақат тегишли бўлган майдонларни тўлдиринг. Бўш қолганлари «амалга оширилмаган» ҳисобланади. Тоифа автоматик равишда ўзгаради (Аукционга чиқарилган → Сотилган → Тўғридан-тўғри).
           </div>
         </div>
       </div>`;
@@ -10717,7 +10724,7 @@ function openEditModal(section, rowIdx){
       <div style="background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;padding:10px 14px;border-radius:10px 10px 0 0;font-weight:800;font-size:12px;letter-spacing:.3px">КООРДИНАТА ВА ХАРИТА</div>
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-top:0;border-radius:0 0 10px 10px;padding:14px">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-          <div><span style="font-size:12px;font-weight:700;color:#15803d">📍 ${points.length} нуқта аниқланди</span><div style="font-size:10.5px;color:#6b7a99;margin-top:2px">KML файлни юклаб Google Earth Pro да очинг</div></div>
+          <div><span style="font-size:12px;font-weight:700;color:#15803d">${points.length} нуқта аниқланди</span><div style="font-size:10.5px;color:#6b7a99;margin-top:2px">KML файлни юклаб Google Earth Pro да очинг</div></div>
           <button class="rs-action-btn" onclick="downloadRowKml('${section}',${rowIdx})" style="padding:8px 14px;background:#dcfce7;border-color:#86efac;color:#15803d" ${points.length?'':'disabled'}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Google Earth Pro (.kml)
@@ -11050,12 +11057,16 @@ async function showParcelHistory(section, rowIdx){
     if(row._fromProposal && row._proposalId && typeof getProposals==='function'){
       const p = (getProposals()||[]).find(x=>x && x.id===row._proposalId);
       if(p){
-        if(p.createdAt) events.push({ts:p.createdAt, ic:'📨', t:'Таклиф юборилди', d:(p.author||p.district||'')});
-        (p.comments||[]).forEach(c=> events.push({ts:c.ts, ic:(c.role==='admin'?'🛡':'🏢'), t:(c.role==='admin'?'Админ изоҳи':'Туман изоҳи')+' — '+(c.name||''), d:c.text||''}));
-        if(p.resubmittedAt) events.push({ts:p.resubmittedAt, ic:'↻', t:'Тузатиб қайта юборилди', d:''});
+        const _icSend='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#1d4ed8" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+        const _icMsg='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#475569" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+        const _icRedo='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#4f46e5" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8"/></svg>';
+        const _icGavel='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#0e7490" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12 11 14.5 15.5 9.5"/></svg>';
+        if(p.createdAt) events.push({ts:p.createdAt, ic:_icSend, t:'Таклиф юборилди', d:(p.author||p.district||'')});
+        (p.comments||[]).forEach(c=> events.push({ts:c.ts, ic:_icMsg, t:(c.role==='admin'?'Админ изоҳи':'Туман изоҳи')+' — '+(c.name||''), d:c.text||''}));
+        if(p.resubmittedAt) events.push({ts:p.resubmittedAt, ic:_icRedo, t:'Тузатиб қайта юборилди', d:''});
         if(p.reviewedAt){
           const lbl = p.status==='approved'?'Тасдиқланди':p.status==='rejected'?'Рад этилди':p.status==='returned'?'Қайта ишлашга қайтарилди':'Кўриб чиқилди';
-          events.push({ts:p.reviewedAt, ic:'⚖', t:lbl, d:p.rejectReason||''});
+          events.push({ts:p.reviewedAt, ic:_icGavel, t:lbl, d:p.rejectReason||''});
         }
       }
     }
@@ -11068,7 +11079,7 @@ async function showParcelHistory(section, rowIdx){
   (auditRows||[]).forEach(a=>{
     const tg = String(a.target||'');
     if(tg.indexOf(needle1)>=0 || (needle2 && tg.indexOf(needle2)>=0)){
-      events.push({ts:a.ts, ic:'✏', t:(a.action||'Амал')+' — '+(a.actorName||''), d:a.details||''});
+      events.push({ts:a.ts, ic:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#92400e" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>', t:(a.action||'Амал')+' — '+(a.actorName||''), d:a.details||''});
     }
   });
   events.sort((x,y)=>(x.ts||0)-(y.ts||0));
