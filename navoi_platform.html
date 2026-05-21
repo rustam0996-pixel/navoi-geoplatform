@@ -25,11 +25,12 @@
   --ok:#16a34a;
   --warn:#f59e0b;
   --danger:#dc2626;
-  --shadow-lg:0 20px 48px -20px rgba(15,26,54,.22), 0 8px 24px -12px rgba(15,26,54,.12);
-  --shadow-md:0 6px 20px -8px rgba(15,26,54,.18);
-  --shadow-sm:0 2px 6px -2px rgba(15,26,54,.1);
-  --radius:14px;
-  --radius-sm:10px;
+  /* Нозик, тарқоқ соялар — расмий, ҳашамсиз кўриниш */
+  --shadow-lg:0 24px 56px -28px rgba(15,26,54,.26), 0 6px 18px -10px rgba(15,26,54,.10);
+  --shadow-md:0 10px 26px -16px rgba(15,26,54,.20);
+  --shadow-sm:0 1px 3px rgba(15,26,54,.07), 0 1px 2px -1px rgba(15,26,54,.06);
+  --radius:12px;
+  --radius-sm:9px;
   --map-bg:#e8eef7;
   --map-filter:none;
   --transition-theme:background .35s ease, color .35s ease, border-color .35s ease;
@@ -1955,6 +1956,29 @@ body[data-theme="map-only"] #kpiDock{ top:14px }
   .kpi-dock.collapsed{ width:auto }
   .kdock-hint{display:none}
 }
+
+/* ===== НОЗИК САЙҚАЛ — расмий, профессионал кўриниш ===== */
+*{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+body{ text-rendering:optimizeLegibility; }
+h1,h2,h3,h4,h5,.brand .t1,.adm-title,.prop-form-title{ letter-spacing:-.012em; }
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible{
+  outline:2px solid rgba(37,99,235,.55); outline-offset:2px; border-radius:6px;
+}
+*{ scrollbar-width:thin; scrollbar-color:#c2cede transparent; }
+*::-webkit-scrollbar{ width:9px; height:9px; }
+*::-webkit-scrollbar-thumb{ background:#cdd7e6; border-radius:8px; border:2px solid transparent; background-clip:content-box; }
+*::-webkit-scrollbar-thumb:hover{ background:#aab8cd; background-clip:content-box; }
+*::-webkit-scrollbar-track{ background:transparent; }
+body[data-theme="dark"] *{ scrollbar-color:#33405e transparent; }
+body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; background-clip:content-box; }
+.tb-btn,.prop-btn,.mr-btn,.rs-action-btn,.adm-act-btn,.adm-mini,.kpi,.cat{
+  transition:background-color .16s ease, border-color .16s ease,
+             box-shadow .18s ease, transform .12s ease, color .16s ease;
+}
+.tb-btn:active,.prop-btn:active,.mr-btn:active,.adm-act-btn:active{ transform:translateY(.5px) scale(.985); }
+.prop-card,.mr-card,.adm-set-card{ border-color:#e8edf4; }
+.edit-modal-backdrop,.prop-form-backdrop{ backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
 
 </style>
 </head>
