@@ -3158,6 +3158,7 @@ let mfyLayer;       // FeatureGroup of MFY polygons
 let highlightLayer; // current highlighted district layer
 let bubbleMarkers = [];
 let plotLayer;
+let parcelPolyLayer = null;   // участка контури (координата бўйича чизилган полигон)
 let districtBounds = {};
 let districtCentroids = {};
 let currentSection = 'all';
@@ -6436,12 +6437,37 @@ function plotHoverCardEl(){
   }
   return el;
 }
+/* ===== УЧАСТКА КОНТУРИ — координата нуқталари бўйича харитага чизиш ===== */
+function clearParcelOutline(){
+  if(parcelPolyLayer){ try{ parcelPolyLayer.remove(); }catch(e){} parcelPolyLayer = null; }
+}
+function drawParcelOutline(item){
+  clearParcelOutline();
+  if(!map || !item) return;
+  let pts = item.points;
+  if((!pts || !pts.length) && item.candidates && item.candidates[0]) pts = item.candidates[0].points;
+  if((!pts || !pts.length) && item.primary) pts = item.primary.points;
+  if(!pts || pts.length < 2) return;            // 1 нуқта — фақат пин кифоя
+  const latlngs = pts.map(p => [p.lat, p.lon]);
+  const col = item.color || '#1d4ed8';
+  parcelPolyLayer = L.layerGroup().addTo(map);
+  if(latlngs.length >= 3){
+    L.polygon(latlngs, {color:col, weight:2.6, opacity:.95, fillColor:col, fillOpacity:.16}).addTo(parcelPolyLayer);
+  } else {
+    L.polyline(latlngs, {color:col, weight:3, opacity:.95}).addTo(parcelPolyLayer);
+  }
+  // Бурчак нуқталари — кичик доирачалар
+  latlngs.forEach(ll => {
+    L.circleMarker(ll, {radius:3.2, color:'#fff', weight:1.4, fillColor:col, fillOpacity:1}).addTo(parcelPolyLayer);
+  });
+}
 function hidePlotHoverCard(opts){
   const el = document.getElementById('plotHoverCard');
   if(!el) return;
   const force = !!(opts && opts.force);
   // Don't auto-hide a locked card on hover-out; only explicit close/action/map-click hides it
   if(el.classList.contains('locked') && !force) return;
+  clearParcelOutline();
   el.classList.remove('locked');
   el.style.pointerEvents = 'none';
   el.style.display = 'none';
@@ -6552,6 +6578,7 @@ function previewParcelOnMap(section, rowIdx){
         // Leaflet stores latlng via leaflet internals, not exposed. Use focus pulse instead.
       });
       showPlotHoverCardLocked(match, target, {pinEl});
+      try{ drawParcelOutline(match); }catch(e){}
     }, 320);
   };
   if(needSelect){
@@ -6631,6 +6658,7 @@ function enrichCandidatesByCoordinate(baseCandidates, sections){
 function renderPlotPoints(){
   if(!map) return;
   hidePlotHoverCard();
+  clearParcelOutline();
   if(plotLayer){
     plotLayer.remove();
     plotLayer = null;
@@ -6688,6 +6716,9 @@ function renderPlotPoints(){
         if(pin) pin.classList.add('hot');
       }
       showPlotHoverCard(item, marker.getLatLng());
+      // Координата бўйича участка контурини чизиб кўрсатамиз
+      const card = document.getElementById('plotHoverCard');
+      if(!(card && card.classList.contains('locked'))) drawParcelOutline(item);
     });
     marker.on('mousemove', () => {
       showPlotHoverCard(item, marker.getLatLng());
@@ -6699,12 +6730,17 @@ function renderPlotPoints(){
         if(pin) pin.classList.remove('hot');
       }
       hidePlotHoverCard();
+      // Қулфланмаган бўлса — ҳавола контурни ўчирамиз
+      const card = document.getElementById('plotHoverCard');
+      if(!(card && card.classList.contains('locked'))) clearParcelOutline();
     });
     marker.on('click', () => {
       // Map-first: clicking the pin opens a locked preview with "Рўйхатга ўтиш" button.
       // The button is what opens the full registry (showRowDetail).
       const pinEl = marker.getElement();
       showPlotHoverCardLocked(item, marker.getLatLng(), {pinEl});
+      // Участканинг ҳақиқий контурини харитага чизамиз (қулфланган)
+      drawParcelOutline(item);
     });
     marker.addTo(plotLayer);
   });
