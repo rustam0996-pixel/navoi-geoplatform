@@ -6437,28 +6437,119 @@ function plotHoverCardEl(){
   }
   return el;
 }
-/* ===== УЧАСТКА КОНТУРИ — координата нуқталари бўйича харитага чизиш ===== */
+/* ===== УЧАСТКА КОНТУРИ — координата нуқталари бўйича харитага чизиш =====
+   Хом маълумотда хатолар бор: адашган (узоқ) нуқталар ва нуқталарнинг
+   нотўғри тартиби. Шу боис қуйидаги тозалаш қувури қўлланилади:
+   1) такрор нуқталарни олиб ташлаш
+   2) адашган (изоляцияланган) нуқтани автоматик чиқариб ташлаш
+   3) тартиб тўғри бўлса — ҳақиқий шакл; бузуқ бўлса — тоза қавариқ контур */
 function clearParcelOutline(){
   if(parcelPolyLayer){ try{ parcelPolyLayer.remove(); }catch(e){} parcelPolyLayer = null; }
+}
+function _poDedupe(pts){
+  const out = [], EPS = 1e-7;
+  for(const p of pts){
+    if(!p || !Number.isFinite(p.lat) || !Number.isFinite(p.lon)) continue;
+    if(!out.some(q => Math.abs(q.lat-p.lat) < EPS && Math.abs(q.lon-p.lon) < EPS)){
+      out.push({lat:p.lat, lon:p.lon});
+    }
+  }
+  return out;
+}
+/* Адашган нуқтани олиб ташлаш — энг яқин қўшнисигача масофаси бошқалардан
+   кескин катта бўлган нуқта (узун чизиқ сабабчиси) чиқарилади. */
+function _poRemoveStray(pts){
+  if(pts.length < 4) return pts;
+  const nn = pts.map((p,i) => {
+    let m = Infinity;
+    for(let j=0;j<pts.length;j++){
+      if(j===i) continue;
+      const d = Math.hypot(pts[j].lat-p.lat, pts[j].lon-p.lon);
+      if(d < m) m = d;
+    }
+    return m;
+  });
+  const sorted = nn.slice().sort((a,b)=>a-b);
+  const med = sorted[Math.floor(sorted.length/2)] || 0;
+  if(med <= 0) return pts;
+  const kept = pts.filter((p,i) => nn[i] <= med * 7);
+  // 35% дан кўп нуқтани ташламаймиз — акс ҳолда ишончсиз
+  return (kept.length >= 3 && kept.length >= pts.length*0.65) ? kept : pts;
+}
+function _poConvexHull(pts){
+  if(pts.length < 3) return pts.slice();
+  const p = pts.slice().sort((a,b)=> a.lon===b.lon ? a.lat-b.lat : a.lon-b.lon);
+  const cross = (o,a,b)=> (a.lon-o.lon)*(b.lat-o.lat) - (a.lat-o.lat)*(b.lon-o.lon);
+  const lower = [];
+  for(const pt of p){
+    while(lower.length>=2 && cross(lower[lower.length-2],lower[lower.length-1],pt) <= 0) lower.pop();
+    lower.push(pt);
+  }
+  const upper = [];
+  for(let i=p.length-1;i>=0;i--){
+    const pt = p[i];
+    while(upper.length>=2 && cross(upper[upper.length-2],upper[upper.length-1],pt) <= 0) upper.pop();
+    upper.push(pt);
+  }
+  lower.pop(); upper.pop();
+  return lower.concat(upper);
+}
+function _poSegCross(a,b,c,d){
+  const ccw = (p,q,r)=> (r.lat-p.lat)*(q.lon-p.lon) - (q.lat-p.lat)*(r.lon-p.lon);
+  const d1=ccw(c,d,a), d2=ccw(c,d,b), d3=ccw(a,b,c), d4=ccw(a,b,d);
+  return ((d1>0)!==(d2>0)) && ((d3>0)!==(d4>0));
+}
+/* Полигон ўзини кесмайдими (тартиб тўғрими)? */
+function _poIsSimple(pts){
+  const n = pts.length;
+  if(n < 4) return true;
+  for(let i=0;i<n;i++){
+    const a=pts[i], b=pts[(i+1)%n];
+    for(let j=i+1;j<n;j++){
+      if(Math.abs(i-j)<=1) continue;
+      if(i===0 && j===n-1) continue;
+      if(_poSegCross(a, b, pts[j], pts[(j+1)%n])) return false;
+    }
+  }
+  return true;
 }
 function drawParcelOutline(item){
   clearParcelOutline();
   if(!map || !item) return;
-  let pts = item.points;
-  if((!pts || !pts.length) && item.candidates && item.candidates[0]) pts = item.candidates[0].points;
-  if((!pts || !pts.length) && item.primary) pts = item.primary.points;
-  if(!pts || pts.length < 2) return;            // 1 нуқта — фақат пин кифоя
-  const latlngs = pts.map(p => [p.lat, p.lon]);
+  // Манба — ёзувнинг ўзи (энг ишончли); бўлмаса item.points
+  let pts = null;
+  const row = (item.candidates && item.candidates[0] && item.candidates[0].row)
+            || item.row || (item.primary && item.primary.row);
+  if(row){
+    try{ pts = parseCoordinatePoints(getCoordinateText(row)); }catch(e){}
+  }
+  if(!pts || pts.length < 2){
+    pts = item.points
+       || (item.candidates && item.candidates[0] && item.candidates[0].points)
+       || (item.primary && item.primary.points);
+  }
+  if(!pts || pts.length < 2) return;          // 1 нуқта — фақат пин
+  pts = _poDedupe(pts);
+  if(pts.length < 2) return;
   const col = item.color || '#1d4ed8';
   parcelPolyLayer = L.layerGroup().addTo(map);
-  if(latlngs.length >= 3){
-    L.polygon(latlngs, {color:col, weight:2.6, opacity:.95, fillColor:col, fillOpacity:.16}).addTo(parcelPolyLayer);
-  } else {
-    L.polyline(latlngs, {color:col, weight:3, opacity:.95}).addTo(parcelPolyLayer);
+  if(pts.length === 2){
+    L.polyline(pts.map(p=>[p.lat,p.lon]), {color:col, weight:3, opacity:.95}).addTo(parcelPolyLayer);
+    pts.forEach(p=>L.circleMarker([p.lat,p.lon],{radius:3,color:'#fff',weight:1.3,fillColor:col,fillOpacity:1}).addTo(parcelPolyLayer));
+    return;
   }
-  // Бурчак нуқталари — кичик доирачалар
+  const clean = _poRemoveStray(pts);
+  // Тартиб тўғри (полигон ўзини кесмаса) — ҳақиқий шакл; акс ҳолда қавариқ контур
+  let ring = _poIsSimple(clean) ? clean : _poConvexHull(clean);
+  if(!ring || ring.length < 3) ring = _poConvexHull(clean);
+  if(!ring || ring.length < 3){
+    L.polyline(clean.map(p=>[p.lat,p.lon]), {color:col, weight:3, opacity:.95}).addTo(parcelPolyLayer);
+    return;
+  }
+  const latlngs = ring.map(p=>[p.lat,p.lon]);
+  L.polygon(latlngs, {color:col, weight:2.6, opacity:.95, fillColor:col, fillOpacity:.16}).addTo(parcelPolyLayer);
   latlngs.forEach(ll => {
-    L.circleMarker(ll, {radius:3.2, color:'#fff', weight:1.4, fillColor:col, fillOpacity:1}).addTo(parcelPolyLayer);
+    L.circleMarker(ll, {radius:3, color:'#fff', weight:1.3, fillColor:col, fillOpacity:1}).addTo(parcelPolyLayer);
   });
 }
 function hidePlotHoverCard(opts){
