@@ -2397,7 +2397,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
     </div>
     <div class="prop-form-body">
       <div id="pfDraftBar" class="pf-draft-bar" style="display:none">
-        <span>📝 Сақланган лойиҳа тикланди — давом этинг ёки тозаланг.</span>
+        <span style="display:flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Сақланган лойиҳа тикланди — давом этинг ёки тозаланг.</span>
         <button type="button" onclick="clearProposalDraftAndForm()">Тозалаб бошлаш</button>
       </div>
       <div class="pf-row">
@@ -2495,7 +2495,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
 <div id="masterRegWrap" style="display:none;position:fixed;inset:0;z-index:1850;background:#f1f5f9;flex-direction:column">
   <div style="background:linear-gradient(135deg,#1d4ed8,#4f46e5);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
     <div style="min-width:0">
-      <div style="font-size:16px;font-weight:850">📋 Ер участкалари рўйхати</div>
+      <div style="font-size:16px;font-weight:850;display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Ер участкалари рўйхати</div>
       <div style="font-size:12px;color:rgba(255,255,255,.85);margin-top:2px">Ҳукумат комиссиясига таклифлар ва тоифаси ўзгарган участкалар</div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -2506,8 +2506,8 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
         <option value="changed">Тоифаси ўзгарган</option>
       </select>
       <select id="mrDist" onchange="renderMasterRegistry()" style="border:0;border-radius:9px;padding:9px 11px;font-size:12.5px;font-weight:700;color:#0f1a36;cursor:pointer"></select>
-      <button onclick="exportMasterRegistryExcel()" style="border:0;border-radius:9px;background:#10b981;color:#fff;font-size:12.5px;font-weight:800;padding:9px 14px;cursor:pointer">⬇ Excel</button>
-      <button onclick="closeMasterRegistry()" style="border:1px solid rgba(255,255,255,.35);border-radius:9px;background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;font-weight:800;padding:9px 14px;cursor:pointer">✕ Харитага қайтиш</button>
+      <button onclick="exportMasterRegistryExcel()" style="display:inline-flex;align-items:center;gap:6px;border:0;border-radius:9px;background:#10b981;color:#fff;font-size:12.5px;font-weight:800;padding:9px 14px;cursor:pointer"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel</button>
+      <button onclick="closeMasterRegistry()" style="display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.35);border-radius:9px;background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;font-weight:800;padding:9px 14px;cursor:pointer"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>Харитага қайтиш</button>
     </div>
   </div>
   <div id="mrStat" style="padding:10px 22px;background:#fff;border-bottom:1px solid #e2e8f0;font-size:12.5px;font-weight:700;color:#475569"></div>
@@ -9852,10 +9852,10 @@ function renderMasterRegistry(){
         <div class="mr-f"><div class="l">Босқич / ҳолат</div><div class="v">${esc(x.stage||'—')}</div></div>
       </div>
       <div class="mr-acts">
-        <button class="mr-btn" onclick="showRowDetail('${x.sec}',${rid})">👁 Кўриш</button>
-        ${admin?`<button class="mr-btn edit" onclick="openEditModal('${x.sec}',${rid})">✏ Таҳрирлаш</button>`:''}
-        ${x.pts?`<button class="mr-btn coord" onclick="downloadRowKml('${x.sec}',${rid})">📍 Координата (KML)</button>`:''}
-        <button class="mr-btn" onclick="showParcelHistory('${x.sec}',${rid})">🕘 Тарих</button>
+        <button class="mr-btn" onclick="showRowDetail('${x.sec}',${rid})"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>Кўриш</button>
+        ${admin?`<button class="mr-btn edit" onclick="openEditModal('${x.sec}',${rid})"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>Таҳрирлаш</button>`:''}
+        ${x.pts?`<button class="mr-btn coord" onclick="downloadRowKml('${x.sec}',${rid})"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Координата (KML)</button>`:''}
+        <button class="mr-btn" onclick="showParcelHistory('${x.sec}',${rid})"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Тарих</button>
       </div>
     </div>`;
   }).join('');
