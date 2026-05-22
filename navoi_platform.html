@@ -1980,6 +1980,25 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
 .prop-card,.mr-card,.adm-set-card{ border-color:#e8edf4; }
 .edit-modal-backdrop,.prop-form-backdrop{ backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
 
+/* ===== ҚАТЛАМЛАР ПАНЕЛИ ===== */
+.layer-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--line,#e2e8f0);
+  border-radius:11px;margin-bottom:8px;background:var(--panel,#fff);transition:border-color .15s,opacity .15s}
+.layer-row:last-child{margin-bottom:0}
+.layer-row.off{opacity:.62}
+.layer-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.layer-info{flex:1;min-width:0}
+.layer-name{font-size:12.5px;font-weight:800;color:var(--ink,#0f1a36);line-height:1.25}
+.layer-cnt{font-size:10.5px;color:var(--muted,#64748b);font-weight:600;margin-top:1px}
+.layer-sw{position:relative;width:38px;height:22px;border-radius:999px;background:#cbd5e1;border:0;cursor:pointer;
+  flex-shrink:0;transition:background .18s;padding:0}
+.layer-sw::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .18s}
+.layer-sw.on{background:#16a34a}
+.layer-sw.on::after{transform:translateX(16px)}
+.layers-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;
+  padding:0 4px;border-radius:8px;background:#f59e0b;color:#fff;font-size:9.5px;font-weight:800;margin-left:3px}
+.layers-badge[hidden]{display:none}
+
 </style>
 </head>
 <body>
@@ -2067,6 +2086,26 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <span>Қидирув</span>
     </button>
+    <div class="notif-wrap" id="layersWrap" style="position:relative">
+      <button class="tb-btn" id="layersBtn" type="button" onclick="toggleLayersPanel()" title="Кўринадиган қатламлар">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><polyline points="2 15.5 12 22 22 15.5"/></svg>
+        <span>Қатламлар</span>
+        <span class="layers-badge" id="layersBadge" hidden></span>
+      </button>
+      <div class="notif-panel" id="layersPanel" hidden role="dialog" aria-label="Кўринадиган қатламлар" style="width:320px">
+        <div class="notif-head">
+          <div class="notif-head-l">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><polyline points="2 15.5 12 22 22 15.5"/></svg>
+            Кўринадиган қатламлар
+          </div>
+          <button class="notif-close" type="button" onclick="toggleLayersPanel(false)" aria-label="Ёпиш">×</button>
+        </div>
+        <div style="padding:6px 14px 10px">
+          <div style="font-size:11px;color:var(--muted);line-height:1.5;margin:6px 0 10px">Ҳар бир бўлимни харита ва реестрда ёқиб ёки ўчириб қўйинг. Ўчирилган бўлим участкалари кўрсатилмайди.</div>
+          <div id="layersBody"></div>
+        </div>
+      </div>
+    </div>
     <div id="yrControl" style="position:relative;display:none">
       <button class="tb-btn" id="yrBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
@@ -6138,6 +6177,8 @@ function collectChangedRawCandidates(){
   return out;
 }
 function collectSectionCandidates(section){
+  // Қатлам ўчирилган бўлса — харитада кўрсатмаймиз
+  if(typeof isLayerOn === 'function' && !isLayerOn(section)) return [];
   if(section === 'changed') return collectChangedRawCandidates();
   const rows = section === 'hk'
     ? (SECTIONS_RAW.hk || []).filter(r => !(r['Тоифаси ўзгаргани (+/-)'] && String(r['Тоифаси ўзгаргани (+/-)']).trim() === '+'))
@@ -9858,7 +9899,9 @@ function setViewMode(mode){
 function _mrRows(){
   const out = [];
   const want = (document.getElementById('mrSec')||{}).value || 'all';
-  const secs = want === 'all' ? ['hk','changed'] : [want];
+  let secs = want === 'all' ? ['hk','changed'] : [want];
+  // Ўчирилган қатламларни реестрда ҳам кўрсатмаймиз
+  if(typeof isLayerOn === 'function') secs = secs.filter(s => isLayerOn(s));
   for(const sec of secs){
     const arr = (typeof SECTIONS_RAW!=='undefined' && SECTIONS_RAW[sec]) ? SECTIONS_RAW[sec] : [];
     for(const row of arr){
@@ -9869,6 +9912,70 @@ function _mrRows(){
   }
   return out;
 }
+/* ===== ҚАТЛАМЛАР — бўлимларни харита/реестрда ёқиб-ўчириш ===== */
+const LAYER_DEFS = [
+  {key:'hk',      label:'Ҳукумат комиссиясига таклифлар', color:'#2563eb'},
+  {key:'changed', label:'Тоифаси ўзгарган',               color:'#0ea5e9'}
+];
+const LAYERS_KEY = 'navoi_layers_v1';
+let LAYER_STATE = (function(){
+  try{ const r = JSON.parse(localStorage.getItem(LAYERS_KEY)||'{}'); return (r && typeof r==='object') ? r : {}; }
+  catch(e){ return {}; }
+})();
+function isLayerOn(sec){ return LAYER_STATE[sec] !== false; }   // default — ёқилган
+function _saveLayers(){ try{ localStorage.setItem(LAYERS_KEY, JSON.stringify(LAYER_STATE)); }catch(e){} }
+function _layerSectionCount(sec){
+  try{
+    if(sec==='hk') return (SECTIONS_RAW.hk||[]).filter(r=>!(r['Тоифаси ўзгаргани (+/-)'] && String(r['Тоифаси ўзгаргани (+/-)']).trim()==='+')).length;
+    if(sec==='changed') return (SECTIONS_RAW.changed||[]).length;
+  }catch(e){}
+  return 0;
+}
+function updateLayersBadge(){
+  const b = document.getElementById('layersBadge');
+  if(!b) return;
+  const off = LAYER_DEFS.filter(L=>!isLayerOn(L.key)).length;
+  if(off>0){ b.hidden=false; b.textContent=String(off); } else b.hidden=true;
+}
+function renderLayersPanel(){
+  const body = document.getElementById('layersBody');
+  if(!body) return;
+  body.innerHTML = LAYER_DEFS.map(L=>{
+    const on = isLayerOn(L.key);
+    return `<div class="layer-row ${on?'':'off'}">
+      <span class="layer-dot" style="background:${L.color}"></span>
+      <div class="layer-info">
+        <div class="layer-name">${escHtml(L.label)}</div>
+        <div class="layer-cnt">${fmt(_layerSectionCount(L.key))} та участка${on?'':' · ўчирилган'}</div>
+      </div>
+      <button class="layer-sw ${on?'on':''}" type="button" role="switch" aria-checked="${on}"
+        onclick="setLayer('${L.key}', ${on?'false':'true'})" aria-label="${escHtml(L.label)}"></button>
+    </div>`;
+  }).join('');
+  updateLayersBadge();
+}
+function setLayer(sec, on){
+  LAYER_STATE[sec] = !!on;
+  _saveLayers();
+  renderLayersPanel();
+  try{ if(typeof renderBubbles==='function') renderBubbles(); }catch(e){}
+  try{ if(typeof renderPlotPoints==='function') renderPlotPoints(); }catch(e){}
+  try{ const mr=document.getElementById('masterRegWrap'); if(mr && mr.style.display!=='none' && typeof renderMasterRegistry==='function') renderMasterRegistry(); }catch(e){}
+  try{ showToast(on ? 'Қатлам ёқилди' : 'Қатлам ўчирилди'); }catch(e){}
+}
+function toggleLayersPanel(force){
+  const p = document.getElementById('layersPanel');
+  if(!p) return;
+  const show = (typeof force==='boolean') ? force : p.hidden;
+  if(show){ renderLayersPanel(); p.hidden=false; }
+  else { p.hidden=true; }
+}
+/* Ташқарига босилса панелни ёпамиз */
+document.addEventListener('click', (e)=>{
+  const w = document.getElementById('layersWrap');
+  const p = document.getElementById('layersPanel');
+  if(p && !p.hidden && w && !w.contains(e.target)) p.hidden=true;
+});
 function openMasterRegistry(){
   const w = document.getElementById('masterRegWrap');
   if(!w) return;
@@ -11790,6 +11897,7 @@ function boot(){
   if(typeof refreshExportBtn === 'function') refreshExportBtn();
   try { getUsers(); applyAdminSettingsUI(); applySiteNotice(); updateAdminBadge(); refreshAdminBtnVisibility(); applyDistrictScope(); } catch(e){ console.warn('admin init', e); }
   try { _initKpiDock(); } catch(e){}
+  try { updateLayersBadge(); } catch(e){}
   setTimeout(()=>document.getElementById('loader').classList.add('hidden'), 500);
   // Onboarding — show once on first visit (after a short delay so the
   // map can settle behind the overlay)
