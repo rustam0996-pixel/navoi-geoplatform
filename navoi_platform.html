@@ -6456,25 +6456,31 @@ function _poDedupe(pts){
   }
   return out;
 }
-/* Адашган нуқтани олиб ташлаш — энг яқин қўшнисигача масофаси бошқалардан
-   кескин катта бўлган нуқта (узун чизиқ сабабчиси) чиқарилади. */
+function _poMedian(arr){
+  if(!arr || !arr.length) return 0;
+  const s = arr.slice().sort((a,b)=>a-b);
+  const m = s.length >> 1;
+  return (s.length % 2) ? s[m] : (s[m-1] + s[m]) / 2;
+}
+/* Адашган нуқта(лар)ни олиб ташлаш — МЕДИАН марказ усули.
+   Медиан марказ ва нуқталарнинг ундан медиан масофаси ҳисобланади;
+   медиан масофадан 4 баробардан узоқ нуқта(лар) чиқарилади. Медиан
+   усул бир неча адашган нуқтага ҳам бардошли (улар натижани бузмайди).
+   Иш такрорий — то барқарор бўлгунча (макс. 4 марта). */
 function _poRemoveStray(pts){
-  if(pts.length < 4) return pts;
-  const nn = pts.map((p,i) => {
-    let m = Infinity;
-    for(let j=0;j<pts.length;j++){
-      if(j===i) continue;
-      const d = Math.hypot(pts[j].lat-p.lat, pts[j].lon-p.lon);
-      if(d < m) m = d;
-    }
-    return m;
-  });
-  const sorted = nn.slice().sort((a,b)=>a-b);
-  const med = sorted[Math.floor(sorted.length/2)] || 0;
-  if(med <= 0) return pts;
-  const kept = pts.filter((p,i) => nn[i] <= med * 7);
-  // 35% дан кўп нуқтани ташламаймиз — акс ҳолда ишончсиз
-  return (kept.length >= 3 && kept.length >= pts.length*0.65) ? kept : pts;
+  let cur = pts.slice();
+  for(let pass=0; pass<4 && cur.length>=4; pass++){
+    const cLat = _poMedian(cur.map(p=>p.lat));
+    const cLon = _poMedian(cur.map(p=>p.lon));
+    const dist = cur.map(p => Math.hypot(p.lat-cLat, p.lon-cLon));
+    const dMed = _poMedian(dist);
+    if(dMed <= 0) break;
+    const kept = cur.filter((p,i) => dist[i] <= dMed * 4);
+    if(kept.length === cur.length) break;   // ўзгариш йўқ — барқарор
+    if(kept.length < 3) break;              // ҳаддан кўп тушиб кетди — тўхтаймиз
+    cur = kept;
+  }
+  return cur;
 }
 function _poConvexHull(pts){
   if(pts.length < 3) return pts.slice();
