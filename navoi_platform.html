@@ -6757,8 +6757,7 @@ function collectPlotPoints(){
   const filterActive = (typeof activeCategoryFilter === 'function' && activeCategoryFilter())
                     || (typeof activeStageFilter === 'function' && activeStageFilter())
                     || (typeof activeSourceTagFilter === 'function' && activeSourceTagFilter())
-                    || (typeof activeAllocationFilter === 'function' && activeAllocationFilter())
-                    || (typeof anyStageHidden === 'function' && anyStageHidden());
+                    || (typeof activeAllocationFilter === 'function' && activeAllocationFilter());
   if(!currentDistrict && !filterActive) return [];
   let candidates = [];
 
@@ -6830,8 +6829,7 @@ function renderPlotPoints(){
   const filterActive = (typeof activeCategoryFilter === 'function' && activeCategoryFilter())
                     || (typeof activeStageFilter === 'function' && activeStageFilter())
                     || (typeof activeSourceTagFilter === 'function' && activeSourceTagFilter())
-                    || (typeof activeAllocationFilter === 'function' && activeAllocationFilter())
-                    || (typeof anyStageHidden === 'function' && anyStageHidden());
+                    || (typeof activeAllocationFilter === 'function' && activeAllocationFilter());
   if(!currentDistrict && !filterActive) return;
   plotLayer = L.layerGroup().addTo(map);
   let items = collectPlotPoints();
