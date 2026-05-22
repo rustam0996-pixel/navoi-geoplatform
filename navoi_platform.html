@@ -9878,6 +9878,21 @@ function openMasterRegistry(){
     const ds = (typeof DISTRICTS!=='undefined'?DISTRICTS:[]);
     dsel.innerHTML = '<option value="all">Барча туманлар</option>' + ds.map(d=>`<option value="${escHtml(d.label)}">${escHtml(d.label)}</option>`).join('');
   }
+  // Реестр жорий контекстга мосланади: танланган туман ва бўлим
+  // автоматик қўлланади (фақат ўша туман/бўлим маълумоти кўрсатилади).
+  if(dsel){
+    const dLbl = (typeof currentDistrict!=='undefined' && currentDistrict)
+      ? ((distByKey[currentDistrict]||{}).label || '')
+      : '';
+    dsel.value = (dLbl && [...dsel.options].some(o=>o.value===dLbl)) ? dLbl : 'all';
+  }
+  const ssel = document.getElementById('mrSec');
+  if(ssel){
+    const cs = (typeof currentSection!=='undefined') ? currentSection : 'all';
+    ssel.value = (cs==='hk' || cs==='changed') ? cs : 'all';
+  }
+  // Қидирув майдонини тозалаймиз — контекст фильтри тоза бошлансин
+  const qel = document.getElementById('mrSearch'); if(qel) qel.value='';
   w.style.display = 'flex';
   renderMasterRegistry();
 }
