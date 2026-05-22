@@ -1229,12 +1229,6 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
 .sp-stage-chip i{width:7px;height:7px;border-radius:50%;display:inline-block;background:var(--ch-dot,#64748b);flex-shrink:0}
 .sp-stage-chip.active i{background:#fff}
 .sp-stage-chip .n{margin-left:2px;font-size:9.5px;font-weight:700;opacity:.85}
-/* Ёқ/ўчир ҳолати */
-.sp-stage-chip .ssc-tick{display:inline-flex;align-items:center;color:#16a34a}
-.sp-stage-chip.is-off{opacity:.5;background:#f1f5f9;border-color:#e2e8f0;color:#94a3b8}
-.sp-stage-chip.is-off .ssc-tick{color:#94a3b8}
-.sp-stage-chip.is-off span:not(.ssc-tick):not(.n){text-decoration:line-through}
-.sp-stage-chip.is-off i{filter:grayscale(1);opacity:.6}
 .sp-stage-export{display:flex;align-items:center;gap:6px;margin-top:3px}
 .sp-stage-export-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;
   padding:8px 10px;font-size:11.5px;font-weight:800;letter-spacing:.1px;
@@ -3952,22 +3946,7 @@ const STAGE_DEFS = [
   { key:'auction_sold', label:'Аукционда сотилган',  color:'#16a34a' },
   { key:'direct',       label:'Тўғридан-тўғри берилган', color:'#0d9488' }
 ];
-/* selected — эски якка фокус (ишлатилмайди, 'all' туради);
-   hidden — ўчирилган босқичлар (харита/реестр/экспортда кўрсатилмайди). */
-const STAGE_STATE = { selected: 'all', hidden: {} };
-function isStageVisible(key){ return !STAGE_STATE.hidden[key]; }
-function anyStageHidden(){
-  return Object.keys(STAGE_STATE.hidden).some(k => STAGE_STATE.hidden[k]);
-}
-/* Ёзув босқичи яширилганми? «Тоифаси ўзгарган» ўчирилса — унинг ости
-   босқичлари (аукцион/тўғридан-тўғри) ҳам яширилади. */
-function _isStageKeyHidden(sk){
-  if(!sk) return false;
-  if(STAGE_STATE.hidden[sk]) return true;
-  if(STAGE_STATE.hidden['changed'] && typeof CHANGED_SUBSET !== 'undefined'
-     && CHANGED_SUBSET.indexOf(sk) >= 0) return true;
-  return false;
-}
+const STAGE_STATE = { selected: 'all' };
 /* Map a parcel "kind" (from plotStatusKind) to a stage key. */
 function __stageFromKind(kind){
   switch(kind){
@@ -4215,28 +4194,16 @@ function renderStageFilter(){
   // user knows they are sub-states (parent count includes them).
   const CHILDREN_OF_CHANGED = new Set(['auction_listed','auction_sold','direct']);
   const chips = STAGE_DEFS.map(def => {
+    const active = sel === def.key;
     const cnt = (stats[def.key] && stats[def.key].count) || 0;
     const dot = `<i style="background:${def.color}"></i>`;
     const isChild = CHILDREN_OF_CHANGED.has(def.key);
-    let cls = 'sp-stage-chip' + (isChild ? ' is-child' : '');
+    const cls = isChild ? 'sp-stage-chip is-child' : 'sp-stage-chip';
     const prefix = isChild ? '<span class="sp-stage-arrow">↳</span>' : '';
-    if(def.key === 'all'){
-      // «Барча босқичлар» — ҳаммасини ёқиш (reset)
-      if(!anyStageHidden()) cls += ' active';
-      return `<button class="${cls}" data-stage="all" style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button" title="Барча босқичларни ёқиш">${dot}<span>${def.label}</span></button>`;
-    }
-    // Босқич чипи — ёқиб/ўчириладиган тугма
-    const off = !isStageVisible(def.key);
-    if(off) cls += ' is-off';
-    const tick = off
-      ? '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14"/></svg>'
-      : '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-    return `<button class="${cls}" data-stage="${def.key}"
-      style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button"
-      title="${off?'Ёқиш':'Ўчириш'} — ${escHtml(def.label)}">${prefix}<span class="ssc-tick">${tick}</span>${dot}<span>${def.label}</span>${cnt?`<span class="n">${fmt(cnt)}</span>`:''}</button>`;
+    return `<button class="${cls} ${active?'active':''}" data-stage="${def.key}"
+      style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button">${prefix}${dot}<span>${def.label}</span>${cnt?`<span class="n">${fmt(cnt)}</span>`:''}</button>`;
   }).join('');
-  const hiddenCnt = STAGE_DEFS.filter(d=>d.key!=='all' && !isStageVisible(d.key)).length;
-  const filteredCount = total;
+  const filteredCount = (sel === 'all') ? total : ((stats[sel] && stats[sel].count) || 0);
   // Source-tag chips: pq12 / pq13 / vm88 / kon — single-select like stage.
   if(typeof buildSourceTagStats === 'function') buildSourceTagStats();
   const sourceSel = (typeof SOURCE_TAG_STATE !== 'undefined' && SOURCE_TAG_STATE.selected) || 'all';
@@ -4263,9 +4230,8 @@ function renderStageFilter(){
   host.innerHTML = `
     <div class="sp-stage-label">
       <span>Босқич бўйича фильтр</span>
-      <span class="sp-stage-count">${hiddenCnt? hiddenCnt+' та ўчирилган' : fmt(total)+' та'}</span>
+      <span class="sp-stage-count">${fmt(filteredCount)} та / ${fmt(total)}</span>
     </div>
-    <div class="sp-stage-hint" style="font-size:9.5px;color:var(--muted);font-weight:600;margin:1px 0 4px">Босқични босиб харитада ёқиб/ўчириб қўйинг</div>
     <div class="sp-stage-chips">${chips}</div>
     <div class="sp-stage-label" style="margin-top:6px">
       <span>Манба бўйича фильтр</span>
@@ -4280,17 +4246,13 @@ function renderStageFilter(){
     <div class="sp-stage-export-hint">Танланган босқич + категория + манба + туман бўйича жорий филтрни юклаб олинг</div>`;
   host.querySelectorAll('.sp-stage-chip[data-stage]').forEach(el => {
     el.onclick = () => {
-      const k = el.dataset.stage;
-      if(k === 'all'){ STAGE_STATE.hidden = {}; }            // ҳаммасини ёқиш
-      else { STAGE_STATE.hidden[k] = !STAGE_STATE.hidden[k]; } // ёқ/ўчир
+      STAGE_STATE.selected = el.dataset.stage;
       renderStageFilter();
       if(typeof renderBubbles === 'function') renderBubbles();
       if(currentDistrict && typeof renderPlotPoints === 'function') renderPlotPoints();
       if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
       if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
       if(typeof refreshExportBtn === 'function') refreshExportBtn();
-      const mr=document.getElementById('masterRegWrap');
-      if(mr && mr.style.display!=='none' && typeof renderMasterRegistry==='function') renderMasterRegistry();
     };
   });
   host.querySelectorAll('.sp-stage-chip[data-source]').forEach(el => {
@@ -4347,10 +4309,6 @@ function collectFilteredRows(){
       if(distFilter && dist !== distFilter) continue;
       if(catFilter && !parcelMatchesCategory(sec, r, catFilter)) continue;
       if(stageFilter && !rowMatchesStage(sec, r, stageFilter)) continue;
-      // Ўчирилган босқичлар — экспорт/ҳисоботга ҳам кирмайди
-      if(typeof anyStageHidden==='function' && anyStageHidden()){
-        try{ if(_isStageKeyHidden(rowStageKey(sec,r))) continue; }catch(e){}
-      }
       if(sourceFilter && !rowMatchesSourceTag(sec, r, sourceFilter)) continue;
       if(allocFilter && !rowMatchesAllocation(sec, r, allocFilter)) continue;
       out.push({ sec, row:r, dist });
@@ -6837,16 +6795,6 @@ function renderPlotPoints(){
   const stageFilter = (typeof activeStageFilter === 'function') ? activeStageFilter() : null;
   if(stageFilter){
     items = items.filter(it => plotItemMatchesStage(it, stageFilter));
-  }
-  // Ўчирилган босқичлар — уларга тегишли участкаларни харитадан олиб ташлаймиз
-  if(typeof anyStageHidden === 'function' && anyStageHidden()){
-    items = items.filter(it => {
-      for(const d of STAGE_DEFS){
-        if(d.key==='all') continue;
-        if(STAGE_STATE.hidden[d.key] && plotItemMatchesStage(it, d.key)) return false;
-      }
-      return true;
-    });
   }
   // Apply source-tag filter — keep only items whose primary candidate carries the tag
   const sourceFilter = (typeof activeSourceTagFilter === 'function') ? activeSourceTagFilter() : null;
@@ -9932,16 +9880,11 @@ function _mrRows(){
   const out = [];
   const want = (document.getElementById('mrSec')||{}).value || 'all';
   const secs = want === 'all' ? ['hk','changed'] : [want];
-  const hideStages = (typeof anyStageHidden === 'function') && anyStageHidden();
   for(const sec of secs){
     const arr = (typeof SECTIONS_RAW!=='undefined' && SECTIONS_RAW[sec]) ? SECTIONS_RAW[sec] : [];
     for(const row of arr){
       // ХК да тоифаси ўзгарган (+) бўлганлар «changed»да кўрсатилади, такрорламаймиз
       if(sec==='hk' && row['Тоифаси ўзгаргани (+/-)'] && String(row['Тоифаси ўзгаргани (+/-)']).trim()==='+') continue;
-      // Ўчирилган босқичларни реестрда кўрсатмаймиз
-      if(hideStages){
-        try{ if(_isStageKeyHidden(rowStageKey(sec,row))) continue; }catch(e){}
-      }
       out.push({sec, row});
     }
   }
