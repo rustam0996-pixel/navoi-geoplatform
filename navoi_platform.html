@@ -6990,36 +6990,36 @@ function styleForFeature(f){
   const anySelected = !!currentDistrict;
   const focused = currentSection !== 'all';
   const hasData = !focused || distCount(dk, currentSection) > 0;
+  // Чегаралар орасида оқ жой қолмаслиги учун:
+  //   • чегара чизиғи полигоннинг ўз ранги билан (stroke = fill color)
+  //   • етарлича қалин (weight≥1.5) — қўшни полигонлар чизиғи туташади
+  //   • opaque чизиқ (opacity:1) + lineJoin/lineCap round — антиалиасинг тоза
+  //   • fillOpacity бир оз кучайтирилди — ҳудудни қувватли тутади
+  const _common = { lineJoin:'round', lineCap:'round' };
   // Selected district: strong, focused blue highlight
   if(isHi){
-    return {
-      color: '#1d4ed8',
-      weight: 2.2,
-      fillColor: '#2563eb',
-      fillOpacity: 0.16,
-      opacity: 1
-    };
+    return Object.assign({
+      color: '#1d4ed8', weight: 2.6, fillColor: '#2563eb', fillOpacity: 0.22, opacity: 1
+    }, _common);
   }
   // District is selected but this one is NOT it → dim strongly so focus stays on selected
   if(anySelected){
-    return { color:'#c8d4e8', weight:0.5, fillColor:'#dbe4f3', fillOpacity:0.04, opacity:0.28 };
+    return Object.assign({ color:'#cbd5e1', weight:1.2, fillColor:'#dbe4f3', fillOpacity:0.18, opacity:.7 }, _common);
   }
   // Overview mode: no selection — district has no data under current section filter
   if(focused && !hasData){
-    return { color:'#cbd5e1', weight:0.4, fillColor:'#e2e8f0', fillOpacity:0.08, opacity:0.3 };
+    return Object.assign({ color:'#cbd5e1', weight:1.2, fillColor:'#e2e8f0', fillOpacity:0.30, opacity:.7 }, _common);
   }
-  // Overview default
-  return {
-    color: d ? distColor(d) : '#64748b',
-    weight: 0.8,
-    fillColor: d ? distColor(d) : '#94a3b8',
-    fillOpacity: 0.12,
-    opacity: 0.5
-  };
+  // Overview default — stroke = fill color → қўшнилар орасида оқ зазор қолмайди
+  const c = d ? distColor(d) : '#94a3b8';
+  return Object.assign({
+    color: c, weight: 1.8, fillColor: c, fillOpacity: 0.22, opacity: 1
+  }, _common);
 }
 function renderMfyLayer(){
   if(mfyLayer) map.removeLayer(mfyLayer);
   mfyLayer = L.geoJSON(GEO, {
+    smoothFactor: 0,           // Leaflet қилаётган силлиқлашни ўчирамиз — қўшни чегаралар ўз ўрнига тушсин
     style: styleForFeature,
     onEachFeature: (f, layer)=>{
       const dk = geoDistKey(f.properties.district);
