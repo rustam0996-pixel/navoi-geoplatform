@@ -3781,7 +3781,7 @@ const SOURCE_TAG_DEFS = [
   // 'kon' tag remains in the data model (cards may still show it as a
   // pill) but the chip is hidden from the filter row — clicking it gave
   // no useful information beyond what the Геология category already does.
-  { key:'kon',  label:'Кон ёзуви',         color:'#8b5cf6', hidden: true }
+  { key:'kon',  label:'Кон участкаси',     color:'#8b5cf6', hidden: true }
 ];
 function __nonZero(v){
   if(v == null) return false;
@@ -6550,34 +6550,46 @@ function drawParcelOutline(item){
   if(row){
     try{ pts = parseCoordinatePoints(getCoordinateText(row)); }catch(e){}
   }
-  if(!pts || pts.length < 2){
+  if(!pts || !pts.length){
     pts = item.points
        || (item.candidates && item.candidates[0] && item.candidates[0].points)
        || (item.primary && item.primary.points);
   }
-  if(!pts || pts.length < 2) return;          // 1 нуқта — фақат пин
+  if(!pts || !pts.length) return;
   pts = _poDedupe(pts);
-  if(pts.length < 2) return;
+  if(!pts.length) return;
   const col = item.color || '#1d4ed8';
   parcelPolyLayer = L.layerGroup().addTo(map);
-  if(pts.length === 2){
-    L.polyline(pts.map(p=>[p.lat,p.lon]), {color:col, weight:3, opacity:.95}).addTo(parcelPolyLayer);
-    pts.forEach(p=>L.circleMarker([p.lat,p.lon],{radius:3,color:'#fff',weight:1.3,fillColor:col,fillOpacity:1}).addTo(parcelPolyLayer));
-    return;
-  }
+  // Ҳар координата нуқтаси кичик доирача билан кўрсатилади
+  const drawMarkers = (arr)=> arr.forEach(p=>
+    L.circleMarker([p.lat,p.lon], {radius:3, color:'#fff', weight:1.3, fillColor:col, fillOpacity:1}).addTo(parcelPolyLayer)
+  );
+  // 3 нуқтадан кам бўлса — полигон тузиб бўлмайди (чизиқ адаштирувчи бўлади),
+  // фақат нуқталарни кўрсатамиз.
+  if(pts.length < 3){ drawMarkers(pts); return; }
+  // Адашган нуқталарни олиб ташлаймиз; тартиб тўғри бўлса ҳақиқий шакл,
+  // акс ҳолда қавариқ контур.
+  let ring = null;
   const clean = _poRemoveStray(pts);
-  // Тартиб тўғри (полигон ўзини кесмаса) — ҳақиқий шакл; акс ҳолда қавариқ контур
-  let ring = _poIsSimple(clean) ? clean : _poConvexHull(clean);
-  if(!ring || ring.length < 3) ring = _poConvexHull(clean);
-  if(!ring || ring.length < 3){
-    L.polyline(clean.map(p=>[p.lat,p.lon]), {color:col, weight:3, opacity:.95}).addTo(parcelPolyLayer);
-    return;
+  if(clean.length >= 3){
+    ring = _poIsSimple(clean) ? clean : _poConvexHull(clean);
+    if(!ring || ring.length < 3) ring = _poConvexHull(clean);
   }
-  const latlngs = ring.map(p=>[p.lat,p.lon]);
-  L.polygon(latlngs, {color:col, weight:2.6, opacity:.95, fillColor:col, fillOpacity:.16}).addTo(parcelPolyLayer);
-  latlngs.forEach(ll => {
-    L.circleMarker(ll, {radius:3, color:'#fff', weight:1.3, fillColor:col, fillOpacity:1}).addTo(parcelPolyLayer);
-  });
+  // Заҳира: адашган-нуқта тозалаш кескин камайтириб юборса — хом
+  // (дедупланган) нуқталар билан қайтадан синаймиз.
+  if((!ring || ring.length < 3) && pts.length >= 3){
+    ring = _poIsSimple(pts) ? pts : _poConvexHull(pts);
+    if(ring && ring.length < 3) ring = null;
+  }
+  if(ring && ring.length >= 3){
+    const latlngs = ring.map(p=>[p.lat,p.lon]);
+    L.polygon(latlngs, {color:col, weight:2.6, opacity:.95, fillColor:col, fillOpacity:.16}).addTo(parcelPolyLayer);
+    drawMarkers(ring);
+  } else {
+    // Полигон тузиб бўлмайди (масалан, нуқталар бир чизиқда) — фақат
+    // нуқта маркерлари кўрсатилади; алдамчи чизиқ чизмаймиз.
+    drawMarkers(pts);
+  }
 }
 function hidePlotHoverCard(opts){
   const el = document.getElementById('plotHoverCard');
