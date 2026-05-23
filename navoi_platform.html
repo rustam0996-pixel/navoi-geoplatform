@@ -5986,7 +5986,11 @@ function changedStatusFromCandidate(c){
   const soldBino = toNum(row[meta.auctionField]) || toNum(raw.sg);
   const soldKon = toNum(extra.ks);
   const directBino = toNum(firstPlotValue(row, ['Доимий фойдаланишга тўғридан-тўғри ажратилган бино-иншоот (га)'])) || toNum(extra.bd) || toNum(raw.dm);
-  const directKon = toNum(extra.kd);
+  const directKon = toNum(firstPlotValue(row, ['Ер қаъри участкаларини корхоналарга тўғридан-тўғри келишув асосида Ажратилган (га)'])) || toNum(extra.kd);
+  // КОН — «Ер қаъридан фойдаланиш маркази» давлат муассасасига доимий
+  // фойдаланиш ҳуқуқи асосида ҳоким қарори билан ажратиш (мажбурий
+  // оралиқ босқич; кейин аукцион ёки корхонага тўғридан-тўғри келади).
+  const subsoilKon = toNum(firstPlotValue(row, ['Ер қаърига доимий фойдаланишга ажратилган (га)']));
   const putBino = toNum(row[meta.auctionPutField]) || (soldBino ? 0 : toNum(raw.au));
   const putKon = toNum(extra.kp);
   const pendingArea = toNum(firstPlotValue(row, ['Бино-иншоот қолдиқ (га)'])) || toNum(extra.kn) || toNum(raw.ql);
@@ -6016,6 +6020,13 @@ function changedStatusFromCandidate(c){
   if(putKon > 0 || putBino > 0){
     const area = putKon > 0 ? putKon : putBino;
     return statusResult('Аукцион савдоларига чиқарилган', `${fmtArea(area)} га аукцион жараёнида. ${changedDetail}.`, '#f59e0b', 85, c);
+  }
+  // КОН — давлат муассасасига доимий фойдаланиш ҳуқуқи асосида ажратилган
+  // (мажбурий оралиқ босқич; якуний эмас — алоҳида тус билан кўрсатамиз).
+  if(subsoilKon > 0){
+    return statusResult('Кон «Ер қаъридан фойдаланиш маркази»га ажратилган',
+      `${fmtArea(subsoilKon)} га доимий фойдаланиш ҳуқуқи асосида ҳоким қарори билан давлат марказига ажратилган. ${changedDetail}.`,
+      '#14b8a6', 80, c);
   }
   if(pendingArea > 0){
     return statusResult('Тоифаси ўзгарган, кейинги ажратиш кутилмоқда', `${fmtArea(pendingArea)} га бўйича кейинги босқич кутилмоқда. ${changedDetail}.`, '#2563eb', 78, c);
@@ -6342,6 +6353,8 @@ function plotStatusKind(label){
   const s = String(label||'').toLowerCase();
   if(/аукционда\s+сотилган/.test(s)) return {kind:'auction-sold', kindLabel:'Аукционда сотилган'};
   if(/аукцион\s+савдоларига\s+чиқарилган|аукцион\s+жараёнида|аукцион\s+бўлимида/.test(s)) return {kind:'auction-listed', kindLabel:'Аукцион савдоларига чиқарилган'};
+  // Давлат марказига доимий фойдаланиш (кон мажбурий оралиқ босқич) — алоҳида туркум
+  if(/фойдаланиш\s+маркази|давлат\s+марказига/.test(s)) return {kind:'changed', kindLabel:'Давлат марказига ажратилган'};
   if(/тўғридан[-\s]?тўғри|доимий\s+фойдаланиш/.test(s)) return {kind:'direct', kindLabel:'Тўғридан-тўғри / доимий фойдаланиш'};
   if(/тоифаси\s+ўзгарган/.test(s)) return {kind:'changed', kindLabel:'Тоифаси ўзгарган'};
   if(/таклиф\s+босқичида|жараён\s+кутилмоқда|кейинги\s+ажратиш\s+кутилмоқда|кейинги\s+босқич\s+кутилмоқда|ҳукумат\s+комиссиясига\s+киритилган|ташаббускори/.test(s)) return {kind:'process', kindLabel:'Тоифаси ўзгариш жараёнида'};
@@ -10419,6 +10432,9 @@ const CHECKBOX_LABELS = {
 };
 
 const HK_FIELD_LABELS = {
+  'Ер қаърига доимий фойдаланишга ажратилган (га)':'Ер қаъридан фойдаланиш марказига доимий фойдаланиш ҳуқуқи асосида ажратилган (га)',
+  'Ер қаъри участкаларини корхоналарга тўғридан-тўғри келишув асосида Ажратилган (га)':'Кон корхонага тўғридан-тўғри ажратилган (га)',
+  'Доимий фойдаланишга тўғридан-тўғри ажратилган бино-иншоот (га)':'Бино-иншоот доимий фойдаланишга (тўғридан-тўғри) ажратилган (га)',
   'Кадастрни хулосасига асосан дастлаб қайси ташкилот балансида бўлган':'Дастлаб қайси ташкилот балансида бўлган',
   'Ташаббускори аниқ/ноаниқ (+/-)':'Лойиҳа ташаббускори ҳолати',
   // Legacy (+/-) keys — kept so old saved state still maps cleanly
