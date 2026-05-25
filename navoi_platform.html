@@ -5453,27 +5453,22 @@ function onCategoryClick(cat){
   const aliasOf = CATEGORY_META[cat] && CATEGORY_META[cat].alias;
   if(aliasOf) cat = aliasOf;
   const meta = CATEGORY_META[cat];
-  const prevSel = CAT_STATE.selected;
-  const prevExp = CAT_STATE.expanded;
 
+  // Тоза мантиқ: ҳар босиш — танлаш (албатта). Бекор қилиш фақат
+  // «Жами ер майдонлари» (hero/all) орқали. Шу боис «иккинчи марта босиш
+  // фильтрни ўчиради» муаммоси йўқолади.
   if(cat === 'all'){
-    // Hero click: toggle tier-1 visibility; selection always resets to 'all'
-    CAT_STATE.expanded = (prevExp ? null : 'all');
+    CAT_STATE.expanded = (CAT_STATE.expanded ? null : 'all');
     CAT_STATE.selected = 'all';
   } else if(meta.tier === 1){
-    // Top-level branches (geology / business): click toggles sub-row + selects branch
-    if(prevExp === cat && prevSel === cat){
-      CAT_STATE.expanded = 'all';
-      CAT_STATE.selected = 'all';
-    } else {
-      CAT_STATE.expanded = cat;
-      CAT_STATE.selected = cat;
-    }
+    // Геология / Тадбиркорлик: ҳар босилганда танланган бўлади + ости очиқ
+    CAT_STATE.expanded = cat;
+    CAT_STATE.selected = cat;
   } else if(meta.tier === 2){
-    // Tier-2 leaf belongs to its parent branch; keep parent expanded
+    // НКМК / Уран / ... — ҳар босилганда танланган; ота-шох очиқ туради
     const parent = meta.parent || 'geology';
     CAT_STATE.expanded = parent;
-    CAT_STATE.selected = (prevSel === cat ? parent : cat);
+    CAT_STATE.selected = cat;
   }
 
   renderKpis();
