@@ -6141,8 +6141,11 @@ function makePlotCandidate(section, row, coordText, rawChanged){
   if(!geo && !declaredDist){
     return null;   // ҳам полигон, ҳам эълон қилинган туман йўқ — туман билиб бўлмайди
   }
-  const distKey = (geo && geo.distKey) || declaredDist;
-  const mfy = (geo && geo.mfy) || declaredMfy;
+  // ЭЪЛОН ҚИЛИНГАН ТУМАН УСТУВОР: маълумот ёзувида туман аниқ кўрсатилган
+  // бўлса, харита пини ўша туманга боғланади (нуқта чегарага яқин бўлиб
+  // қўшни туман полигонига тушиб қолса ҳам участка ўз туманидан йўқолмайди).
+  const distKey = declaredDist || (geo && geo.distKey);
+  const mfy = declaredMfy || (geo && geo.mfy);
   if(currentDistrict && distKey !== currentDistrict) return null;
   const color = (SECTIONS.find(s=>s.key===section)||{color:'#2563eb'}).color;
   return {
