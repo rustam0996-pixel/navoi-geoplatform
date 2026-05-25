@@ -2292,6 +2292,13 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
       </summary>
       <div id="drCats"></div>
     </details>
+    <details class="dr-fold" open>
+      <summary class="dr-fold-head">
+        <span>Йўналишлар кесимида</span>
+        <svg class="dr-fold-caret" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+      </summary>
+      <div id="drCategories"></div>
+    </details>
     <details class="dr-fold">
       <summary class="dr-fold-head">
         <span>Ер участкалари бўйича муҳим маълумотлар</span>
@@ -7365,6 +7372,70 @@ function renderDrawer(key){
       </button>` : ''}
     `;
   }
+  // «Йўналишлар кесимида» — қайси туман бўлмасин ҳар сафар янгилаймиз
+  try{ renderDrawerCategoryBreakdown(key); }catch(e){ console.warn('drawer categories', e); }
+}
+
+/* Туман ичида НКМК/Уран/Сочма/Норуда/Стратегик ва Завод/Туризм/Энергия/
+   Электр/Ижтимоий йўналишлари бўйича участка сонини кўрсатади. */
+function renderDrawerCategoryBreakdown(distKey){
+  const host = document.getElementById('drCategories');
+  if(!host) return;
+  const subs = ['nkmk','uran','sochma','noruda','strategic','zavod','turizm','energetika','elektr','ijtimoiy'];
+  const stats = {};
+  subs.forEach(k => stats[k] = {count:0, area:0});
+  for(const sec of ['hk','changed']){
+    const arr = (typeof SECTIONS_RAW!=='undefined' && SECTIONS_RAW[sec]) ? SECTIONS_RAW[sec] : [];
+    for(const r of arr){
+      if(sec==='hk' && String(r['Тоифаси ўзгаргани (+/-)']||'').trim()==='+') continue;
+      if(rowDistrict(sec, r) !== distKey) continue;
+      for(const k of subs){
+        try{
+          if(parcelMatchesCategory(sec, r, k)){
+            stats[k].count++;
+            stats[k].area += rowArea(sec, r) || 0;
+          }
+        }catch(e){}
+      }
+    }
+  }
+  const max = Math.max(1, ...subs.map(k => stats[k].count));
+  const groups = [
+    {title:'Геология йўналиши',          keys:['nkmk','uran','sochma','noruda','strategic']},
+    {title:'Тадбиркорлик / инвестиция',  keys:['zavod','turizm','energetika','elektr','ijtimoiy']}
+  ];
+  host.innerHTML = groups.map(g => {
+    const rows = g.keys.map(k => {
+      const meta = CATEGORY_META[k] || {};
+      const st = stats[k];
+      const widthPct = (st.count / max * 100).toFixed(0);
+      const muted = st.count === 0;
+      return `<div class="cat-row" data-cat="${k}" style="position:relative;overflow:hidden;opacity:${muted?.45:1};cursor:${muted?'default':'pointer'}">
+        <div class="bar" style="background:${meta.color};width:${widthPct}%"></div>
+        <div class="dot" style="background:${meta.color};position:relative"></div>
+        <div class="n" style="position:relative">${meta.label||k}<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:2px">${st.area>0?fmtArea(st.area)+' га':'—'}</div></div>
+        <div class="c" style="position:relative">${fmt(st.count)}</div>
+      </div>`;
+    }).join('');
+    return `<div style="font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:8px 4px 4px">${g.title}</div>${rows}`;
+  }).join('');
+  host.querySelectorAll('.cat-row[data-cat]').forEach(el => {
+    el.onclick = () => {
+      const k = el.dataset.cat;
+      if(stats[k].count === 0) return;
+      if(typeof CAT_STATE !== 'undefined'){
+        CAT_STATE.selected = k;
+        const parent = (CATEGORY_META[k] && CATEGORY_META[k].parent) || null;
+        CAT_STATE.expanded = parent;
+      }
+      if(typeof renderKpis === 'function') renderKpis();
+      if(typeof renderBubbles === 'function') renderBubbles();
+      if(typeof renderPlotPoints === 'function') renderPlotPoints();
+      if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
+      if(typeof refreshExportBtn === 'function') refreshExportBtn();
+      if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
+    };
+  });
 }
 
 /* ================= MAP INIT ================= */
