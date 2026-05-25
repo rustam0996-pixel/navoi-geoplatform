@@ -2816,7 +2816,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
 
 <script src="leaflet.js"></script>
 <script src="changed_data_v4.js"></script>
-<script src="sections_data.js?v=phaseD-20260427"></script>
+<script src="sections_data.js?v=20260521-cat-fix"></script>
 <script src="source_tags_index.js?v=phaseE-20260427"></script>
 <script src="changed_extra.js"></script>
 <script src="navoi_geo.js"></script>
@@ -6784,7 +6784,17 @@ function collectPlotPoints(){
     for(const sec of PRIMARY_SECTIONS){
       candidates = candidates.concat(collectSectionCandidates(sec));
     }
-    candidates = enrichCandidatesByCoordinate(candidates, relatedInfoSections());
+    // Йўналиш (category) фильтри фаол бўлганда — алоқадор бўлимларни
+    // координатага қараб эмас, ТЎЛИҚ қўшамиз: акс ҳолда КПИ кўрсаткичи
+    // (масалан «Геология: 591») харита пинлари сонидан кўп бўлиб қолади.
+    const _catFilterEarly = (typeof activeCategoryFilter === 'function') ? activeCategoryFilter() : null;
+    if(_catFilterEarly){
+      for(const sec of relatedInfoSections()){
+        candidates = candidates.concat(collectSectionCandidates(sec));
+      }
+    } else {
+      candidates = enrichCandidatesByCoordinate(candidates, relatedInfoSections());
+    }
     for(const sec of SECTIONS.filter(s => s.key !== 'all' && isIndependentSection(s.key)).map(s => s.key)){
       candidates = candidates.concat(collectSectionCandidates(sec));
     }
