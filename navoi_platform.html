@@ -7260,6 +7260,14 @@ function renderDrawer(key){
         renderYearBar();
         renderDistrictList();
         renderBubbles();
+        // Аниқ кафолат: танланган туман пинлари дарров чизилсин
+        try{ if(typeof renderPlotPoints==='function') renderPlotPoints(); }catch(e){}
+        // Туманни харитада фокусга олиб келамиз — пинлар яққол кўринсин
+        try{
+          if(currentDistrict && typeof districtBounds!=='undefined' && districtBounds[currentDistrict]){
+            map.flyToBounds(districtBounds[currentDistrict], {padding:[40,40], duration:0.6, maxZoom:13});
+          }
+        }catch(e){}
         restyleMfyLayer();
         if(currentDistrict) renderDrawer(currentDistrict);
         closeResultsPanel();
