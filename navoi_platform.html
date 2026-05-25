@@ -6132,12 +6132,14 @@ function makePlotCandidate(section, row, coordText, rawChanged){
   const declaredDist = rowDistrict(section, row) || canonDistrict(rawChanged && rawChanged.t);
   const declaredMfy = rowMfy(section, row) || cleanPlotText(rawChanged && rawChanged.m);
   const geo = resolveGeoLocation(center);
-  // Координата Навоий вилояти полигонларидан бирортасига тушмаса — пинни
-  // нотўғри жойда кўрсатмаймиз (эълон қилинган туман эса бошқа). Уни тушириб
-  // юборамиз — таҳрирлаб тузатилгач, қайта чиқаверади.
-  if(!geo && declaredDist){
-    try{ console.warn('[geo] парcel coords outside Navoi polygons — hidden:', section, row && (row._row||row.id)); }catch(e){}
-    return null;
+  // Эътиборга: координата Навоий вилояти диапазонида (__navoiRangeFilter
+  // аллақачон бошқа вилоят нуқталарини олиб ташлайди). Агар нуқта ҳеч бир
+  // туман полигонига тушмаса — бу одатда чегарага яқин кадастрда учрайди.
+  // Ёзувнинг ўзи туман номини кўрсатган бўлса — пинни эълон қилинган туманга
+  // боғлаб, парс қилинган жойда кўрсатамиз (йўқотиб юбормаймиз). Эълон қилинган
+  // туман ҳам бошқа полигонга тушса — кейинги резолюция уни ушлайди.
+  if(!geo && !declaredDist){
+    return null;   // ҳам полигон, ҳам эълон қилинган туман йўқ — туман билиб бўлмайди
   }
   const distKey = (geo && geo.distKey) || declaredDist;
   const mfy = (geo && geo.mfy) || declaredMfy;
