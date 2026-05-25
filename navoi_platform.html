@@ -883,6 +883,17 @@ body.sidepanel-open .brand{display:none}
 /* Қидирув режими: «Жами ер майдонлари» KPI блоки кераксиз — яширамиз
    (фақат панель очиқ турганда; панель ёпилса қайта кўринади) */
 body.search-mode.sidepanel-open .kpis{display:none!important}
+/* Туман танланганда (драйвер очиқ) — тепадаги «Жами ер майдонлари» КПИ
+   яшиб турсин (фойдаланувчи драйвердаги тафсилотга диққат қаратсин). */
+body.drawer-open .kpis{display:none!important}
+/* Драйвер ичидаги «Йўналишлар кесимида» — ҳар йўналиш учун ёқ/ўчир тугмаси */
+#drCategories .cat-row{position:relative;overflow:hidden;padding-right:48px}
+#drCategories .cat-sw{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:34px;height:19px;border-radius:999px;background:#cbd5e1;border:0;cursor:pointer;padding:0;transition:background .15s;flex-shrink:0;z-index:2}
+#drCategories .cat-sw::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+#drCategories .cat-sw.on{background:#16a34a}
+#drCategories .cat-sw.on::after{transform:translateX(15px)}
+#drCategories .cat-row.is-hidden{opacity:.5}
+#drCategories .cat-row.is-hidden .n{text-decoration:line-through;text-decoration-color:#94a3b8}
 body.sidepanel-open:not(.drawer-open) .kpis{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:6px}
 body.sidepanel-open:not(.drawer-open) .toolbar{max-width:none;flex-wrap:nowrap}
 body.drawer-open .topbar{right:420px}
@@ -6841,6 +6852,17 @@ function renderPlotPoints(){
   if(stageFilter){
     items = items.filter(it => plotItemMatchesStage(it, stageFilter));
   }
+  // Yўналиш кўриниши: ўчирилган йўналишдаги участкаларни харитадан олиб ташлаймиз
+  if(typeof anyCatHidden === 'function' && anyCatHidden()){
+    items = items.filter(it => {
+      const cands = it.candidates || (it.primary ? [it.primary] : []);
+      return cands.some(c => {
+        let k = null;
+        try{ k = (typeof classifyParcel==='function') ? classifyParcel(c.section, c.row) : null; }catch(e){}
+        return k && isCatVisible(k);
+      });
+    });
+  }
   // Apply source-tag filter — keep only items whose primary candidate carries the tag
   const sourceFilter = (typeof activeSourceTagFilter === 'function') ? activeSourceTagFilter() : null;
   if(sourceFilter){
@@ -7376,6 +7398,22 @@ function renderDrawer(key){
   try{ renderDrawerCategoryBreakdown(key); }catch(e){ console.warn('drawer categories', e); }
 }
 
+/* Йўналиш кўриниши — ҳар йўналишни харитада ёқиб/ўчириб қўйиш мумкин. */
+const CATVIS_KEY = 'navoi_catvis_v1';
+const CATEGORY_VIS = (function(){
+  try{ const r = JSON.parse(localStorage.getItem(CATVIS_KEY)||'{}'); return (r && typeof r==='object') ? r : {}; }
+  catch(e){ return {}; }
+})();
+function isCatVisible(k){ return !CATEGORY_VIS[k]; }
+function anyCatHidden(){ return Object.keys(CATEGORY_VIS).some(k => CATEGORY_VIS[k]); }
+function _saveCatVis(){ try{ localStorage.setItem(CATVIS_KEY, JSON.stringify(CATEGORY_VIS)); }catch(e){} }
+function toggleCatVisibility(k){
+  CATEGORY_VIS[k] = !CATEGORY_VIS[k];
+  _saveCatVis();
+  try{ if(currentDistrict) renderDrawerCategoryBreakdown(currentDistrict); }catch(e){}
+  try{ if(typeof renderBubbles === 'function') renderBubbles(); }catch(e){}
+  try{ if(typeof renderPlotPoints === 'function') renderPlotPoints(); }catch(e){}
+}
 /* Туман ичида НКМК/Уран/Сочма/Норуда/Стратегик ва Завод/Туризм/Энергия/
    Электр/Ижтимоий йўналишлари бўйича участка сонини кўрсатади. */
 function renderDrawerCategoryBreakdown(distKey){
@@ -7410,16 +7448,23 @@ function renderDrawerCategoryBreakdown(distKey){
       const st = stats[k];
       const widthPct = (st.count / max * 100).toFixed(0);
       const muted = st.count === 0;
-      return `<div class="cat-row" data-cat="${k}" style="position:relative;overflow:hidden;opacity:${muted?.45:1};cursor:${muted?'default':'pointer'}">
+      const on = isCatVisible(k);
+      const cls = `cat-row${muted?' is-empty':''}${on?'':' is-hidden'}`;
+      return `<div class="${cls}" data-cat="${k}" style="opacity:${muted?.5:(on?1:.5)};cursor:${muted?'default':'pointer'}">
         <div class="bar" style="background:${meta.color};width:${widthPct}%"></div>
         <div class="dot" style="background:${meta.color};position:relative"></div>
         <div class="n" style="position:relative">${meta.label||k}<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:2px">${st.area>0?fmtArea(st.area)+' га':'—'}</div></div>
         <div class="c" style="position:relative">${fmt(st.count)}</div>
+        <button class="cat-sw ${on?'on':''}" type="button" data-toggle="1" aria-pressed="${on}" title="${on?'Яшириш':'Кўрсатиш'}"></button>
       </div>`;
     }).join('');
     return `<div style="font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:8px 4px 4px">${g.title}</div>${rows}`;
   }).join('');
   host.querySelectorAll('.cat-row[data-cat]').forEach(el => {
+    const sw = el.querySelector('.cat-sw');
+    if(sw){
+      sw.onclick = (e) => { e.stopPropagation(); toggleCatVisibility(el.dataset.cat); };
+    }
     el.onclick = () => {
       const k = el.dataset.cat;
       if(stats[k].count === 0) return;
