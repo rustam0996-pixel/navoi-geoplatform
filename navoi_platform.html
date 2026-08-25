@@ -1996,11 +1996,9 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 .rs-table tbody tr{animation:fadeIn .3s ease both}
 
 .drawer.open .dr-head{animation:fadeIn .35s ease}
-.drawer.open .dr-stat{animation:fadeInUp .35s ease both}
-.drawer.open .dr-stat:nth-child(1){animation-delay:.05s}
-.drawer.open .dr-stat:nth-child(2){animation-delay:.1s}
-.drawer.open .dr-stat:nth-child(3){animation-delay:.15s}
-.drawer.open .dr-stat:nth-child(4){animation-delay:.2s}
+/* .dr-stat анимацияси энди --i асосидаги .reveal-pop орқали (MOTION SYSTEM),
+   шу боис бу ердаги қатъий nth-child кечикишлари олиб ташланди — акс ҳолда
+   улар юқори specificity билан янги тизимни босиб қоларди. */
 
 /* Button ripple effect */
 .tb-btn,.chip,.yr,.rp-btn,.rs-open,.btn,.drow,.cat-row{position:relative;overflow:hidden}
@@ -2029,6 +2027,101 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 
 /* Brand logo pulse on load */
 .brand-logo{animation:breathe 2.5s ease-in-out 1s 2}
+
+/* ===================== MOTION SYSTEM =====================
+   Сайт бўйлаб ягона ҳаракат тили: бир хил easing, бир хил кечикиш
+   қадами. Мақсад — бўлимга кирилганда, маълумот ва рақамлар пайдо
+   бўлганда ҳаракат тасодифий эмас, уюшган кўринсин.
+   Ҳамма нарса opacity/transform устида — layout қайта ҳисобланмайди. */
+:root{
+  --ease-out:    cubic-bezier(.22,1,.36,1);     /* асосий: тез бошлаб, юмшоқ тўхтайди */
+  --ease-spring: cubic-bezier(.2,.9,.3,1.25);   /* босилганда — сал сакраш */
+  --dur-1:.18s; --dur-2:.30s; --dur-3:.46s;
+  --stagger:34ms;                                /* қатор-қатор кечикиш қадами */
+}
+
+@keyframes revealUp   {from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none}}
+@keyframes revealSide {from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes revealPop  {from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes numIn      {from{opacity:0;transform:translateY(7px);filter:blur(5px)}
+                       to  {opacity:1;transform:none;      filter:blur(0)}}
+@keyframes sheenSweep {from{transform:translateX(-130%)} to{transform:translateX(240%)}}
+@keyframes softGlow   {0%,100%{box-shadow:0 0 0 0 rgba(29,78,216,.30)}
+                       50%    {box-shadow:0 0 0 10px rgba(29,78,216,0)}}
+
+/* Кечикиш --i орқали берилади: style="--i:3" → 3-қадам */
+.reveal      {animation:revealUp   var(--dur-3) var(--ease-out) both; animation-delay:calc(var(--i,0) * var(--stagger))}
+.reveal-side {animation:revealSide var(--dur-2) var(--ease-out) both; animation-delay:calc(var(--i,0) * var(--stagger))}
+.reveal-pop  {animation:revealPop  var(--dur-3) var(--ease-out) both; animation-delay:calc(var(--i,0) * var(--stagger))}
+
+/* Рақам ўрнига келганда — фокусга келгандек «аниқлашади» */
+.num-in{animation:numIn .52s var(--ease-out) both}
+
+/* Панел боши очилганда бир марта ялтираб ўтади */
+.sheen{position:relative;overflow:hidden}
+.sheen::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(105deg,transparent 32%,rgba(255,255,255,.38) 50%,transparent 68%);
+  transform:translateX(-130%);
+}
+.sheen.play::after{animation:sheenSweep .95s var(--ease-out)}
+body[data-theme="dark"] .sheen::after{
+  background:linear-gradient(105deg,transparent 32%,rgba(255,255,255,.14) 50%,transparent 68%);
+}
+
+/* Карточка/қатор устига мишка келганда — юмшоқ кўтарилиш ва нур */
+.lift{transition:transform var(--dur-1) var(--ease-out),
+                 box-shadow var(--dur-1) var(--ease-out),
+                 border-color var(--dur-1) var(--ease-out)}
+.lift:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.lift:active{transform:translateY(0) scale(.985);transition-duration:.08s}
+
+/* Клавиатура фокуси доим кўринсин — «жозибадорлик» кириш имконини
+   йўқотмаслиги керак */
+:where(button,[role="button"],a,input,select,textarea):focus-visible{
+  outline:2px solid var(--brand);
+  outline-offset:2px;
+  border-radius:6px;
+}
+
+/* Тўлиқ экранли бўлим (реестр) очилиши */
+@keyframes panelIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+.panel-in{animation:panelIn .42s var(--ease-out) both}
+
+/* Реестр карточкалари — устига келганда юмшоқ кўтарилади */
+.mr-card{transition:transform var(--dur-1) var(--ease-out),
+                    box-shadow var(--dur-1) var(--ease-out),
+                    border-color var(--dur-1) var(--ease-out)}
+.mr-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:#cfe0ff}
+
+/* Қидирув натижаси қатори */
+.sr-item{transition:transform var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out)}
+.sr-item:hover{transform:translateX(3px)}
+
+/* Драйвер ва ён панел юмшоқроқ сирпансин */
+.drawer{transition:transform .42s var(--ease-out), opacity .3s var(--ease-out)}
+
+/* ---- Биринчи юкланиш хореографияси ----
+   body.booting фақат саҳифа очилганда туради ва ~1.2s дан кейин олиб
+   ташланади. Шу боис бу анимациялар ҳар қайта рендерда эмас, айнан бир
+   марта ишлайди (акс ҳолда ҳар фильтр босилганда такрорланарди). */
+body.booting .brand      {animation:revealSide .52s var(--ease-out) both}
+body.booting .cat-tree   {animation:revealUp   .55s var(--ease-out) .10s both}
+body.booting .toolbar    {animation:revealUp   .50s var(--ease-out) .18s both}
+body.booting .tabbar     {animation:revealUp   .50s var(--ease-out) .26s both}
+body.booting .sidepanel  {animation:fadeIn     .60s var(--ease-out) .14s both}
+body.booting #mapWrap    {animation:fadeIn     .70s var(--ease-out) both}
+
+/* ҲАРАКАТНИ КАМАЙТИРИШ сўралган бўлса — ҳаммасини ўчирамиз.
+   Вестибуляр сезгирлиги бор фойдаланувчилар учун шарт. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 
 /* Year dropdown */
 .yr-dropdown{
@@ -5526,6 +5619,101 @@ function __animateOnce(key, el, target, formatter, durationMs){
   }
   requestAnimationFrame(tick);
 }
+
+/* Саҳифа очилиши: booting класси хореографияни бир марта ишлатади */
+(function(){
+  const start = () => {
+    document.body.classList.add('booting');
+    setTimeout(() => document.body.classList.remove('booting'), 1200);
+  };
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+
+/* ===================== MOTION HELPERS =====================
+   Бўлимга кириш, маълумот ва рақамларнинг пайдо бўлиши учун умумий
+   воситалар. Ҳеч бири маълумотни ўзгартирмайди — фақат кўрсатиш усули. */
+
+/* Фойдаланувчи ҳаракатни камайтиришни сўраганми? */
+function __reducedMotion(){
+  try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  catch(e){ return false; }
+}
+
+/* Матндан сонни ажратиб олиш («1 234 та» → 1234) */
+function __numFromText(t){
+  const m = String(t == null ? '' : t).replace(/\s/g,'').match(/-?\d+(?:[.,]\d+)?/);
+  return m ? parseFloat(m[0].replace(',', '.')) : null;
+}
+
+/* Бир элементдаги сонни 0 дан нишонгача санаб чиқади.
+   Матннинг сондан бошқа қисми (мисол: « га», « та») сақланади. */
+function __countUp(el, dur){
+  if(!el || el.__counting) return;
+  const raw = el.textContent;
+  const target = __numFromText(raw);
+  if(target === null || !Number.isFinite(target)) return;
+  if(__reducedMotion() || Math.abs(target) < 1){ el.classList.add('num-in'); return; }
+
+  const decimals = (String(target).split('.')[1] || '').length;
+  const prefix = raw.slice(0, raw.search(/-?\d/));
+  const suffix = raw.slice(raw.search(/-?\d/)).replace(/^-?[\d\s.,]+/, '');
+  const render = v => (decimals
+      ? v.toFixed(decimals)
+      : Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '));
+
+  el.__counting = true;
+  el.classList.add('num-in');
+  const t0 = performance.now();
+  const D = dur || 780;
+  const step = now => {
+    const t = Math.min(1, (now - t0) / D);
+    const e = 1 - Math.pow(1 - t, 3);            // easeOutCubic
+    el.textContent = prefix + render(target * e) + suffix;
+    if(t < 1) requestAnimationFrame(step);
+    else { el.textContent = raw; el.__counting = false; }
+  };
+  requestAnimationFrame(step);
+}
+
+/* Контейнердаги барча кўрсаткич рақамларини жонлантиради. */
+function animateNumbersIn(host, selector){
+  if(!host) return;
+  const sel = selector || '.dr-stat .v, .rs-kpi .v, .sp-stat .v, [data-count]';
+  host.querySelectorAll(sel).forEach(el => __countUp(el));
+}
+window.animateNumbersIn = animateNumbersIn;
+
+/* Рўйхат элементларини навбат билан чиқаради.
+   maxStep — кечикиш шунча қадамдан ошмайди, акс ҳолда узун рўйхатнинг
+   охирги қатори бир неча сониядан кейин пайдо бўларди. */
+function revealIn(host, selector, opts){
+  if(!host) return;
+  const o = opts || {};
+  const cls = o.cls || 'reveal';
+  const maxStep = o.maxStep == null ? 12 : o.maxStep;
+  const nodes = host.querySelectorAll(selector);
+  if(__reducedMotion()) return;
+  nodes.forEach((el, i) => {
+    el.style.setProperty('--i', Math.min(i, maxStep));
+    el.classList.remove(cls);
+    void el.offsetWidth;          // reflow — анимация қайта бошлансин
+    el.classList.add(cls);
+  });
+}
+window.revealIn = revealIn;
+
+/* Панел боши бўйлаб бир марта нур ўтказади */
+function playSheen(el){
+  if(!el || __reducedMotion()) return;
+  el.classList.add('sheen');
+  el.classList.remove('play');
+  void el.offsetWidth;
+  el.classList.add('play');
+  setTimeout(() => el.classList.remove('play'), 1000);
+}
+window.playSheen = playSheen;
+
 /* Walk all rendered count elements inside a host and animate each.
    target value is read from the rendered text (digits only). */
 function __animateCountersIn(host, keyPrefix){
@@ -5988,6 +6176,9 @@ function renderDistrictList(){
   el.querySelectorAll('.drow').forEach(r=>{
     r.onclick = ()=>selectDistrict(r.dataset.dist);
   });
+  // Қаторлар навбат билан чиқсин, рақамлар эса санаб борсин
+  if(typeof revealIn === 'function') revealIn(el, '.drow', {maxStep:14});
+  if(typeof animateNumbersIn === 'function') animateNumbersIn(el, '.drow .count');
 }
 
 /* ================= BUBBLES ================= */
@@ -7514,7 +7705,11 @@ function selectDistrict(key){
     map.flyToBounds(districtBounds[key], {padding:[60,60], duration:0.8, maxZoom:12});
   }
   renderDrawer(key);
-  document.getElementById('drawer').classList.add('open');
+  const _dw = document.getElementById('drawer');
+  _dw.classList.add('open');
+  // Бўлимга кириш ҳис қилинсин: боши бўйлаб нур, тоифалар навбат билан
+  if(typeof playSheen === 'function') playSheen(_dw.querySelector('.dr-head'));
+  if(typeof revealIn === 'function') revealIn(_dw, '#drCats .cat-row', {cls:'reveal-side', maxStep:10});
   updateLayoutState();
   updateHomePillState();
   closeResultsPanel();
@@ -7644,6 +7839,9 @@ function renderDrawer(key){
       <div class="dr-stat interactive" data-allocation="konDirect" title="Кон тўғридан тўғри ажратилган"><div class="l">Кон тўғридан тўғри</div><div class="v">${fmt(alloc.konDirectCount)}</div><div class="sub">${fmtArea(alloc.konDirectArea)} га</div></div>
     `;
   }
+  // Кўрсаткич рақамлари 0 дан ўз қийматигача санаб чиқади
+  if(typeof animateNumbersIn === 'function') animateNumbersIn(document.getElementById('drStats'), '.dr-stat .v');
+  if(typeof revealIn === 'function') revealIn(document.getElementById('drStats'), '.dr-stat', {cls:'reveal-pop'});
   document.querySelectorAll('#drStats .dr-stat[data-allocation]').forEach(el=>{
     // First click → preview those parcels on the MAP (not the list).
     // The «Рўйхатга ўтиш» button in the filter crumb opens the registry.
@@ -8335,6 +8533,9 @@ function renderSearchResults(){
         …яна <b>${fmt(items.length - limit)}</b> та натижа бор. Фильтрни аниқлаштиринг.
        </div>` : '';
   list.innerHTML = html + over;
+  // Натижалар навбат билан пайдо бўлсин, сони эса санаб чиқсин
+  if(typeof revealIn === 'function') revealIn(list, '.sr-item', {maxStep:12});
+  if(typeof animateNumbersIn === 'function') animateNumbersIn(stats, '.sr-count b');
   list.querySelectorAll('.sr-item').forEach(el => {
     el.onclick = () => {
       const section = el.dataset.section;
@@ -8674,6 +8875,8 @@ function renderProposalsList(){
       ${thread}
     </div>`;
   }).join('');
+  // Таклиф карточкалари навбат билан пайдо бўлсин
+  if(typeof revealIn === 'function') revealIn(list, '.prop-card', {maxStep:10});
 }
 /* Танланган туман учун МФЙ рўйхати — GEO полигонларидан йиғилади. */
 function mfysForDistrict(districtLabel){
@@ -10477,6 +10680,10 @@ function isLayerOn(){ return true; }
 function openMasterRegistry(){
   const w = document.getElementById('masterRegWrap');
   if(!w) return;
+  // Бўлимга кириш сезилсин: панел юмшоқ очилади, боши бўйлаб нур ўтади
+  if(typeof playSheen === 'function') setTimeout(()=>playSheen(w.querySelector('.mr-head, header, .mr-top') || w.firstElementChild), 30);
+  w.classList.add('panel-in');
+  setTimeout(()=>w.classList.remove('panel-in'), 700);
   // Туман фильтри рўйхатини тўлдириш
   const dsel = document.getElementById('mrDist');
   if(dsel && dsel.options.length<=0){
@@ -10621,6 +10828,11 @@ function renderMasterRegistry(){
       </div>
     </div>`;
   }).join('');
+  // Карточкалар навбат билан чиқсин, «Жами» кўрсаткичи эса санаб борсин
+  if(typeof revealIn === 'function') revealIn(list, '.mr-card', {maxStep:10});
+  if(stat && typeof __countUp === 'function'){
+    stat.classList.add('num-in');
+  }
 }
 function exportMasterRegistryExcel(){
   const items = _mrItems();
