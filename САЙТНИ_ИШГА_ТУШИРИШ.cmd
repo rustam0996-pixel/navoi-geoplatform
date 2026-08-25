@@ -9,13 +9,13 @@ echo.
 echo Сервер ишга туширилмоқда...
 echo.
 
-start "" "http://localhost:8765/navoi_map_platform.html"
+start "" "http://localhost:8765/navoi_platform.html"
 
 powershell -NoProfile -NoLogo -ExecutionPolicy Bypass -Command ^
   "$listener = New-Object System.Net.HttpListener; ^
    $listener.Prefixes.Add('http://localhost:8765/'); ^
    $listener.Start(); ^
-   Write-Host 'Сайт очиқ: http://localhost:8765/navoi_map_platform.html'; ^
+   Write-Host 'Сайт очиқ: http://localhost:8765/navoi_platform.html'; ^
    Write-Host 'Тўхтатиш учун: Ctrl+C'; ^
    $root = (Get-Item -LiteralPath '%~dp0').FullName; ^
    $mime = @{'.html'='text/html; charset=utf-8';'.htm'='text/html; charset=utf-8';'.js'='application/javascript; charset=utf-8';'.css'='text/css; charset=utf-8';'.json'='application/json; charset=utf-8';'.png'='image/png';'.jpg'='image/jpeg';'.svg'='image/svg+xml';'.ico'='image/x-icon';'.woff'='font/woff';'.woff2'='font/woff2'}; ^
@@ -23,7 +23,7 @@ powershell -NoProfile -NoLogo -ExecutionPolicy Bypass -Command ^
      try { ^
        $ctx = $listener.GetContext(); ^
        $p = [System.Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath); ^
-       if ($p -eq '/' -or $p -eq '') { $p = '/navoi_map_platform.html' }; ^
+       if ($p -eq '/' -or $p -eq '') { $p = '/navoi_platform.html' }; ^
        $full = Join-Path $root ($p.TrimStart('/').Replace('/', '\')); ^
        if (Test-Path -LiteralPath $full -PathType Leaf) { ^
          $ext = [System.IO.Path]::GetExtension($full).ToLower(); ^

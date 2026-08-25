@@ -5643,7 +5643,7 @@ function __wireCatMega(host){
       e.stopPropagation();
       __megaOpen = false;
       wrap.classList.remove('is-open');
-      onCategoryClick(el.dataset.cat);
+      onCategoryClick(el.dataset.cat, {collapse:true});
     });
   });
 }
@@ -5755,7 +5755,7 @@ function renderKpis(){
 }
 
 /* ================= CATEGORY TREE INTERACTION ================= */
-function onCategoryClick(cat){
+function onCategoryClick(cat, opts){
   if(!CATEGORY_META[cat]) return;
   // Resolve legacy aliases (bino → zavod, other → ijtimoiy)
   const aliasOf = CATEGORY_META[cat] && CATEGORY_META[cat].alias;
@@ -5765,17 +5765,21 @@ function onCategoryClick(cat){
   // Тоза мантиқ: ҳар босиш — танлаш (албатта). Бекор қилиш фақат
   // «Жами ер майдонлари» (hero/all) орқали. Шу боис «иккинчи марта босиш
   // фильтрни ўчиради» муаммоси йўқолади.
+  // Hover мега-панелдан танланганда ички қаторларни ОЧМАЙМИЗ: панелнинг
+  // ўзи бутун дарахтни кўрсатди, танлангандан кейин тепа тоза қолиши керак
+  // ва харитада фақат танланган йўналиш ерлари туради.
+  const collapse = !!(opts && opts.collapse);
   if(cat === 'all'){
-    CAT_STATE.expanded = (CAT_STATE.expanded ? null : 'all');
+    CAT_STATE.expanded = collapse ? null : (CAT_STATE.expanded ? null : 'all');
     CAT_STATE.selected = 'all';
   } else if(meta.tier === 1){
     // Геология / Тадбиркорлик: ҳар босилганда танланган бўлади + ости очиқ
-    CAT_STATE.expanded = cat;
+    CAT_STATE.expanded = collapse ? null : cat;
     CAT_STATE.selected = cat;
   } else if(meta.tier === 2){
     // НКМК / Уран / ... — ҳар босилганда танланган; ота-шох очиқ туради
     const parent = meta.parent || 'geology';
-    CAT_STATE.expanded = parent;
+    CAT_STATE.expanded = collapse ? null : parent;
     CAT_STATE.selected = cat;
   }
 
