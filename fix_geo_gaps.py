@@ -1,23 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-navoi_geo.js — қўшни полигонлар орасидаги тирқишларни (slivers) ёпади.
+navoi_geo.js — маҳалла/туман полигонларининг топологиясини тозалайди.
 
-Муаммо: маҳалла полигонлари бир-биридан мустақил рақамланган, шу боис
-чегаралар мос тушмайди — харитада туманлар орасида очиқ жойлар кўринади.
+Муаммо: полигонлар бир-биридан мустақил рақамланган, шу боис
+  (1) чегаралар мос тушмайди → орада ОЧИҚ ЖОЙЛАР (gaps) қолади;
+  (2) айрим полигонлар бир-бирини ҚОПЛАЙДИ (overlaps) → чегарадаги
+      участка иккита маҳаллага тушиб, қайси бири олдин топилса ўша танланади.
 
-Мантиқ:
-  1. Ҳар feature шапели геометрияга ўтказилади (PowerShell'нинг {value,Count}
-     ўрами ечилади, нотўғри полигонлар make_valid билан тузатилади).
-  2. set_precision билан ҳамма координата 1e-6 (~0.11 м) тўрига ўтказилади —
-     бу GEOS'нинг snap-rounding'и, геометрия ЯРОҚЛИ бўлиб қолади.
-  3. unary_union олинади → ичидаги "тешик"лар айнан ўша очиқ жойлар.
-  4. Ҳар тешик ўзи билан энг узун чегарани бўлишадиган featureга қўшилади,
-     шунинг учун у ўралиб турган туманга тушади — харита бузилмайди.
-  5. Натижа яна тўрга ўтказилиб ёзилади.
+Босқичлар:
+  A. Тешикларни ёпиш — unary_union ичидаги ҳар тешик ЎЗИ БИЛАН ЭНГ УЗУН
+     чегарани бўлишадиган полигонга қўшилади (шу боис ўзи ўралиб турган
+     туманга тушади). Тешик қолмагунча такрорланади.
+  B. Устма-устликни ечиш — полигонлар КИЧИГИДАН БОШЛАБ навбатга қўйилади,
+     ҳар бири ўзидан аввалгилар эгаллаган жойни бўшатади. Кичик полигонлар
+     (аниқ чизилган маҳаллалар) тўлиқ сақланади, катталари (қўпол чизилган
+     чўл ОФЙлари) қирқилади. Union ўзгармайди — янги тешик пайдо бўлмайди.
+  C. Аниқлик артефактлари учун А босқичи қайта юритилади ва иккала
+     кўрсаткич ҳам 0 экани текширилади.
+
+set_precision(1e-6) — GEOS'нинг snap-rounding'и: ҳамма координата ~0.11 м
+тўрига тушади ва геометрия ЯРОҚЛИ бўлиб қолади.
 
 IDEMPOTENT: иккинчи марта ишга туширилса геометрия ўзгармайди (тешик 0,
-майдон ўша-ўша). Файл байтлари бир оз фарқ қилиши мумкин — бу фақат
-полигон тепа нуқталарининг тартиби, шакл эмас.
+устма-устлик артефакт даражасида, майдон ўша-ўша). Файл байтлари бир оз
+фарқ қилиши мумкин —
+бу фақат полигон тепа нуқталарининг тартиби, шакл эмас.
 
 `parse_kml.ps1` navoi_geo.js ни қайта яратгандан СЎНГ шуни ишлатинг:
     python fix_geo_gaps.py
@@ -25,19 +32,20 @@ IDEMPOTENT: иккинчи марта ишга туширилса геометр
 """
 import io, json, math, collections, sys
 import shapely
+from shapely.geometry import shape, mapping, Polygon
+from shapely.ops import unary_union
+from shapely import make_valid, STRtree
 
 # Windows консоли (cp1251) ўзбекча ҳарфларни чиқара олмайди — UTF-8 га ўтказамиз
 try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 except Exception: pass
-from shapely.geometry import shape, mapping, Polygon
-from shapely.ops import unary_union
-from shapely import make_valid, STRtree
 
 SRC    = 'navoi_geo.js'
 PREFIX = 'window.NAVOI_GEOJSON = '
 GRID   = 1e-6      # ~0.11 м — координата тўри
 ND     = 6         # GRID га мос ўнлик хона сони
 GROW   = 0.0006    # ~50 м — тешик атрофида қўшни излаш оралиғи
+MIN_KEEP = 0.02    # полигон майдонининг камида шунча улуши сақланиши шарт
 
 M_LAT = 111132.0
 M_LON = 111320.0 * math.cos(math.radians(41))
@@ -74,6 +82,51 @@ def to_geojson(g):
     return {'type':'MultiPolygon',
             'coordinates':[[rr(r) for r in poly] for poly in m['coordinates']]}
 
+def find_holes(geoms):
+    u = unary_union([g for g in geoms if g is not None])
+    hs = [Polygon(r) for p in polys_of(u) for r in p.interiors]
+    return [h for h in hs if h.area > 0], u
+
+def close_gaps(geoms, label):
+    """Тешик қолмагунча ёпади. Нечта ёпилганини қайтаради."""
+    closed, prev = 0, None
+    for it in range(1, 9):
+        holes, _ = find_holes(geoms)
+        if not holes:
+            print('  %s pass %d: тешик йўқ' % (label, it)); break
+        print('  %s pass %d: %d gap (%.3f km2)'
+              % (label, it, len(holes), sum(km2(h.area) for h in holes)))
+        # Snap-rounding айрим микро-тирқишларни ёпгач қайта ҳосил қилиши мумкин.
+        # Илгарилаш тўхтаса — тебранмасдан чиқамиз (қолдиқ 1 м² дан кичик).
+        if prev is not None and len(holes) >= prev:
+            print('  %s: илгарилаш йўқ — %d микро-тирқиш қолди' % (label, len(holes)))
+            break
+        prev = len(holes)
+        parts_idx, parts_geom = [], []
+        for i, g in enumerate(geoms):
+            for p in polys_of(g):
+                parts_idx.append(i); parts_geom.append(p)
+        tree = STRtree(parts_geom)
+        assign = collections.defaultdict(list)
+        for h in holes:
+            hb = h.boundary.buffer(GROW / 3)
+            best, best_len = None, 0.0
+            for j in tree.query(h.buffer(GROW)):
+                inter = parts_geom[j].boundary.intersection(hb)
+                L = inter.length if not inter.is_empty else 0.0
+                if L > best_len: best_len, best = L, parts_idx[j]
+            if best is not None: assign[best].append(h)
+        if not assign:
+            print('  %s: қўшни топилмади — тўхтадик' % label); break
+        for i, hs in assign.items():
+            geoms[i] = clean(unary_union([geoms[i]] + hs))
+        closed += sum(len(v) for v in assign.values())
+    return closed
+
+def overlap_area(geoms):
+    live = [g for g in geoms if g is not None]
+    return sum(g.area for g in live) - unary_union(live).area
+
 # ---------- юклаш ----------
 src = io.open(SRC, encoding='utf-8-sig').read()
 gj = json.loads(src[src.index('{'):src.rindex('}')+1])
@@ -86,66 +139,72 @@ for f in feats:
     if not s.is_valid: invalid += 1
     geoms.append(clean(s))
 
+_, u0 = find_holes(geoms)
+area_before = u0.area
+ov_before = overlap_area(geoms)
 print('features            :', len(feats))
 print('invalid -> repaired :', invalid)
+print('overlap before      : %.2f km2' % km2(ov_before))
+print()
 
-# ---------- тешикларни топиш ва ёпиш ----------
-# Snap-rounding ҳар ўтишда жуда кичик (бир неча м2) артефактлар қолдириши
-# мумкин, шу боис ҳеч тешик қолмагунча такрорлаймиз. Амалда 3-4 ўтиш кифоя.
-u = unary_union([g for g in geoms if g is not None])
-area_before = u.area
-total_closed, total_area = 0, 0.0
+# ---------- A: тешикларни ёпиш ----------
+print('A. тешикларни ёпиш')
+print('   ёпилди: %d' % close_gaps(geoms, 'A'))
+print()
 
-for it in range(1, 9):
-    u_now = unary_union([g for g in geoms if g is not None])
-    holes = [Polygon(r) for p in polys_of(u_now) for r in p.interiors]
-    holes = [h for h in holes if h.area > 0]
-    if not holes:
-        print('pass %d              : тешик йўқ — тугади' % it)
-        break
-    print('pass %d              : %d gap (%.3f km2)' % (it, len(holes), sum(km2(h.area) for h in holes)))
+# ---------- B: устма-устликни ечиш ----------
+# Қолдиқ snap-rounding артефактидан иборат бўлса — тегмаймиз, акс ҳолда
+# ҳар ишга туширишда полигонлар қайта қирқилиб, файл беҳуда шишаверади.
+OV_SKIP = 0.01   # km2
+print('B. устма-устликни ечиш (кичик полигон устувор)')
+if km2(ov_before) < OV_SKIP:
+    print('   қолдиқ %.4f km2 — артефакт даражасида, ўтказиб юборилди' % km2(ov_before))
+    order = []
+else:
+    order = sorted((i for i, g in enumerate(geoms) if g is not None),
+                   key=lambda i: geoms[i].area)
+done_geom = []
+trimmed, protected = 0, []
+for i in order:
+    g = geoms[i]
+    if done_geom:
+        hits = [done_geom[j] for j in STRtree(done_geom).query(g)]
+        if hits:
+            cut = clean(g.difference(unary_union(hits)))
+            if cut is None or cut.is_empty or cut.area < g.area * MIN_KEEP:
+                # Полигон бутунлай йўқолиб кетмасин — қирқмаймиз
+                protected.append(i)
+            elif cut.area < g.area - 1e-15:
+                g = cut; trimmed += 1
+    geoms[i] = g
+    done_geom.append(g)
+print('   қирқилди: %d полигон' % trimmed)
+if protected:
+    print('   тегилмади (йўқолиб кетарди): %d — %s'
+          % (len(protected), ', '.join(feats[i]['properties'].get('mfy','?') for i in protected[:6])))
+print()
 
-    parts_idx, parts_geom = [], []
-    for i, g in enumerate(geoms):
-        for p in polys_of(g):
-            parts_idx.append(i); parts_geom.append(p)
-    tree = STRtree(parts_geom)
-
-    assign = collections.defaultdict(list)
-    unassigned = 0
-    for h in holes:
-        hb = h.boundary.buffer(GROW / 3)
-        best, best_len = None, 0.0
-        for j in tree.query(h.buffer(GROW)):
-            inter = parts_geom[j].boundary.intersection(hb)
-            L = inter.length if not inter.is_empty else 0.0
-            if L > best_len: best_len, best = L, parts_idx[j]
-        if best is None: unassigned += 1
-        else: assign[best].append(h)
-
-    if not assign:
-        print('  қўшни топилмади — тўхтадик (%d gap қолди)' % unassigned)
-        break
-    for i, hs in assign.items():
-        geoms[i] = clean(unary_union([geoms[i]] + hs))
-    total_closed += sum(len(v) for v in assign.values())
-    total_area   += sum(km2(h.area) for h in holes)
-
-print('gaps closed (total) :', total_closed)
+# ---------- C: артефактларни тозалаш ----------
+print('C. қолдиқ тешикларни ёпиш')
+print('   ёпилди: %d' % close_gaps(geoms, 'C'))
+print()
 
 # ---------- текшириш ----------
-u2 = unary_union([g for g in geoms if g is not None])
-holes2 = [Polygon(r) for p in polys_of(u2) for r in p.interiors if Polygon(r).area > 0]
+holes2, u2 = find_holes(geoms)
 bad = sum(1 for g in geoms if g is not None and not g.is_valid)
-print('gaps remaining      :', len(holes2), '(%.4f km2)' % sum(km2(h.area) for h in holes2))
-print('invalid geometries  :', bad)
+ov_after = overlap_area(geoms)
+print('=== НАТИЖА ===')
+print('gaps remaining      : %d (%.4f km2)' % (len(holes2), sum(km2(h.area) for h in holes2)))
+print('overlap remaining   : %.4f km2  (аввал %.2f)' % (km2(ov_after), km2(ov_before)))
+print('invalid geometries  : %d' % bad)
 print('area before/after   : %.1f / %.1f km2' % (km2(area_before), km2(u2.area)))
+print('empty features      : %d' % sum(1 for g in geoms if g is None or g.is_empty))
 
 # ---------- ёзиш ----------
 out = []
 for f, g in zip(feats, geoms):
     nf = {'properties': f['properties'], 'type': 'Feature'}
-    nf['geometry'] = to_geojson(g) if g is not None else f['geometry']
+    nf['geometry'] = to_geojson(g) if (g is not None and not g.is_empty) else f['geometry']
     out.append(nf)
 txt = PREFIX + json.dumps({'features': out, 'type': 'FeatureCollection'},
                           ensure_ascii=False, separators=(',', ':')) + ';'
