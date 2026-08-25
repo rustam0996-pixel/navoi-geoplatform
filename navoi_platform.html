@@ -1382,6 +1382,9 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
   background:linear-gradient(180deg,#f8fafc,#f1f5f9);display:flex;flex-direction:column;gap:7px;
 }
 .sp-stage:empty{display:none}
+/* Қидирув режимида паст томондаги "Босқич бўйича фильтр" виджети натижа сонини
+   сиқиб қўймасин — қидирув панелининг ўз фильтрлари бор. */
+body.search-mode .sp-stage{display:none !important}
 .sp-stage-label{font-size:9.5px;font-weight:800;color:#1e293b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .sp-stage-label .sp-stage-count{font-size:10px;color:#475569;background:#fff;border:1px solid #e2e8f0;padding:1px 6px;border-radius:6px;font-weight:800;text-transform:none}
 .sp-stage-chips{display:flex;flex-wrap:wrap;gap:4px}
@@ -2972,7 +2975,7 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
 
 <script src="leaflet.js"></script>
 <script src="changed_data_v4.js"></script>
-<script src="sections_data.js?v=20260521-cat-fix"></script>
+<script src="sections_data.js?v=20260526-perf-cache"></script>
 <script src="source_tags_index.js?v=phaseE-20260427"></script>
 <script src="changed_extra.js"></script>
 <script src="navoi_geo.js"></script>
@@ -4447,7 +4450,7 @@ function renderStageFilter(){
       STAGE_STATE.selected = el.dataset.stage;
       renderStageFilter();
       if(typeof renderBubbles === 'function') renderBubbles();
-      if(currentDistrict && typeof renderPlotPoints === 'function') renderPlotPoints();
+      if(currentDistrict && typeof requestRenderPlotPoints === 'function') requestRenderPlotPoints();
       if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
       if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
       if(typeof refreshExportBtn === 'function') refreshExportBtn();
@@ -4459,7 +4462,7 @@ function renderStageFilter(){
       if(typeof SOURCE_TAG_STATE !== 'undefined') SOURCE_TAG_STATE.selected = el.dataset.source;
       renderStageFilter();
       if(typeof renderBubbles === 'function') renderBubbles();
-      if(currentDistrict && typeof renderPlotPoints === 'function') renderPlotPoints();
+      if(currentDistrict && typeof requestRenderPlotPoints === 'function') requestRenderPlotPoints();
       if(currentDistrict && typeof renderDrawer === 'function') renderDrawer(currentDistrict);
       if(typeof renderFilterCrumb === 'function') renderFilterCrumb();
       if(typeof refreshExportBtn === 'function') refreshExportBtn();
@@ -6014,7 +6017,8 @@ function renderBubbles(){
     mk.addTo(map);
     bubbleMarkers.push(mk);
   }
-  renderPlotPoints();
+  if(typeof requestRenderPlotPoints === 'function') requestRenderPlotPoints();
+  else renderPlotPoints();
 }
 
 function plotPointCenter(points){
@@ -6061,25 +6065,47 @@ function __pointInPolygon(x, y, poly){
   }
   return true;
 }
+/* Нуқта-полигон қидируви LRU кеш билан. Координаталар ҳар сафар бир хил
+   ёзувлар учун такрорланади (мисол: ҳар бир рендерда юзлаб одатдаги марказлар).
+   Кеш ключи 5 ўнлик хонагача яхлитланган — амалда жуда яқин нуқталар бир
+   натижани олади. */
+const __RGL_CACHE = new Map();
+const __RGL_CACHE_MAX = 6000;
 function resolveGeoLocation(center){
   if(!center) return null;
   __ensureGeoBBoxCache();
   if(!__geoFeatureBBox) return null;
   const lat = center[0], lon = center[1];
+  if(!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  const key = lat.toFixed(5) + ',' + lon.toFixed(5);
+  if(__RGL_CACHE.has(key)){
+    const hit = __RGL_CACHE.get(key);
+    __RGL_CACHE.delete(key);
+    __RGL_CACHE.set(key, hit);
+    return hit;
+  }
+  let found = null;
   for(const entry of __geoFeatureBBox){
     if(lon < entry.minX || lon > entry.maxX || lat < entry.minY || lat > entry.maxY) continue;
     for(const poly of entry.polys){
       if(__pointInPolygon(lon, lat, poly)){
         const props = entry.feature.properties || {};
-        return {
+        found = {
           distKey: geoDistKey(props.district),
           mfy: props.mfy || '',
           feature: entry.feature
         };
+        break;
       }
     }
+    if(found) break;
   }
-  return null;
+  if(__RGL_CACHE.size >= __RGL_CACHE_MAX){
+    const oldestKey = __RGL_CACHE.keys().next().value;
+    if(oldestKey !== undefined) __RGL_CACHE.delete(oldestKey);
+  }
+  __RGL_CACHE.set(key, found);
+  return found;
 }
 function cleanPlotText(v){
   return String(v == null ? '' : v).replace(/\s+/g,' ').trim();
@@ -7280,6 +7306,30 @@ function renderPlotPoints(){
   });
 }
 
+/* renderPlotPoints оғир операция. zoomend, moveend ва турли филтр ўзгаришлари
+   уни кетма-кет чақириши мумкин. RAF орқали бирлаштириб, бир анимация кадрида
+   фақат бир мартта бажарилишини таъминлаймиз. */
+let __rppPending = false;
+function requestRenderPlotPoints(){
+  if(__rppPending) return;
+  __rppPending = true;
+  const run = () => {
+    __rppPending = false;
+    try{ renderPlotPoints(); }catch(e){ console.warn('renderPlotPoints failed', e); }
+  };
+  if(typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+  else setTimeout(run, 16);
+}
+window.requestRenderPlotPoints = requestRenderPlotPoints;
+
+/* Маълумотлар янгиланганда (мисол: янги ёзув Firebase'дан келди) геолокатция
+   кешини тозалаймиз. Координата кеши эса манба матнга боғлиқ — тоза қолади. */
+function invalidatePlotCaches(){
+  try{ __RGL_CACHE.clear(); }catch(e){}
+  // PCP кешини сақлаймиз — координата матнлари деярли ўзгармайди
+}
+window.invalidatePlotCaches = invalidatePlotCaches;
+
 /* Re-cluster plot points when zoom changes so clusters split/merge smoothly. */
 if(typeof window !== 'undefined' && !window.__plotZoomHandlerBound){
   window.__plotZoomHandlerBound = true;
@@ -7288,7 +7338,7 @@ if(typeof window !== 'undefined' && !window.__plotZoomHandlerBound){
       if(typeof map !== 'undefined' && map && !map.__plotZoomBound){
         map.__plotZoomBound = true;
         map.on('zoomend', () => {
-          if(currentDistrict) renderPlotPoints();
+          if(currentDistrict) requestRenderPlotPoints();
         });
       } else {
         setTimeout(bind, 300);
@@ -7842,7 +7892,7 @@ function initMap(){
   // Hover hint: auto-dismiss on any pan/zoom. Locked preview is also dismissed
   // (we'd lose the pin→card anchor once the map moves).
   map.on('zoomstart movestart dragstart', () => hidePlotHoverCard({force:true}));
-  map.on('zoomend', ()=>renderPlotPoints());
+  map.on('zoomend', ()=>requestRenderPlotPoints());
   // Click on empty map background → close locked card
   map.on('click', () => {
     const el = document.getElementById('plotHoverCard');
@@ -10716,7 +10766,13 @@ function __navoiRangeFilter(points){
   }
   return out;
 }
-function parseCoordinatePoints(raw){
+/* parseCoordinatePoints оғир (regex + цикл). Бир хил матн юзлаб ёзувларда
+   такрорланади (ҳар йил/туман кесимида қайта чақирилади). LRU кеш билан
+   натижаларни қайта фойдаланамиз. Кеш ўлчами чегараланган — хотира оқиб
+   кетмайди. */
+const __PCP_CACHE = new Map();
+const __PCP_CACHE_MAX = 4000;
+function __parseCoordinatePointsImpl(raw){
   const text = __normCoordText(raw);
   if(!text) return [];
   const points = [];
@@ -10787,6 +10843,25 @@ function parseCoordinatePoints(raw){
     else if(b >= 35 && b <= 50 && a >= 55 && a <= 75) points.push({lat:b, lon:a});
   }
   return points.filter(p=>Number.isFinite(p.lat) && Number.isFinite(p.lon));
+}
+function parseCoordinatePoints(raw){
+  const key = (raw == null) ? '' : String(raw);
+  if(!key) return [];
+  const hit = __PCP_CACHE.get(key);
+  if(hit){
+    // LRU touch: ўчириб қайта қўйиш кейинроқ юқорида туриши учун
+    __PCP_CACHE.delete(key);
+    __PCP_CACHE.set(key, hit);
+    return hit;
+  }
+  const result = __parseCoordinatePointsImpl(key);
+  if(__PCP_CACHE.size >= __PCP_CACHE_MAX){
+    // Энг эски ёзувни олиб ташлаймиз (Map insertion order бўйича биринчиси)
+    const oldestKey = __PCP_CACHE.keys().next().value;
+    if(oldestKey !== undefined) __PCP_CACHE.delete(oldestKey);
+  }
+  __PCP_CACHE.set(key, result);
+  return result;
 }
 function buildEarthKml(title, description, points){
   if(!points.length) return '';
