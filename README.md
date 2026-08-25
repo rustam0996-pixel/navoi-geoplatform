@@ -14,6 +14,7 @@
 | `navoi_platform.html` | Асосий саҳифа (UI, логика, Firebase интеграцияси) |
 | `sections_data.js` | Бўлимлар бўйича маълумотлар |
 | `navoi_geo.js` | Туманлар чегаралари (GeoJSON) |
+| `fix_geo_gaps.py` | Чегаралардаги тирқишларни ёпади — `parse_kml.ps1` дан кейин ишлатилади |
 | `changed_data.js`, `changed_extra.js` | Ўзгартирилган ер тоифалари |
 | `platform_stats.js` | Умумий статистика |
 | `leaflet.js`, `leaflet.css` | Харита кутубхонаси |
