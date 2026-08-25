@@ -2975,12 +2975,15 @@ body[data-theme="dark"] *::-webkit-scrollbar-thumb{ background:#33405e; backgrou
   Рўйхат шаклида кўриш →
 </button>
 
+<!-- ДИҚҚАТ: vercel.json .js файлларга 1 йиллик immutable кэш қўяди.
+     Маълумот файли ўзгарса ?v= албатта янгиланиши шарт, акс ҳолда
+     фойдаланувчилар эски нусхани кўравериб қолади. -->
 <script src="leaflet.js"></script>
-<script src="changed_data_v4.js"></script>
+<script src="changed_data_v4.js?v=20260825-topology"></script>
 <script src="sections_data.js?v=20260526-perf-cache"></script>
 <script src="source_tags_index.js?v=phaseE-20260427"></script>
-<script src="changed_extra.js"></script>
-<script src="navoi_geo.js"></script>
+<script src="changed_extra.js?v=20260825-topology"></script>
+<script src="navoi_geo.js?v=20260825-topology"></script>
 
 <script>
 /* ================= CONFIG ================= */

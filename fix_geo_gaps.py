@@ -66,10 +66,21 @@ def polys_of(g):
     return []
 
 def clean(g):
-    """Яроқли + тўрга ўтказилган полигон(лар) қайтаради."""
+    """Яроқли + айнан ЁЗИЛАДИГАН аниқликдаги полигон(лар) қайтаради.
+
+    Муҳим: фақат set_precision етарли эмас — файлга ёзишдаги ND хонали
+    яхлитлаш ўзи янги микро-тирқиш ҳосил қилади. Шу боис геометрияни шу
+    ерда round-trip қиламиз (ёзиш → қайта ўқиш), токи ўлчовларимиз
+    браузер кўрадиган ҳақиқий геометрияга тегишли бўлсин.
+    """
     if g is None or g.is_empty: return None
     if not g.is_valid: g = make_valid(g)
     g = shapely.set_precision(g, GRID)
+    if not g.is_valid: g = make_valid(g)
+    parts = polys_of(g)
+    if not parts: return None
+    g = unary_union(parts)
+    g = shape(to_geojson(g))          # ёзилиш аниқлигига келтирамиз
     if not g.is_valid: g = make_valid(g)
     parts = polys_of(g)
     return unary_union(parts) if parts else None
