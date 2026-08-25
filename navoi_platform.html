@@ -383,6 +383,9 @@ body.has-selection .home-pill{display:inline-flex}
 .cat-hero-wrap:hover>.cat-mega,
 .cat-hero-wrap:focus-within>.cat-mega,
 .cat-hero-wrap.is-open>.cat-mega{opacity:1;visibility:visible;pointer-events:auto;transform:none}
+/* Карточка босиб ёпилганда — мишка ҳали устида бўлса ҳам ёпиқ турсин.
+   Шу боис бу қоида :hover қоидасидан КЕЙИН туриши шарт. */
+.cat-hero-wrap.is-dismissed>.cat-mega{opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-10px) scale(.97)}
 /* Кичик учбурчак — панел қайси карточкадан чиққанини кўрсатади */
 .cat-hero-wrap::before{
   content:"";position:absolute;left:30px;top:calc(100% + 4px);width:13px;height:13px;z-index:71;
@@ -393,6 +396,7 @@ body.has-selection .home-pill{display:inline-flex}
 .cat-hero-wrap:hover::before,
 .cat-hero-wrap:focus-within::before,
 .cat-hero-wrap.is-open::before{opacity:1;transform:rotate(45deg) scale(1)}
+.cat-hero-wrap.is-dismissed::before{opacity:0}
 
 /* --- Панел боши: умумий рақамлар --- */
 .cat-mega-head{
@@ -503,12 +507,10 @@ body.has-selection .home-pill{display:inline-flex}
 @media (max-width:720px){
   .cat-tree .cat-hero-wrap{max-width:none;flex:1 1 100%}
 }
-/* Панелни фақат ҳеч қандай hover қила оладиган қурилма йўқ бўлсагина
-   яширамиз (соф сенсорли экран). Сенсорли ноутбукда мишка ҳам бор —
-   у ерда (hover:none) рост бўлиши мумкин, шу боис any-hover ҳам текширилади,
-   акс ҳолда мишка борлигига қарамай панел кўринмай қоларди. */
+/* Сенсорли экранда панел энди карточкага тегиниш билан очилади, шу боис
+   уни яширмаймиз. Фақат hover'га боғлиқ «кўприк» кераксиз. */
 @media (hover:none) and (any-hover:none){
-  .cat-mega,.cat-hero-wrap::after,.cat-hero-wrap::before{display:none!important}
+  .cat-hero-wrap::after{display:none!important}
 }
 
 /* ========== PROPOSAL PANEL ========== */
@@ -5622,28 +5624,70 @@ function __wireCatMega(host){
   // сўнг қайта кўрсатилган) панел ўз-ўзидан очилиб қолмаслиги керак.
   if(__megaOpen && wrap.matches(':hover')) wrap.classList.add('is-open');
   else __megaOpen = false;
+
   let closeT = null;
-  wrap.addEventListener('mouseenter', () => {
-    clearTimeout(closeT);
-    __megaOpen = true;
+  let openedAt = 0;
+  const openPanel = () => {
+    wrap.classList.remove('is-dismissed');
     wrap.classList.add('is-open');
-  });
+    __megaOpen = true;
+    openedAt = Date.now();
+  };
+  /* Десктопда CSS :hover ҳам панелни очади — шунчаки классни олиб ташлаш
+     мишка карточка устида турганда ёпмайди. Шу боис is-dismissed класси
+     (у :hover қоидасидан кейин туради ва уни босади). */
+  const closePanel = () => {
+    wrap.classList.remove('is-open');
+    wrap.classList.add('is-dismissed');
+    __megaOpen = false;
+  };
+  const resetPanel = () => {
+    wrap.classList.remove('is-open');
+    wrap.classList.remove('is-dismissed');
+    __megaOpen = false;
+  };
+
+  wrap.addEventListener('mouseenter', () => { clearTimeout(closeT); openPanel(); });
   wrap.addEventListener('mouseleave', () => {
     clearTimeout(closeT);
     // Кичик кечикиш — мишка панелга ўтаётганда дарҳол ёпилиб қолмасин
-    closeT = setTimeout(() => {
-      __megaOpen = false;
-      wrap.classList.remove('is-open');
-    }, 160);
+    closeT = setTimeout(resetPanel, 160);
   });
+
+  /* Карточкани босиш — ўша панелни очади/ёпади. Аввал у ички tier
+     қаторларини очарди, энди эса hover'даги билан айнан бир хил панел.
+     Сенсорли қурилмада бир тегиниш кетма-кет mouseenter + click беради:
+     шу сабабли янги очилган панелни (400ms) ўша тегиниш ёпиб юбормайди. */
+  const hero = wrap.querySelector('.cat-hero');
+  if(hero){
+    hero.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if(wrap.classList.contains('is-open') && (Date.now() - openedAt) > 400) closePanel();
+      else openPanel();
+    });
+  }
+
   // Тоифа танлаш: панел ичидаги ҳар қандай тугма
   wrap.querySelectorAll('.cat-mega-item,.cat-mega-grp,.cat-mega-reset').forEach(el => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      __megaOpen = false;
-      wrap.classList.remove('is-open');
+      resetPanel();
       onCategoryClick(el.dataset.cat, {collapse:true});
+    });
+  });
+}
+/* Ташқарига босилса панел ёпилади — сенсорли қурилмада ягона ёпиш йўли
+   (у ерда mouseleave йўқ). */
+if(typeof window !== 'undefined' && !window.__catMegaOutsideBound){
+  window.__catMegaOutsideBound = true;
+  document.addEventListener('click', (e) => {
+    document.querySelectorAll('.cat-hero-wrap.is-open').forEach(w => {
+      if(w.contains(e.target)) return;
+      w.classList.remove('is-open');
+      w.classList.remove('is-dismissed');
+      __megaOpen = false;
     });
   });
 }
@@ -5719,7 +5763,9 @@ function renderKpis(){
         ${tier2Biz}
       </div>
     </div>`;
-  host.querySelectorAll('.cat').forEach(el => {
+  // Hero карточка алоҳида: у энди фильтрни ўзгартирмайди, балки мега-панелни
+  // очади/ёпади (қаранг: __wireCatMega). Қолган катаклар эски ҳолича.
+  host.querySelectorAll('.cat:not(.cat-hero)').forEach(el => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
       onCategoryClick(el.dataset.cat);
@@ -7847,8 +7893,9 @@ function renderDrawerCategoryBreakdown(distKey){
       if(stats[k].count === 0) return;
       if(typeof CAT_STATE !== 'undefined'){
         CAT_STATE.selected = k;
-        const parent = (CATEGORY_META[k] && CATEGORY_META[k].parent) || null;
-        CAT_STATE.expanded = parent;
+        // Тепадаги ички tier қаторларини очмаймиз — кичик бўлимлар энди
+        // фақат «Жами ер майдонлари» панелида кўрсатилади.
+        CAT_STATE.expanded = null;
       }
       if(typeof renderKpis === 'function') renderKpis();
       if(typeof renderBubbles === 'function') renderBubbles();
