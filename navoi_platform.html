@@ -1137,17 +1137,29 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
 
 /* District bubble markers (like the screenshot) */
 .dist-bubble{
-  background:radial-gradient(circle at 35% 30%,#6ea6ff 0%,var(--brand-600) 55%,var(--brand) 100%);
+  position:relative;
+  background:radial-gradient(circle at 34% 26%,#7db0ff 0%,var(--brand-600) 48%,#123a9e 100%);
   color:#fff;border-radius:50%;font-weight:800;text-align:center;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  border:3px solid rgba(255,255,255,.95);
-  box-shadow:0 8px 22px -6px rgba(29,78,216,.7), 0 3px 10px -2px rgba(0,0,0,.25);
-  cursor:pointer;transition:all .25s cubic-bezier(.2,.9,.3,1.2);
+  border:2px solid rgba(255,255,255,.92);
+  /* Уч қатлам: ички қирра ялтироғи + яқин контакт сояси + узоқ рангли ёйилиш */
+  box-shadow:inset 0 2px 5px rgba(255,255,255,.32),
+             inset 0 -3px 8px rgba(4,16,54,.34),
+             0 3px 8px -2px rgba(4,16,54,.4),
+             0 14px 30px -10px rgba(18,58,158,.6);
+  cursor:pointer;transition:transform .25s cubic-bezier(.2,.9,.3,1.2), box-shadow .25s ease;
   font-family:inherit;line-height:1;
+  text-shadow:0 1px 2px rgba(4,16,54,.45);
 }
-.dist-bubble:hover{transform:scale(1.12);box-shadow:0 12px 28px -8px rgba(29,78,216,.8),0 4px 12px -2px rgba(0,0,0,.3)}
-.dist-bubble .num{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
-.dist-bubble .lbl{font-size:9.5px;font-weight:600;opacity:.92;margin-top:1px;text-transform:uppercase;letter-spacing:.3px}
+.dist-bubble:hover{
+  transform:scale(1.1);
+  box-shadow:inset 0 2px 5px rgba(255,255,255,.4),
+             inset 0 -3px 8px rgba(4,16,54,.3),
+             0 4px 10px -2px rgba(4,16,54,.42),
+             0 20px 40px -10px rgba(18,58,158,.7);
+}
+.dist-bubble .num{font-size:17px;font-weight:850;font-variant-numeric:tabular-nums;letter-spacing:-.4px}
+.dist-bubble .lbl{font-size:9px;font-weight:700;opacity:.9;margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
 .dist-bubble.highlight{background:radial-gradient(circle at 35% 30%,#fda4af 0%,#e11d48 55%,#9f1239 100%);box-shadow:0 12px 28px -8px rgba(225,29,72,.7),0 4px 12px -2px rgba(0,0,0,.3)}
 
 .dist-label{
@@ -3595,23 +3607,43 @@ function buildCategoryStats(){
 const CAT_STATE = { expanded: null, selected: 'all' };
 
 /* Districts present in the KMZ — canonical keys (latin) to Cyrillic labels */
+/* Туман ранглари. Аввал hsl(hue 72% 55%) формуласи ишлатиларди — ҳуслар
+   доира бўйлаб тенг тарқалиб, натижа камалакка ўхшарди ва 22% шаффофликда
+   ювилган пастелга айланарди. Энди ҳар туманга танланган, ўзаро уйғун
+   (босиқ-жавоҳир) ранг берилган: ёрқинлиги бир хилга яқин, шу боис бирорта
+   туман бошқасидан «бақирмайди», лекин фарқлаш осон.
+   hue сақланди — эски код йўллари ва фолбэк учун. */
 const DISTRICTS = [
-  {key:"Ғозғон шаҳри",   label:'Ғозғон шаҳри',    type:'city',     hue:200},
-  {key:"Кармана тумани",    label:'Кармана тумани',  type:'district', hue:220},
-  {key:"Конимех тумани",    label:'Конимех тумани',  type:'district', hue:260},
-  {key:"Навбаҳор тумани",    label:'Навбаҳор тумани', type:'district', hue:290},
-  {key:"Навоий шаҳар",     label:'Навоий шаҳар',    type:'city',     hue:10},
-  {key:"Нурота тумани",      label:'Нурота тумани',   type:'district', hue:35},
-  {key:"Қизилтепа тумани",  label:'Қизилтепа тумани',type:'district', hue:55},
-  {key:"Томди тумани",      label:'Томди тумани',    type:'district', hue:85},
-  {key:"Учқудуқ тумани",   label:'Учқудуқ тумани',  type:'district', hue:130},
-  {key:"Хатирчи тумани",    label:'Хатирчи тумани',  type:'district', hue:160},
-  {key:"Зарафшон шаҳри",  label:'Зарафшон шаҳри',  type:'city',     hue:340}
+  {key:"Ғозғон шаҳри",   label:'Ғозғон шаҳри',    type:'city',     hue:200, color:'#2f6f9f'},
+  {key:"Кармана тумани",    label:'Кармана тумани',  type:'district', hue:220, color:'#3b6bb5'},
+  {key:"Конимех тумани",    label:'Конимех тумани',  type:'district', hue:260, color:'#6b5fb0'},
+  {key:"Навбаҳор тумани",    label:'Навбаҳор тумани', type:'district', hue:290, color:'#8a5aa8'},
+  {key:"Навоий шаҳар",     label:'Навоий шаҳар',    type:'city',     hue:10,  color:'#b8556b'},
+  {key:"Нурота тумани",      label:'Нурота тумани',   type:'district', hue:35,  color:'#c07a45'},
+  {key:"Қизилтепа тумани",  label:'Қизилтепа тумани',type:'district', hue:55,  color:'#a58a3c'},
+  {key:"Томди тумани",      label:'Томди тумани',    type:'district', hue:85,  color:'#6f9247'},
+  {key:"Учқудуқ тумани",   label:'Учқудуқ тумани',  type:'district', hue:130, color:'#3f8f74'},
+  {key:"Хатирчи тумани",    label:'Хатирчи тумани',  type:'district', hue:160, color:'#3d8b93'},
+  {key:"Зарафшон шаҳри",  label:'Зарафшон шаҳри',  type:'city',     hue:340, color:'#a44e88'}
 ];
 
 const distByKey = Object.fromEntries(DISTRICTS.map(d=>[d.key,d]));
-const distColor = d => `hsl(${d.hue} 72% 55%)`;
-const distColorSoft = d => `hsl(${d.hue} 72% 55% / .28)`;
+const distColor = d => (d && d.color) ? d.color : `hsl(${d.hue} 72% 55%)`;
+/* Рангни қораga қараб тўқлаштиради (0..1). Харита Canvas renderer'да
+   чизилади — у ерда CSS'нинг color-mix() и УМУМАН ишламайди (Canvas
+   strokeStyle уни танимай, чегара рангсиз қолади). Шу боис JS'да
+   ҳисоблаймиз. */
+function shadeHex(hex, amount){
+  if(!hex || hex[0] !== '#') return hex;
+  let h = hex.slice(1);
+  if(h.length === 3) h = h.split('').map(c=>c+c).join('');
+  const k = 1 - Math.max(0, Math.min(1, amount));
+  const ch = i => Math.round(parseInt(h.substr(i,2),16) * k);
+  return 'rgb(' + ch(0) + ',' + ch(2) + ',' + ch(4) + ')';
+}
+const distColorSoft = d => (d && d.color)
+  ? hexToRgba(d.color, .28)
+  : `hsl(${d.hue} 72% 55% / .28)`;
 
 /* Latin GEO → Cyrillic key mapping (navoi_geo.js uses Latin district names) */
 const GEO_LATIN_MAP = {
@@ -6401,10 +6433,11 @@ function renderBubbles(){
       ? `radial-gradient(circle at 35% 30%,#fda4af 0%,#e11d48 55%,#9f1239 100%)`
       : (focused || catFilter || stageFilter || sourceFilter)
         ? `radial-gradient(circle at 35% 30%, ${hexToRgba(col,.85)} 0%, ${col} 55%, ${col} 100%)`
-        : `radial-gradient(circle at 35% 30%,#6ea6ff 0%,#2563eb 55%,#1d4ed8 100%)`;
+        : `radial-gradient(circle at 34% 26%,#7db0ff 0%,#2563eb 48%,#123a9e 100%)`;
+    // Уч қатламли соя — CSS'даги .dist-bubble билан бир хил тилда
     const shadow = isHi
-      ? '0 12px 28px -8px rgba(225,29,72,.7),0 4px 12px -2px rgba(0,0,0,.3)'
-      : `0 8px 22px -6px ${hexToRgba(col,.55)}, 0 3px 10px -2px rgba(0,0,0,.22)`;
+      ? 'inset 0 2px 5px rgba(255,255,255,.32), inset 0 -3px 8px rgba(80,4,28,.34), 0 3px 8px -2px rgba(60,4,22,.42), 0 16px 34px -10px rgba(190,20,60,.62)'
+      : `inset 0 2px 5px rgba(255,255,255,.32), inset 0 -3px 8px rgba(4,16,54,.34), 0 3px 8px -2px rgba(4,16,54,.4), 0 14px 30px -10px ${hexToRgba(col,.6)}`;
     const html = `<div class="dist-bubble" style="width:${size}px;height:${size}px;background:${bgA};box-shadow:${shadow}">
       <div class="num">${fmt(count)}</div>
       <div class="lbl">${d.label.split(' ')[0]}</div>
@@ -7815,10 +7848,13 @@ function styleForFeature(f){
   if(focused && !hasData){
     return Object.assign({ color:'#cbd5e1', weight:1.2, fillColor:'#e2e8f0', fillOpacity:0.30, opacity:.7 }, _common);
   }
-  // Overview default — stroke = fill color → қўшнилар орасида оқ зазор қолмайди
+  // Overview default — stroke = fill color → қўшнилар орасида оқ зазор қолмайди.
+  // Тўлдириш 0.22 да ювилган пастел бўлиб кўринарди; 0.30 да ҳудуд аниқ
+  // ўқилади. Чегара эса ўша рангнинг тўқроқ вариантида — қирралар тиниқ.
   const c = d ? distColor(d) : '#94a3b8';
+  const edge = d ? shadeHex(c, .28) : '#7c8ba0';
   return Object.assign({
-    color: c, weight: 1.8, fillColor: c, fillOpacity: 0.22, opacity: 1
+    color: edge, weight: 1.6, fillColor: c, fillOpacity: 0.30, opacity: 1
   }, _common);
 }
 function renderMfyLayer(){
