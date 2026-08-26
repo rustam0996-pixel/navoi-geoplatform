@@ -3425,11 +3425,11 @@ body[data-theme="dark"] .rs-table tbody tr{background:var(--panel)}
      Маълумот файли ўзгарса ?v= албатта янгиланиши шарт, акс ҳолда
      фойдаланувчилар эски нусхани кўравериб қолади. -->
 <script src="leaflet.js"></script>
-<script src="changed_data_v4.js?v=20260825-topology"></script>
-<script src="sections_data.js?v=20260526-perf-cache"></script>
-<script src="source_tags_index.js?v=phaseE-20260427"></script>
-<script src="changed_extra.js?v=20260825-topology"></script>
-<script src="navoi_geo.js?v=20260825-topology"></script>
+<script src="changed_data_v4.js?v=20260826-data"></script>
+<script src="sections_data.js?v=20260826-data"></script>
+<script src="source_tags_index.js?v=20260826-data"></script>
+<script src="changed_extra.js?v=20260826-data"></script>
+<script src="navoi_geo.js?v=20260826-data"></script>
 
 <script>
 /* ================= CONFIG ================= */
@@ -3909,7 +3909,23 @@ function toNum(v){
   return isFinite(n) ? n : 0;
 }
 function buildChangedByYear(){
-  const raw = (typeof CHANGED_RAW !== 'undefined') ? CHANGED_RAW : [];
+  /* Манба: CHANGED_RAW (changed_data_v4.js). Аммо у файл .gitignore'да —
+     деплойга бормайди, шу боис продакшнда CHANGED_RAW бўш бўлади ва йиллар
+     рўйхати умуман тўлмасди (харита ва рақамлар ишлаган, фақат йил танлаш
+     панели бўш қоларди). Бўш бўлса — асосий манба SECTIONS_RAW.changed'дан
+     ўқиймиз; у ерда ҳам туман ва йил бор. */
+  let raw = (typeof CHANGED_RAW !== 'undefined') ? CHANGED_RAW : [];
+  if(!raw.length && typeof SECTIONS_RAW !== 'undefined' && SECTIONS_RAW.changed){
+    raw = SECTIONS_RAW.changed.map(r => ({
+      t: r['Ҳудуд номи'] || '',
+      y: (typeof rowYear === 'function') ? rowYear('changed', r) : '',
+      g: r['Гектар']
+    }));
+  }
+  // Аввалги ҳисобни тозалаймиз. Бўлмаса иккинчи чақирувда рақамлар аввалгисига
+  // қўшилиб, икки баробар кўринади (одатда бир марта чақирилгани учун
+  // сезилмасди, лекин заҳира йўл қўшилгач бу хавф ортади).
+  for(const k of Object.keys(CHANGED_BY_YEAR)) delete CHANGED_BY_YEAR[k];
   const yearSet = new Set();
   for(const r of raw){
     const dRaw = (r.t||'').trim();
@@ -6091,14 +6107,24 @@ function revealIn(host, selector, opts){
   const o = opts || {};
   const cls = o.cls || 'reveal';
   const maxStep = o.maxStep == null ? 12 : o.maxStep;
-  const nodes = host.querySelectorAll(selector);
   if(__reducedMotion()) return;
+  const all = host.querySelectorAll(selector);
+  // Анимацияни фақат биринчи ЛИМИТ тагача қўллаймиз: қолгани барибир
+  // экрандан ташқарида ва --i maxStep'да тўхтагани учун бир хил кечикади.
+  // 766 карточкани жонлантириш фойда бермайди, лекин қиммат туради.
+  const limit = o.limit == null ? 60 : o.limit;
+  const nodes = Array.prototype.slice.call(all, 0, limit);
+  // Қайта бошлаш керак бўлганларни ажратамиз
+  const restart = [];
   nodes.forEach((el, i) => {
     el.style.setProperty('--i', Math.min(i, maxStep));
-    el.classList.remove(cls);
-    void el.offsetWidth;          // reflow — анимация қайта бошлансин
-    el.classList.add(cls);
+    if(el.classList.contains(cls)){ el.classList.remove(cls); restart.push(el); }
   });
+  // МУҲИМ: reflow ҳар элемент учун эмас, БИР МАРТА. Аввал ҳар биттасида
+  // void el.offsetWidth бор эди — 766 карточкада бу 19 сониялик layout
+  // thrashing'га айланарди.
+  if(restart.length) void host.offsetWidth;
+  nodes.forEach(el => el.classList.add(cls));
 }
 window.revealIn = revealIn;
 
