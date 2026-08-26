@@ -2734,6 +2734,27 @@ body[data-theme="dark"] .rd-yes{color:#5fd48b}
 .rd-body{padding:14px 18px 18px;overflow-y:auto}
 @media (max-width:820px){ .rd-card{max-width:100%} }
 
+
+/* Координатасиз участкалар огоҳлантириши — харитага қараб «ҳаммаси шу»
+   деган хато хулосага келмаслик учун. */
+.nocoord{
+  display:inline-flex;align-items:center;gap:6px;
+  min-height:32px;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;
+  font-size:11.5px;font-weight:750;color:#92400e;
+  background:linear-gradient(180deg,#fef6e4,#fdeecd);
+  border:1px solid #f4d38a;
+  box-shadow:var(--shadow-sm), var(--ring-in);
+  transition:transform var(--dur-1) var(--ease-out),box-shadow var(--dur-1) var(--ease-out);
+}
+.nocoord:hover{transform:translateY(-1px);box-shadow:var(--shadow-md), var(--ring-in-strong)}
+.nocoord:active{transform:translateY(0) scale(.97)}
+.nocoord-ic{flex-shrink:0;display:flex}
+.nocoord-n{font-weight:900;font-variant-numeric:tabular-nums}
+body[data-theme="dark"] .nocoord{
+  background:linear-gradient(180deg,#3a2c10,#2c210c);
+  border-color:#6b5320;color:#fbbf24;
+}
+
 </style>
 </head>
 <body>
@@ -2817,6 +2838,7 @@ body[data-theme="dark"] .rd-yes{color:#5fd48b}
   <div class="kpis" id="kpis"></div>
 
   <div class="toolbar">
+    <span id="noCoordNotice"></span>
     <button class="tb-btn" id="openSearch" onclick="openSearchPanel()" title="Қидирув">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <span>Қидирув</span>
@@ -3267,6 +3289,11 @@ body[data-theme="dark"] .rd-yes{color:#5fd48b}
         <option value="changed">Тоифаси ўзгарган</option>
       </select>
       <select id="mrDist" onchange="renderMasterRegistry()" style="border:0;border-radius:9px;padding:9px 11px;font-size:12.5px;font-weight:700;color:#0f1a36;cursor:pointer"></select>
+      <select id="mrCoord" onchange="renderMasterRegistry()" title="Координата ҳолати бўйича фильтр" style="border:0;border-radius:9px;padding:9px 11px;font-size:12.5px;font-weight:700;color:#0f1a36;cursor:pointer">
+        <option value="all">Координата: барчаси</option>
+        <option value="yes">Координатаси бор</option>
+        <option value="no">Координатасиз</option>
+      </select>
       <button onclick="exportMasterRegistryExcel()" style="display:inline-flex;align-items:center;gap:6px;border:0;border-radius:9px;background:#10b981;color:#fff;font-size:12.5px;font-weight:800;padding:9px 14px;cursor:pointer"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel</button>
       <button onclick="closeMasterRegistry()" style="display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.35);border-radius:9px;background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;font-weight:800;padding:9px 14px;cursor:pointer"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>Харитага қайтиш</button>
     </div>
@@ -6725,6 +6752,39 @@ function renderYearBar(){
 }
 
 /* ================= DISTRICT LIST ================= */
+/* Координатаси йўқ участкалар ҳақида огоҳлантириш.
+   Улар харитада УМУМАН кўринмайди, шу боис фойдаланувчи харитадаги
+   пинларни «ҳаммаси» деб қабул қилиши мумкин эди. Босилса — реестр
+   ўша участкалар бўйича фильтрланган ҳолда очилади. */
+function renderNoCoordNotice(){
+  const host = document.getElementById('noCoordNotice');
+  if(!host) return;
+  let n = 0, ha = 0;
+  for(const sec of ['hk','changed']){
+    for(const r of (SECTIONS_RAW[sec] || [])){
+      if(getCoordinateText(r)) continue;
+      n++; ha += rowArea(sec, r) || 0;
+    }
+  }
+  if(!n){ host.innerHTML = ''; return; }
+  host.innerHTML = `<button class="nocoord" type="button"
+      title="Бу участкаларнинг координатаси киритилмаган, шу боис харитада кўрсатилмайди. Рўйхатда кўриш учун босинг.">
+    <span class="nocoord-ic"><svg viewBox="0 0 24 24" width="13" height="13" fill="none"
+      stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 9v4"/><path d="M12 17v.01"/>
+      <path d="M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+    <span class="nocoord-n">${fmt(n)}</span>
+    <span>харитада йўқ</span>
+  </button>`;
+  host.querySelector('.nocoord').onclick = () => {
+    if(typeof openMasterRegistry !== 'function') return;
+    openMasterRegistry();
+    setTimeout(() => {
+      const sel = document.getElementById('mrCoord');
+      if(sel){ sel.value = 'no'; renderMasterRegistry(); }
+    }, 60);
+  };
+}
 function renderDistrictList(){
   const el = document.getElementById('dlist');
   const titleEl = document.getElementById('dlistTitle');
@@ -6763,6 +6823,7 @@ function renderDistrictList(){
     r.onclick = ()=>selectDistrict(r.dataset.dist);
   });
   // Қаторлар навбат билан чиқсин, рақамлар эса санаб борсин
+  if(typeof renderNoCoordNotice === 'function') renderNoCoordNotice();
   if(typeof revealIn === 'function') revealIn(el, '.drow', {maxStep:14});
   if(typeof animateNumbersIn === 'function') animateNumbersIn(el, '.drow .count');
 }
@@ -11376,6 +11437,9 @@ const MR_USER_KEYS      = ['Бугунги кунда ердан фойдала�
 function _mrItems(){
   const q = ((document.getElementById('mrSearch')||{}).value||'').trim().toLowerCase();
   const dist = (document.getElementById('mrDist')||{}).value || 'all';
+  // Координата ҳолати: 131 та участка координатасиз — улар харитада умуман
+  // кўринмайди. Шу фильтр орқали уларни топиб, координата киритиш мумкин.
+  const coord = (document.getElementById('mrCoord')||{}).value || 'all';
   return _mrRows().map(({sec,row})=>{
     const title = (typeof plotTitle==='function') ? plotTitle(sec,row,null) : (row['Жойлашган участка номи']||row['Лойиҳа номи']||'Участка');
     const d = (typeof rowDistrict==='function') ? rowDistrict(sec,row) : (row['Ҳудуд номи']||'');
@@ -11392,7 +11456,8 @@ function _mrItems(){
     const luser     = _mrText(row, MR_USER_KEYS);
     const blob = (title+' '+dLabel+' '+mfy+' '+stage+' '+initiator+' '+luser).toLowerCase();
     return {sec,row,title,dLabel,mfy,area,cost,jobs,pts,stage,initiator,balance,luser,
-      _ok: (!q || blob.indexOf(q)>=0) && (dist==='all' || dLabel===dist)};
+      _ok: (!q || blob.indexOf(q)>=0) && (dist==='all' || dLabel===dist)
+           && (coord==='all' || (coord==='no' ? pts===0 : pts>0))};
   }).filter(x=>x._ok);
 }
 function renderMasterRegistry(){
