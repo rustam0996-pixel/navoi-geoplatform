@@ -5382,7 +5382,12 @@ function __applyPrintLayout(ws, lastCol, opts){
   ws['!printOptions'] = { horizontalCentered: true, gridLines: false };
   // Repeat first row on every printed page (header)
   if(opts.repeatHeader){
-    ws['!printTitles'] = { top: '1:1' };
+    // Такрорланадиган қатор — устун САРЛАВҲАСИ турган қатор.
+    // Аввал доим '1:1' эди, аммо номма-ном рўйхатда сарлавҳа 4-қаторда:
+    // чоп этилганда 2-саҳифадан бошлаб устун номлари ўрнига ҳисобот
+    // сарлавҳаси такрорланарди ва жадвал ўқилмас эди.
+    const hr = opts.headerRow || 1;
+    ws['!printTitles'] = { top: hr + ':' + hr };
   }
 }
 
@@ -5801,7 +5806,16 @@ async function exportFilteredToExcel(){
 
     // — Sheet 4 — «Номма-ном рўйхат»
     const data = rows.map((r,i) => buildExportRow(r,i));
-    const colKeys = Object.keys(data[0]||{});
+    // «Ортиқча маълумотсиз» талаби: жорий танловда БУТУНЛАЙ бўш қолган
+    // устунлар ҳисоботга киритилмайди. Мисол: битта туман бўйича ҳисоботда
+    // аукцион устунлари умуман тўлдирилмаган бўлса, улар фақат жойни эгаллаб,
+    // раҳбарият эътиборини чалғитарди. Қисман тўлдирилганлари СAҚЛАНАДИ —
+    // маълумотни йўқотиш ихчамликдан муҳимроқ.
+    const __allKeys = Object.keys(data[0] || {});
+    const colKeys = __allKeys.filter(k =>
+      data.some(r => { const v = r[k]; return v !== undefined && v !== null && String(v).trim() !== ''; })
+    );
+    const __droppedCols = __allKeys.length - colKeys.length;
     // Сарлавҳа банди + субсарлавҳа + бўш қатор + ҳосил жадвал
     const listAoa = [
       [_xlsxReportTitle()],
@@ -5812,11 +5826,17 @@ async function exportFilteredToExcel(){
     data.forEach(r => listAoa.push(colKeys.map(k => r[k])));
     const wsList = XLSX_.utils.aoa_to_sheet(listAoa, {cellDates:false});
     const NCOL = colKeys.length;
+    // Устун кенглиги. Аввал энг узун қиймат бўйича 50 гача чўзиларди —
+    // олтита устун 50 бўлиб, варақ экранга ҳам, А4 га ҳам сиғмасди.
+    // Энди 34 билан чегараланади ва матн катак ичида ўралади (wrapText).
     wsList['!cols'] = colKeys.map(k => {
       const max = Math.max(k.length, ...data.map(r => String(r[k]||'').length));
-      return { wch: Math.min(50, Math.max(8, max+2)) };
+      return { wch: Math.min(34, Math.max(8, max+2)) };
     });
-    wsList['!rows'] = [{hpt:28},{hpt:20},{hpt:6},{hpt:30}];
+    wsList['!rows'] = [{hpt:28},{hpt:20},{hpt:6},{hpt:38}];
+    // 766 қаторли рўйхатда фильтрсиз ишлаш қийин — сарлавҳага автофильтр
+    wsList['!autofilter'] = { ref: XLSX_.utils.encode_range(
+      {s:{r:3,c:0}, e:{r:3+data.length, c:NCOL-1}}) };
     wsList['!merges'] = [
       {s:{r:0,c:0}, e:{r:0,c:NCOL-1}},
       {s:{r:1,c:0}, e:{r:1,c:NCOL-1}}
@@ -5836,7 +5856,7 @@ async function exportFilteredToExcel(){
       }
     }
     __applyZebra(wsList, HEAD_ROWS, HEAD_ROWS+data.length-1, 0, NCOL-1);
-    __applyPrintLayout(wsList, NCOL-1, {repeatHeader:true});
+    __applyPrintLayout(wsList, NCOL-1, {repeatHeader:true, headerRow:4});
 
     const wb = XLSX_.utils.book_new();
     XLSX_.utils.book_append_sheet(wb, wsTitle,      'Титул');
@@ -11538,79 +11558,112 @@ function renderMasterRegistry(){
     stat.classList.add('num-in');
   }
 }
-function exportMasterRegistryExcel(){
+/* Реестр рўйхатини Excel'га чиқариш.
+
+   Аввал бу функция HTML жадвални `.xls` номи билан сақларди — Excel уни
+   очганда «формат кенгайтмага мос эмас» огоҳлантириши чиқарарди, автофильтр
+   ва музлатиш бўлмасди, файл номи эса лотинча эди.
+   Энди раҳбарият ҳисоботи билан БИР ХИЛ тизимда: ҳақиқий .xlsx, ўша
+   XLS_STYLE услублари, автофильтр, музлатилган сарлавҳа ва чоп этиш
+   созламаси. Бўш устунлар киритилмайди. */
+async function exportMasterRegistryExcel(){
   const items = _mrItems();
   if(!items.length){ showToast('Экспорт учун маълумот йўқ'); return; }
-  const esc=(s)=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const NCOL = 12;
-  // Excel рақамни санага айлантирмаслиги учун — mso-number-format
-  const NFMT = {0:'0', 1:'0.0', 2:'0.00'};
-  const numCell = (n, dec)=> n==null
-    ? `<td style="border:1px solid #c7d2e0;padding:5px 7px"></td>`
-    : `<td style="border:1px solid #c7d2e0;padding:5px 7px;mso-number-format:'${NFMT[dec||0]}';text-align:right">${Number(n).toFixed(dec||0)}</td>`;
-  const txt = (s, extra)=> `<td style="border:1px solid #c7d2e0;padding:5px 8px;mso-number-format:'\\@';${extra||''}">${esc(s)}</td>`;
-  const th = (s)=> `<th style="background:#1e40af;color:#fff;font-weight:bold;border:1px solid #1e3a8a;padding:7px 8px;text-align:center">${esc(s)}</th>`;
-  let tA=0,tC=0,tJ=0, nA=0,nC=0,nJ=0;
-  items.forEach(x=>{ if(x.area!=null){tA+=x.area;nA++;} if(x.cost!=null){tC+=x.cost;nC++;} if(x.jobs!=null){tJ+=x.jobs;nJ++;} });
-  const today = new Date().toLocaleDateString('uz-UZ');
-  const rows = items.map((x,i)=>`<tr style="background:${i%2?'#f6f8fc':'#ffffff'}">
-      <td style="border:1px solid #c7d2e0;padding:5px;text-align:center">${i+1}</td>
-      ${txt(x.dLabel)}
-      ${txt(x.mfy)}
-      ${txt(x.title)}
-      ${txt(x.initiator)}
-      ${txt(x.luser)}
-      ${txt(x.balance)}
-      ${numCell(x.area,2)}
-      ${numCell(x.cost,1)}
-      ${numCell(x.jobs,0)}
-      ${txt(x.stage)}
-      ${txt(x.sec==='changed'?'Тоифаси ўзгарган':'Ҳукумат комиссияси')}
-    </tr>`).join('');
-  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8">
-    <style>td,th{font-family:'Times New Roman',serif;font-size:11pt} br{mso-data-placement:same-cell}</style></head><body>
-    <table border="0" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
-      <colgroup><col width="40"><col width="135"><col width="135"><col width="290"><col width="170"><col width="170"><col width="160"><col width="80"><col width="105"><col width="80"><col width="165"><col width="150"></colgroup>
-      <tr><td colspan="${NCOL}" style="font-size:15pt;font-weight:bold;text-align:center;padding:10px;border:1px solid #1e3a8a;background:#1d4ed8;color:#fff">НАВОИЙ ВИЛОЯТИ — ЕР УЧАСТКАЛАРИ РЎЙХАТИ</td></tr>
-      <tr><td colspan="${NCOL}" style="font-size:10.5pt;text-align:center;padding:6px;border:1px solid #c7d2e0;background:#eef2ff">Ҳукумат комиссиясига таклифлар ва тоифаси ўзгарган участкалар · Сана: ${esc(today)} · Жами: ${items.length} та</td></tr>
-      <tr>${th('№')}${th('Туман/шаҳар')}${th('МФЙ')}${th('Участка / Лойиҳа номи')}${th('Ташаббускор')}${th('Ердан фойдаланувчи')}${th('Қайси балансда')}${th('Майдон (га)')}${th('Лойиҳа қиймати (млн.$)')}${th('Иш ўрни (нафар)')}${th('Босқич / ҳолат')}${th('Бўлим')}</tr>
-      ${rows}
-      <tr style="background:#dbe4f5;font-weight:bold">
-        <td colspan="7" style="border:1px solid #94a3b8;padding:6px 8px;text-align:right">ЖАМИ:</td>
-        ${numCell(nA?tA:null,2)}${numCell(nC?tC:null,1)}${numCell(nJ?tJ:null,0)}
-        <td colspan="2" style="border:1px solid #94a3b8"></td>
-      </tr>
-    </table></body></html>`;
-  const blob = new Blob(['﻿'+html], {type:'application/vnd.ms-excel;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='er_uchastkalari_royxati_'+new Date().toISOString().slice(0,10)+'.xls';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-  try{ logAudit('Рўйхат Excel экспорт', 'ХК + тоифаси ўзгарган', {jami:items.length}); }catch(e){}
-  showToast('⬇ Раҳбарият учун тайёр Excel юклаб олинди');
-}
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.mode-switch .ms-btn').forEach(b => {
-    b.onclick = () => setViewMode(b.dataset.mode);
-  });
-  // Keep switch in sync when results panel closes via other actions
-  const rp = document.getElementById('resultsPanel');
-  if(rp){
-    const sync = () => {
-      const isOpen = rp.classList.contains('open');
-      document.querySelectorAll('.mode-switch .ms-btn').forEach(b => {
-        const shouldActive = (b.dataset.mode === 'list') === isOpen;
-        b.classList.toggle('active', shouldActive);
-        b.setAttribute('aria-selected', shouldActive ? 'true' : 'false');
-      });
-    };
-    // Observe class changes on resultsPanel
-    const mo = new MutationObserver(sync);
-    mo.observe(rp, {attributes:true, attributeFilter:['class']});
-  }
-});
+  let XLSX_;
+  try { XLSX_ = await ensureXlsxLib(); }
+  catch(e){ showToast('Excel кутубхонаси юкланмади'); return; }
 
-/* ===== ПОЛИГОН УСТМА-УСТ ТУШИШНИ ТЕКШИРИШ =====
-   Янги таклиф координатаси мавжуд участкалар билан кесишса огоҳлантирамиз. */
+  const num = v => (v == null || v === '') ? null : (Number(v) || 0);
+  const COLS = [
+    {k:'№',                          w:6,  get:(x,i)=>i+1,        type:'c'},
+    {k:'Туман / шаҳар',              w:20, get:x=>x.dLabel},
+    {k:'МФЙ',                        w:22, get:x=>x.mfy},
+    {k:'Участка / Лойиҳа номи',      w:34, get:x=>x.title},
+    {k:'Ташаббускор',                w:28, get:x=>x.initiator},
+    {k:'Ердан фойдаланувчи',         w:26, get:x=>x.luser},
+    {k:'Қайси балансда',             w:24, get:x=>x.balance},
+    {k:'Майдон (га)',                w:13, get:x=>num(x.area),  type:'n', z:'#,##0.00'},
+    {k:'Лойиҳа қиймати (млн. долл.)',w:16, get:x=>num(x.cost),  type:'n', z:'#,##0.0'},
+    {k:'Иш ўрни (нафар)',            w:13, get:x=>num(x.jobs),  type:'n', z:'#,##0'},
+    {k:'Босқич / ҳолат',             w:26, get:x=>x.stage},
+    {k:'Бўлим',                      w:26, get:x=>x.sec === 'changed' ? 'Тоифаси ўзгарган' : 'Ҳукумат комиссиясига таклифлар'}
+  ];
+  // Бутунлай бўш устунлар ҳисоботга кирмайди — раҳбарият учун ортиқча жой
+  const cols = COLS.filter(c => items.some((x,i) => {
+    const v = c.get(x,i); return v !== null && v !== undefined && String(v).trim() !== '';
+  }));
+  const NCOL = cols.length;
+
+  // Жорий фильтр контексти — ҳисобот нима бўйича экани кўриниб турсин
+  const distSel  = (document.getElementById('mrDist')  || {}).value || 'all';
+  const secSel   = (document.getElementById('mrSec')   || {}).value || 'all';
+  const coordSel = (document.getElementById('mrCoord') || {}).value || 'all';
+  const qSel     = ((document.getElementById('mrSearch')||{}).value || '').trim();
+  const ctx = [];
+  ctx.push(distSel === 'all' ? 'Барча туманлар' : distSel);
+  if(secSel !== 'all') ctx.push(secSel === 'changed' ? 'Тоифаси ўзгарган' : 'Ҳукумат комиссиясига таклифлар');
+  if(coordSel === 'no')  ctx.push('фақат координатасиз');
+  if(coordSel === 'yes') ctx.push('фақат координатали');
+  if(qSel) ctx.push('қидирув: «' + qSel + '»');
+  const totalHa = items.reduce((s,x) => s + (Number(x.area) || 0), 0);
+  const subtitle = ctx.join(' · ') + ' · Жами: ' + fmt(items.length) + ' та участка · '
+                 + fmtArea(totalHa) + ' га · Сана: ' + new Date().toLocaleDateString('ru-RU');
+
+  const aoa = [
+    ['ЕР УЧАСТКАЛАРИ РЎЙХАТИ — НАВОИЙ ВИЛОЯТИ'],
+    [subtitle],
+    [],
+    cols.map(c => c.k)
+  ];
+  items.forEach((x,i) => aoa.push(cols.map(c => {
+    const v = c.get(x,i);
+    if(c.type === 'n') return (v == null) ? null : {v, t:'n', z:c.z || '#,##0.00'};
+    return (v == null || v === '') ? '' : String(v);
+  })));
+
+  // ЖАМИ сатри — фақат сонли устунлар бўйича
+  const totals = cols.map((c,ci) => {
+    if(ci === 0) return 'ЖАМИ';
+    if(c.type !== 'n') return '';
+    const sum = items.reduce((s,x,i) => s + (Number(c.get(x,i)) || 0), 0);
+    return {v: sum, t:'n', z: c.z || '#,##0.00'};
+  });
+  aoa.push(totals);
+
+  const ws = XLSX_.utils.aoa_to_sheet(aoa, {cellDates:false});
+  const HEAD = 4;                      // маълумот шу қатордан бошланади
+  const lastRow = HEAD + items.length; // ЖАМИ сатри индекси
+  ws['!cols'] = cols.map(c => ({wch:c.w}));
+  ws['!rows'] = [{hpt:26},{hpt:20},{hpt:6},{hpt:36}];
+  ws['!merges'] = [
+    {s:{r:0,c:0}, e:{r:0,c:NCOL-1}},
+    {s:{r:1,c:0}, e:{r:1,c:NCOL-1}}
+  ];
+  ws['!freeze'] = {xSplit:0, ySplit:HEAD};
+  ws['!autofilter'] = {ref: XLSX_.utils.encode_range({s:{r:HEAD-1,c:0}, e:{r:lastRow-1,c:NCOL-1}})};
+
+  __styleRange(ws, 0, 0, 0, NCOL-1, XLS_STYLE.title);
+  __styleRange(ws, 1, 0, 1, NCOL-1, XLS_STYLE.subtitle);
+  __styleRange(ws, HEAD-1, 0, HEAD-1, NCOL-1, XLS_STYLE.tableH);
+  for(let r=HEAD; r<lastRow; r++){
+    for(let c=0; c<NCOL; c++){
+      const t = cols[c].type;
+      __setCellStyle(ws, XLSX_.utils.encode_cell({r,c}),
+        t === 'n' ? XLS_STYLE.dataNum : (t === 'c' ? XLS_STYLE.dataCenter : XLS_STYLE.dataText));
+    }
+  }
+  __applyZebra(ws, HEAD, lastRow-1, 0, NCOL-1);
+  __setCellStyle(ws, XLSX_.utils.encode_cell({r:lastRow,c:0}), XLS_STYLE.totalLabel);
+  for(let c=1; c<NCOL; c++)
+    __setCellStyle(ws, XLSX_.utils.encode_cell({r:lastRow,c}), XLS_STYLE.total);
+  __applyPrintLayout(ws, NCOL-1, {repeatHeader:true, headerRow:HEAD});
+
+  const wb = XLSX_.utils.book_new();
+  XLSX_.utils.book_append_sheet(wb, ws, 'Рўйхат');
+  const stamp = new Date().toISOString().slice(0,10);
+  XLSX_.writeFile(wb, 'Ер_участкалари_рўйхати_' + stamp + '.xlsx');
+  showToast(fmt(items.length) + ' та ёзув Excel’га юкланди');
+}
 function _polyBBox(points){
   let mnLa=Infinity,mxLa=-Infinity,mnLo=Infinity,mxLo=-Infinity;
   for(const p of points){
