@@ -2767,7 +2767,17 @@ body[data-theme="dark"] .nocoord:focus-visible{color:#fbbf24;border-color:#6b532
   -webkit-tap-highlight-color:transparent;
 }
 .deck-cue.down{bottom:20px}
-.deck-cue.up{top:14px}
+/* Тепадаги стрелка энди fixed эмас — оқимда, сарлавҳа чеккасига минади.
+   Аввал position:fixed эди ва реестрнинг қидирув майдони устига тушарди. */
+.deck-cue.up{
+  position:relative;left:auto;top:auto;transform:none;
+  align-self:center;flex-direction:row;gap:8px;
+  /* Манфий маржа ЙЎҚ: реестр сарлавҳаси кенгликка қараб ўралади ва
+     фильтр танловчилари пастки қаторга тушади — тутқич уларга тегиб
+     қоларди. Тоза оралиқ ишончлироқ. */
+  margin:9px auto 3px;padding:0;
+  z-index:5;
+}
 
 /* Доира — шиша сатҳ, ичида стрелка */
 .deck-ring{
@@ -2826,8 +2836,9 @@ body[data-theme="dark"] .deck-ring::after{border-color:#7db0ff}
 }
 @keyframes deckBlink{0%,100%{opacity:.45}50%{opacity:1}}
 .deck-cue:hover .deck-label{animation:none;opacity:1;color:var(--brand);border-color:color-mix(in srgb,var(--brand) 40%,transparent)}
-/* Тепадаги вариантда ёзув стрелканинг ТАГИДА турсин */
-.deck-cue.up{flex-direction:column-reverse}
+/* Тепадаги вариантда ёзув стрелка ЁНИДА — устун эмас, қатор */
+.deck-cue.up .deck-ring{width:38px;height:38px}
+.deck-cue.up .deck-label{animation-duration:2.8s}
 
 /* Драйвер/натижа панели очиқ бўлса — халақит бермасин */
 body.drawer-open .deck-cue.down,
@@ -2837,16 +2848,32 @@ body.results-open .deck-cue.down,
 body.deck-list .deck-cue.down{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(12px)}
 .deck-cue.down{transition:opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out)}
 
-/* ---- Рўйхат панели пастдан сирпаниб чиқади ---- */
+/* ---- Рўйхат панели пастдан кўтарилади ----
+   Ҳаракат уч қисмдан иборат: панел кўтарилади, юқори қирраси думалоқдан
+   текисга «эрийди», харита эса орқада узоқлашиб хиралашади. Учаласи бир
+   вақтда бўлгани учун варақ алмашгандек эмас, қатлам устига қатлам
+   чиққандек ҳис қилинади. */
 #masterRegWrap{
-  transform:translateY(100%);
-  transition:transform .52s cubic-bezier(.22,1,.36,1);
+  transform:translateY(100%) scale(.97);
+  border-radius:26px 26px 0 0;
+  transition:transform .62s cubic-bezier(.16,1,.3,1),
+             border-radius .62s cubic-bezier(.16,1,.3,1),
+             box-shadow .62s ease;
   will-change:transform;
+  box-shadow:0 -30px 60px -30px rgba(6,16,43,0);
+  overflow:hidden;
 }
-#masterRegWrap.deck-in{transform:translateY(0)}
-/* Харита орқада бир оз узоқлашади — қатламлилик ҳисси */
-#mapWrap{transition:transform .52s cubic-bezier(.22,1,.36,1), filter .52s ease}
-body.deck-list #mapWrap{transform:scale(.985) translateY(-10px);filter:brightness(.94)}
+#masterRegWrap.deck-in{
+  transform:translateY(0) scale(1);
+  border-radius:0;
+  box-shadow:0 -30px 60px -20px rgba(6,16,43,.45);
+}
+/* Харита орқага чекинади: кичраяди, хиралашади ва пастга сурилади */
+#mapWrap{transition:transform .62s cubic-bezier(.16,1,.3,1), filter .62s ease}
+body.deck-list #mapWrap{
+  transform:scale(.94) translateY(-18px);
+  filter:brightness(.88) blur(3px);
+}
 
 @media (max-width:720px){
   .deck-cue.down{bottom:14px}
@@ -2854,7 +2881,8 @@ body.deck-list #mapWrap{transform:scale(.985) translateY(-10px);filter:brightnes
 }
 @media (prefers-reduced-motion: reduce){
   .deck-ring::after,.deck-ring svg,.deck-label{animation:none !important}
-  #masterRegWrap{transition:none}
+  #masterRegWrap{transition:none;border-radius:0;transform:translateY(100%)}
+  #masterRegWrap.deck-in{transform:none}
   body.deck-list #mapWrap{transform:none;filter:none}
 }
 
@@ -3377,13 +3405,6 @@ body.deck-list #mapWrap{transform:scale(.985) translateY(-10px);filter:brightnes
 
 <!-- MASTER REGISTRY (Рўйхат — ХК + тоифаси ўзгарган барча участкалар) -->
 <div id="masterRegWrap" style="display:none;position:fixed;inset:0;z-index:1850;background:#f1f5f9;flex-direction:column">
-  <button class="deck-cue up" id="deckUp" type="button" title="Харитага қайтиш">
-    <span class="deck-label">Харитага қайтиш</span>
-    <span class="deck-ring" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-           stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-    </span>
-  </button>
   <div style="background:linear-gradient(135deg,#1d4ed8,#4f46e5);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
     <div style="min-width:0">
       <div style="font-size:16px;font-weight:850;display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Ер участкалари рўйхати</div>
@@ -3406,6 +3427,13 @@ body.deck-list #mapWrap{transform:scale(.985) translateY(-10px);filter:brightnes
       <button onclick="closeMasterRegistry()" style="display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.35);border-radius:9px;background:rgba(255,255,255,.14);color:#fff;font-size:12.5px;font-weight:800;padding:9px 14px;cursor:pointer"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>Харитага қайтиш</button>
     </div>
   </div>
+  <button class="deck-cue up" id="deckUp" type="button" title="Харитага қайтиш (Esc)">
+    <span class="deck-ring" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+    </span>
+    <span class="deck-label">Харитага қайтиш</span>
+  </button>
   <div id="mrStat" style="padding:10px 22px;background:#fff;border-bottom:1px solid #e2e8f0;font-size:12.5px;font-weight:700;color:#475569"></div>
   <div id="mrList" style="flex:1;overflow-y:auto;padding:16px 22px"></div>
 </div>
@@ -3668,10 +3696,6 @@ body.deck-list #mapWrap{transform:scale(.985) translateY(-10px);filter:brightnes
 </div>
 
 <!-- BOTTOM PILL -->
-<button class="bottom-pill" id="openPlatform2">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 10h18M8 20h8"/></svg>
-  Рўйхат шаклида кўриш →
-</button>
 
 <!-- ДИҚҚАТ: vercel.json .js файлларга 1 йиллик immutable кэш қўяди.
      Маълумот файли ўзгарса ?v= албатта янгиланиши шарт, акс ҳолда
@@ -10861,7 +10885,9 @@ function wireEvents(){
     openResultsPanel(currentSection);
   };
   { const _op=document.getElementById('openPlatform'); if(_op) _op.onclick = openPlat; }
-  document.getElementById('openPlatform2').onclick = openPlat;
+  // openPlatform2 («Рўйхат шаклида кўриш») олиб ташланди — дека стрелкаси
+  // айни ишни бажаради, иккита бир хил тугма ортиқча эди.
+  { const _op2=document.getElementById('openPlatform2'); if(_op2) _op2.onclick = openPlat; }
   document.getElementById('drOpen').onclick = openPlat;
   document.getElementById('drOpen').textContent = 'Номма-ном маълумотни очиш';
   document.getElementById('bcRoot').onclick = ()=>setView('uz');
@@ -11536,8 +11562,14 @@ function openMasterRegistry(){
   }
   // Қидирув майдонини тозалаймиз — контекст фильтри тоза бошлансин
   const qel = document.getElementById('mrSearch'); if(qel) qel.value='';
-  w.style.display = 'flex';
   renderMasterRegistry();
+  // Карточкалар панел кўтарилиб бўлгач чиқсин — ҳаммаси бирдан эмас,
+  // кетма-кет: аввал панел келади, кейин мазмун тўлади.
+  if(typeof revealIn === 'function' && !(typeof __reducedMotion === 'function' && __reducedMotion())){
+    clearTimeout(w.__deckReveal);
+    w.__deckReveal = setTimeout(() => revealIn(document.getElementById('mrList'),
+                                               '.mr-card', {maxStep:10}), 300);
+  }
 }
 /* КПИ/фильтр докини йиғиш-очиш (ҳолат сақланади) */
 const KDOCK_KEY='navoi_kpidock_collapsed_v1';
