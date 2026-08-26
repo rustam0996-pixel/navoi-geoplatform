@@ -1653,27 +1653,6 @@ body.search-mode .sp-stage{display:none !important}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Bottom mode switch: Харита / Рўйхат */
-.mode-switch{
-  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:750;
-  display:flex;gap:2px;padding:4px;
-  background:rgba(255,255,255,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border:1px solid #dbe6f5;border-radius:12px;
-  box-shadow:0 12px 32px -12px rgba(15,26,54,.3), 0 4px 12px -4px rgba(15,26,54,.15);
-}
-.mode-switch .ms-btn{
-  display:inline-flex;align-items:center;gap:6px;padding:8px 18px;
-  font-size:12.5px;font-weight:700;color:var(--muted);
-  background:transparent;border:0;border-radius:9px;cursor:pointer;transition:all .18s;
-}
-.mode-switch .ms-btn:hover{color:var(--ink-2);background:rgba(29,78,216,.06)}
-.mode-switch .ms-btn.active{
-  background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;
-  box-shadow:0 4px 12px -3px rgba(29,78,216,.55);
-}
-.mode-switch .ms-btn svg{opacity:.85}
-.mode-switch .ms-btn.active svg{opacity:1}
-/* Shift up when registry drawer opens from bottom */
-body.results-open .mode-switch{bottom:calc(var(--results-gap, 0px) + 14px)}
 
 /* Bottom pill */
 .bottom-pill{
@@ -2774,6 +2753,111 @@ body[data-theme="dark"] .nocoord:focus-visible{color:#fbbf24;border-color:#6b532
 @media (max-width:720px){ #noCoordNotice{left:12px;bottom:64px} }
 
 
+
+/* ===================== ВЕРТИКАЛ ДЕКА =====================
+   «Харита | Рўйхат» иккита таб ўрнига вертикал метафора: харита тепада,
+   умумий рўйхат пастда. Орасида нафас олаётган стрелка — қаерга
+   ўтилаётгани ўз-ўзидан тушунарли, ортиқча тугма керак эмас. */
+
+.deck-cue{
+  position:fixed;left:50%;z-index:1900;
+  transform:translateX(-50%);
+  display:inline-flex;flex-direction:column;align-items:center;gap:5px;
+  border:0;background:transparent;cursor:pointer;padding:6px 10px;
+  -webkit-tap-highlight-color:transparent;
+}
+.deck-cue.down{bottom:20px}
+.deck-cue.up{top:14px}
+
+/* Доира — шиша сатҳ, ичида стрелка */
+.deck-ring{
+  width:46px;height:46px;border-radius:50%;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--brand);
+  background:color-mix(in srgb,var(--panel) 88%,transparent);
+  border:1px solid var(--line);
+  backdrop-filter:blur(12px) saturate(1.4);-webkit-backdrop-filter:blur(12px) saturate(1.4);
+  box-shadow:var(--shadow-md), var(--ring-in);
+  transition:transform var(--dur-2) var(--ease-spring),
+             box-shadow var(--dur-2) var(--ease-out),
+             color var(--dur-2) var(--ease-out);
+}
+/* Тарқалиб борувчи ҳалқа — «бу ерга босинг» ишораси */
+.deck-ring::after{
+  content:"";position:absolute;inset:-2px;border-radius:50%;
+  border:1.5px solid var(--brand);
+  animation:deckPulse 2.4s var(--ease-out) infinite;
+  pointer-events:none;
+}
+@keyframes deckPulse{
+  0%   {transform:scale(1);   opacity:.5}
+  70%  {transform:scale(1.45);opacity:0}
+  100% {transform:scale(1.45);opacity:0}
+}
+/* Стрелка юмшоқ тебранади — йўналишни кўрсатади */
+.deck-ring svg{animation:deckBobDown 2.4s var(--ease-out) infinite}
+.deck-cue.up .deck-ring svg{animation-name:deckBobUp}
+@keyframes deckBobDown{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
+@keyframes deckBobUp  {0%,100%{transform:translateY(2px)} 50%{transform:translateY(-3px)}}
+
+/* Қоронғи режимда бренд кўки тўқ фонда хиралашади — ёрқинроқ тус */
+body[data-theme="dark"] .deck-ring{color:#7db0ff}
+body[data-theme="dark"] .deck-ring::after{border-color:#7db0ff}
+.deck-cue:hover .deck-ring{
+  transform:scale(1.08);
+  color:#fff;
+  background:linear-gradient(140deg,#12266b 0%,var(--brand) 55%,#3f7ff0 100%);
+  border-color:transparent;
+  box-shadow:0 14px 30px -10px rgba(18,38,107,.55), var(--ring-in);
+}
+.deck-cue:active .deck-ring{transform:scale(.96)}
+.deck-cue:focus-visible .deck-ring{outline:2px solid var(--brand);outline-offset:3px}
+
+/* Ёниб-ўчиб турувчи ёзув */
+.deck-label{
+  font-size:11px;font-weight:800;letter-spacing:.25px;white-space:nowrap;
+  color:var(--ink-2);
+  padding:3px 10px;border-radius:999px;
+  background:color-mix(in srgb,var(--panel) 86%,transparent);
+  border:1px solid var(--line);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:var(--shadow-sm);
+  animation:deckBlink 2.4s ease-in-out infinite;
+}
+@keyframes deckBlink{0%,100%{opacity:.45}50%{opacity:1}}
+.deck-cue:hover .deck-label{animation:none;opacity:1;color:var(--brand);border-color:color-mix(in srgb,var(--brand) 40%,transparent)}
+/* Тепадаги вариантда ёзув стрелканинг ТАГИДА турсин */
+.deck-cue.up{flex-direction:column-reverse}
+
+/* Драйвер/натижа панели очиқ бўлса — халақит бермасин */
+body.drawer-open .deck-cue.down,
+body.results-open .deck-cue.down,
+/* Рўйхат очиқ бўлса пастки стрелка кераксиз — у панелдан юқори қатламда
+   (z-index 1900 > 1850) бўлгани учун акс ҳолда рўйхат устида сузиб турарди */
+body.deck-list .deck-cue.down{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(12px)}
+.deck-cue.down{transition:opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out)}
+
+/* ---- Рўйхат панели пастдан сирпаниб чиқади ---- */
+#masterRegWrap{
+  transform:translateY(100%);
+  transition:transform .52s cubic-bezier(.22,1,.36,1);
+  will-change:transform;
+}
+#masterRegWrap.deck-in{transform:translateY(0)}
+/* Харита орқада бир оз узоқлашади — қатламлилик ҳисси */
+#mapWrap{transition:transform .52s cubic-bezier(.22,1,.36,1), filter .52s ease}
+body.deck-list #mapWrap{transform:scale(.985) translateY(-10px);filter:brightness(.94)}
+
+@media (max-width:720px){
+  .deck-cue.down{bottom:14px}
+  .deck-ring{width:42px;height:42px}
+}
+@media (prefers-reduced-motion: reduce){
+  .deck-ring::after,.deck-ring svg,.deck-label{animation:none !important}
+  #masterRegWrap{transition:none}
+  body.deck-list #mapWrap{transform:none;filter:none}
+}
+
 </style>
 </head>
 <body>
@@ -2990,17 +3074,15 @@ body[data-theme="dark"] .nocoord:focus-visible{color:#fbbf24;border-color:#6b532
   <span>Хариталик режимдан чиқиш</span>
 </button>
 
-<!-- BOTTOM MODE SWITCH: Харита / Рўйхат -->
-<div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Кўриниш режими">
-  <button class="ms-btn active" data-mode="map" role="tab" aria-selected="true">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 4l-6 3v13l6-3 6 3 6-3V4l-6 3-6-3z"/><path d="M9 4v13M15 7v13"/></svg>
-    <span>Харита</span>
-  </button>
-  <button class="ms-btn" data-mode="list" role="tab" aria-selected="false">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-    <span>Рўйхат</span>
-  </button>
-</div>
+<!-- ВЕРТИКАЛ ДЕКА: харита тепада, умумий рўйхат пастда.
+     Иккита таб ўрнига нафас олаётган стрелка — йўналиш ўз-ўзидан аён. -->
+<button class="deck-cue down" id="deckDown" type="button" aria-controls="masterRegWrap">
+  <span class="deck-label">Умумий рўйхатга ўтиш</span>
+  <span class="deck-ring" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+         stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+  </span>
+</button>
 
 <!-- SIDE PANEL -->
 <aside class="sidepanel collapsed" id="sidepanel">
@@ -3295,6 +3377,13 @@ body[data-theme="dark"] .nocoord:focus-visible{color:#fbbf24;border-color:#6b532
 
 <!-- MASTER REGISTRY (Рўйхат — ХК + тоифаси ўзгарган барча участкалар) -->
 <div id="masterRegWrap" style="display:none;position:fixed;inset:0;z-index:1850;background:#f1f5f9;flex-direction:column">
+  <button class="deck-cue up" id="deckUp" type="button" title="Харитага қайтиш">
+    <span class="deck-label">Харитага қайтиш</span>
+    <span class="deck-ring" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+           stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+    </span>
+  </button>
   <div style="background:linear-gradient(135deg,#1d4ed8,#4f46e5);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
     <div style="min-width:0">
       <div style="font-size:16px;font-weight:850;display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Ер участкалари рўйхати</div>
@@ -11365,13 +11454,27 @@ function closeResultsPanel(){ const s=document.getElementById('resultsSummary');
 window.addEventListener('resize', ()=>{ if(document.body.classList.contains('results-open')) setResultsOpenState(true); });
 
 /* ================= BOTTOM MODE SWITCH ================= */
+/* Дека тугмаларини улаш. ДИҚҚАТ: эски «Харита | Рўйхат» тугмаларига
+   ҳеч қандай босиш ишлови уланмаган эди — setViewMode умуман
+   чақирилмасди, яъни улар ишламайдиган безак бўлган. */
+(function(){
+  const bind = () => {
+    const dn = document.getElementById('deckDown');
+    const up = document.getElementById('deckUp');
+    if(dn) dn.addEventListener('click', e => { e.preventDefault(); setViewMode('list'); });
+    if(up) up.addEventListener('click', e => { e.preventDefault(); setViewMode('map'); });
+    // Esc — харитага қайтариш
+    document.addEventListener('keydown', e => {
+      if(e.key !== 'Escape') return;
+      const w = document.getElementById('masterRegWrap');
+      if(w && w.classList.contains('deck-in')) setViewMode('map');
+    });
+  };
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+})();
+
 function setViewMode(mode){
-  const btns = document.querySelectorAll('.mode-switch .ms-btn');
-  btns.forEach(b => {
-    const active = b.dataset.mode === mode;
-    b.classList.toggle('active', active);
-    b.setAttribute('aria-selected', active ? 'true' : 'false');
-  });
   if(mode === 'list'){
     openMasterRegistry();
   } else {
@@ -11400,10 +11503,18 @@ function isLayerOn(){ return true; }
 function openMasterRegistry(){
   const w = document.getElementById('masterRegWrap');
   if(!w) return;
-  // Бўлимга кириш сезилсин: панел юмшоқ очилади, боши бўйлаб нур ўтади
-  if(typeof playSheen === 'function') setTimeout(()=>playSheen(w.querySelector('.mr-head, header, .mr-top') || w.firstElementChild), 30);
-  w.classList.add('panel-in');
-  setTimeout(()=>w.classList.remove('panel-in'), 700);
+  clearTimeout(w.__deckT);
+  // Панел пастдан сирпаниб чиқади. display'ни аввал берамиз, transform'ни
+  // эса кейинги кадрда — акс ҳолда браузер ўтишни бошламай, панел
+  // бирдан пайдо бўларди.
+  w.style.display = 'flex';
+  document.body.classList.add('deck-list');
+  // Мажбурий reflow — браузер бошланғич transform'ни «кўради», шундан
+  // кейингина класс қўшилса ўтиш ишлайди. requestAnimationFrame'га
+  // таянмаймиз: у секинлаштирилса панел кўринмай қолиши мумкин эди.
+  void w.offsetWidth;
+  w.classList.add('deck-in');
+  if(typeof playSheen === 'function') setTimeout(()=>playSheen(w.querySelector('.mr-head, header, .mr-top') || w.firstElementChild), 320);
   // Туман фильтри рўйхатини тўлдириш
   const dsel = document.getElementById('mrDist');
   if(dsel && dsel.options.length<=0){
@@ -11444,12 +11555,18 @@ function _initKpiDock(){
   const t=document.getElementById('kpiDockToggle'); if(t) t.setAttribute('aria-expanded', col?'false':'true');
 }
 function closeMasterRegistry(){
-  const w = document.getElementById('masterRegWrap'); if(w) w.style.display='none';
-  document.querySelectorAll('.mode-switch .ms-btn').forEach(b=>{
-    const isMap = b.dataset.mode==='map';
-    b.classList.toggle('active', isMap);
-    b.setAttribute('aria-selected', isMap?'true':'false');
-  });
+  const w = document.getElementById('masterRegWrap');
+  if(!w) return;
+  document.body.classList.remove('deck-list');
+  // Пастга сирпаниб чиқиб кетади, шундан кейингина display:none.
+  // Дарҳол яширсак ҳаракат кўринмай қоларди.
+  w.classList.remove('deck-in');
+  const reduce = (typeof __reducedMotion === 'function') && __reducedMotion();
+  if(reduce){ w.style.display = 'none'; return; }
+  clearTimeout(w.__deckT);
+  w.__deckT = setTimeout(() => {
+    if(!w.classList.contains('deck-in')) w.style.display = 'none';
+  }, 540);   // CSS ўтиши .52s — ундан сал кўпроқ
 }
 function _mrStageLabel(sec,row){
   try{
