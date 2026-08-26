@@ -1133,7 +1133,9 @@ body.sidepanel-open.drawer-open .kpi.clickable::after{width:12px;height:12px;bac
 #mapWrap{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--map-bg)}
 #map{width:100%;height:100%;z-index:1;background:var(--map-bg)}
 .leaflet-container{font-family:inherit;background:var(--map-bg)}
-.leaflet-tile-pane{filter:saturate(.95) brightness(1.02)}
+/* OSM стандарт услуби рангли — уни босиқлаштирамиз, шунда устидаги
+   туман ранглари ва пуфакчалар олдинда туради. */
+.leaflet-tile-pane{filter:saturate(.42) brightness(1.06) contrast(.96)}
 
 /* District bubble markers (like the screenshot) */
 .dist-bubble{
@@ -2737,23 +2739,40 @@ body[data-theme="dark"] .rd-yes{color:#5fd48b}
 
 /* Координатасиз участкалар огоҳлантириши — харитага қараб «ҳаммаси шу»
    деган хато хулосага келмаслик учун. */
+/* Координатасиз участкалар белгиси. Хаританинг пастки чап бурчагида,
+   атайин хира ва кичик — камчилик кўзга ташланиб турмаслиги учун.
+   Устига мишка келганда тўлиқ ёзув очилади. */
+#noCoordNotice{position:fixed;left:20px;bottom:18px;z-index:690}
+body.drawer-open #noCoordNotice,
+body.results-open #noCoordNotice{display:none}
 .nocoord{
   display:inline-flex;align-items:center;gap:6px;
-  min-height:32px;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;
-  font-size:11.5px;font-weight:750;color:#92400e;
-  background:linear-gradient(180deg,#fef6e4,#fdeecd);
-  border:1px solid #f4d38a;
-  box-shadow:var(--shadow-sm), var(--ring-in);
-  transition:transform var(--dur-1) var(--ease-out),box-shadow var(--dur-1) var(--ease-out);
+  height:26px;padding:0 9px;border-radius:999px;cursor:pointer;white-space:nowrap;
+  font-size:10.5px;font-weight:700;
+  color:var(--muted);
+  background:color-mix(in srgb,var(--panel) 82%,transparent);
+  border:1px solid var(--line);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:var(--shadow-sm);
+  opacity:.55;
+  transition:opacity var(--dur-2) var(--ease-out),
+             color var(--dur-2) var(--ease-out),
+             border-color var(--dur-2) var(--ease-out),
+             box-shadow var(--dur-2) var(--ease-out);
 }
-.nocoord:hover{transform:translateY(-1px);box-shadow:var(--shadow-md), var(--ring-in-strong)}
-.nocoord:active{transform:translateY(0) scale(.97)}
-.nocoord-ic{flex-shrink:0;display:flex}
-.nocoord-n{font-weight:900;font-variant-numeric:tabular-nums}
-body[data-theme="dark"] .nocoord{
-  background:linear-gradient(180deg,#3a2c10,#2c210c);
-  border-color:#6b5320;color:#fbbf24;
+.nocoord:hover,.nocoord:focus-visible{
+  opacity:1;color:#92400e;border-color:#f4d38a;box-shadow:var(--shadow-md);
 }
+body[data-theme="dark"] .nocoord:hover,
+body[data-theme="dark"] .nocoord:focus-visible{color:#fbbf24;border-color:#6b5320}
+.nocoord-ic{flex-shrink:0;display:flex;opacity:.8}
+.nocoord-n{font-weight:850;font-variant-numeric:tabular-nums}
+/* Тўлиқ ёзув фақат hover'да — одатда фақат рақам туради */
+.nocoord-full{max-width:0;overflow:hidden;opacity:0;
+  transition:max-width var(--dur-3) var(--ease-out),opacity var(--dur-2) var(--ease-out)}
+.nocoord:hover .nocoord-full,.nocoord:focus-visible .nocoord-full{max-width:150px;opacity:1}
+@media (max-width:720px){ #noCoordNotice{left:12px;bottom:64px} }
+
 
 </style>
 </head>
@@ -2818,6 +2837,7 @@ body[data-theme="dark"] .nocoord{
 </div>
 
 <!-- TOP BAR -->
+<div id="noCoordNotice"></div>
 <div class="topbar">
   <div class="brand" id="brandHome" role="button" tabindex="0" title="Бош саҳифага қайтиш" aria-label="Бош саҳифага қайтиш">
     <div class="brand-logo">NV</div>
@@ -2838,7 +2858,6 @@ body[data-theme="dark"] .nocoord{
   <div class="kpis" id="kpis"></div>
 
   <div class="toolbar">
-    <span id="noCoordNotice"></span>
     <button class="tb-btn" id="openSearch" onclick="openSearchPanel()" title="Қидирув">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <span>Қидирув</span>
@@ -6774,7 +6793,7 @@ function renderNoCoordNotice(){
       <path d="M12 9v4"/><path d="M12 17v.01"/>
       <path d="M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
     <span class="nocoord-n">${fmt(n)}</span>
-    <span>харитада йўқ</span>
+    <span class="nocoord-full">&nbsp;участка харитада йўқ</span>
   </button>`;
   host.querySelector('.nocoord').onclick = () => {
     if(typeof openMasterRegistry !== 'function') return;
@@ -8793,14 +8812,21 @@ function initMap(){
     preferCanvas: true
   }).setView([41.377, 65.1], 7);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 18,
-    subdomains: 'abcd'
+  /* Асос харита. Аввал CARTO Voyager ишлатиларди, аммо CARTO калитсиз
+     фойдаланишни чеклаб, плиткаларга «API KEY REQUIRED» ёзувини босиб
+     жўната бошлади — харита устида ўша ёзувлар пайдо бўларди.
+     Энди OpenStreetMap: калит талаб қилмайди, фақат атрибуция шарт.
+     OSM стандарт услуби рангли, шу боис .leaflet-tile-pane'да
+     десатурация билан босиқлаштирилади — туман ранглари олдинда туради.
+     (Агар кейинчалик CARTO калити олинса, шу URL'ни алмаштириш кифоя.) */
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    crossOrigin: true
   }).addTo(map);
 
   // Attribution (small, bottom-right)
   L.control.attribution({prefix:false, position:'bottomright'})
-    .addAttribution('© OpenStreetMap, © CARTO | Навоий ер платформаси')
+    .addAttribution('© OpenStreetMap | Навоий ер платформаси')
     .addTo(map);
 
   // Zoom control position
