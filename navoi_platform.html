@@ -4612,7 +4612,13 @@ const SOURCE_TAG_DEFS = [
   // 'kon' tag remains in the data model (cards may still show it as a
   // pill) but the chip is hidden from the filter row — clicking it gave
   // no useful information beyond what the Геология category already does.
-  { key:'kon',  label:'Кон участкаси',     color:'#8b5cf6', hidden: true }
+  { key:'kon',  label:'Кон участкаси',     color:'#8b5cf6', hidden: true },
+  // Қуйидагилар маълумотда бор эди, лекин тамға берилмагани учун фильтрда
+  // умуман кўринмасди. Устун тўлдирилган бўлса — участка шу манбага тегишли.
+  { key:'pq430', label:'ПҚ-430 қарори',        color:'#0ea5e9' },
+  { key:'q854',  label:'854-сонли қарор',       color:'#16a34a' },
+  { key:'erqar', label:'Ер қаъридан келган',    color:'#14b8a6' },
+  { key:'mahal', label:'Маҳаллий ҳокимлик',     color:'#a855f7' }
 ];
 function __nonZero(v){
   if(v == null) return false;
@@ -4637,11 +4643,37 @@ function __findValueByTail(row, regex){
        for parcels that the data-science script matched.
    (b) Fallback — column-based detection from row's own data. Used for kon
        (Бино-иншоот/Кон == "Геология") and any pq12/pq13 explicit columns. */
+/* Индекс жорий маълумотга мосми? Калитларнинг камида 90% и мавжуд
+   қаторларга тушса — ишонамиз. Акс ҳолда (қайта импортдан кейин) индекс
+   эскирган ҳисобланиб, умуман ишлатилмайди. Бир марта ҳисобланади. */
+let __srcIdxOk = null;
+function __sourceIndexUsable(){
+  if(__srcIdxOk !== null) return __srcIdxOk;
+  try{
+    const idx = window.SOURCE_TAGS_INDEX || {};
+    const keys = Object.keys(idx);
+    if(!keys.length){ __srcIdxOk = false; return false; }
+    const live = new Set();
+    for(const sec of Object.keys(SECTIONS_RAW || {}))
+      for(const r of (SECTIONS_RAW[sec] || [])) live.add(sec + '-' + r._row);
+    const hit = keys.filter(k => live.has(k)).length;
+    __srcIdxOk = (hit / keys.length) >= 0.9;
+    if(!__srcIdxOk){
+      console.warn('SOURCE_TAGS_INDEX эскирган (' + hit + '/' + keys.length +
+                   ' мос) — тамғалар устунлардан ҳисобланади');
+    }
+  }catch(e){ __srcIdxOk = false; }
+  return __srcIdxOk;
+}
 function sourceTagsFor(sec, row){
   if(!row) return [];
   let tags = [];
-  // (a) Index lookup
-  if(typeof window !== 'undefined' && window.SOURCE_TAGS_INDEX){
+  // (a) Индекс. ДИҚҚАТ: индекс `бўлим-_row` калити бўйича тузилган, _row эса
+  //     Excel'даги қатор рақами. Маълумот қайта импорт қилинса _row лар
+  //     сурилиб, эски индекс БОШҚА участкаларга тегиб кетади. Шу боис у
+  //     фақат жорий маълумотга мос бўлсагина ишлатилади (қаранг:
+  //     __sourceIndexUsable). Мос бўлмаса — тамғалар устунлардан олинади.
+  if(typeof window !== 'undefined' && window.SOURCE_TAGS_INDEX && __sourceIndexUsable()){
     const key = `${sec}-${row._row}`;
     const fromIdx = window.SOURCE_TAGS_INDEX[key];
     if(Array.isArray(fromIdx)){
@@ -4656,7 +4688,10 @@ function sourceTagsFor(sec, row){
   if(__findValueByTail(row, /^п[қк]-?58.*13.*илова|^13-?илова|13-?илова\s+бўйича/)) addTag('pq13');
   // vm88: changed-file "Тоифаси ўзгарган Протокол ёки ВМ фармойишга асосан" — text contains "ВМ-88"
   for(const k of Object.keys(row)){
-    if(/протокол|вм\s*фармойиш/i.test(k) && /\bвм[-\s]?88\b|вилоят\s+88|88-сон/i.test(String(row[k]||''))){
+    // ДИҚҚАТ: JS'да \b фақат лотин ҳарф/рақамни «сўз» деб билади, кирилл
+    // ҳарф билан ишламайди — шу боис аввалги /\bвм[-\s]?88\b/ «ВМ-88-Ф-сон
+    // Фармойиш» матнини УМУМАН топмасди ва vm88 тамғаси 0 та эди.
+    if(/протокол|фармойиш/i.test(k) && /вм[-\s.]?88|вилоят\s+88|88-ф|88-сон/i.test(String(row[k]||''))){
       addTag('vm88');
       break;
     }
@@ -4667,6 +4702,14 @@ function sourceTagsFor(sec, row){
   // column wasn't filled it shouldn't carry the kon source-tag. The
   // dedicated Кон annex file (when uploaded later) will populate this for
   // additional parcels.
+  // ПҚ-430: hk'да «ПҚ-430-сонли қарор бўйича», changed'да «ПҚ-430 18-илова»
+  if(__findValueByTail(row, /^п[қк]-?430/)) addTag('pq430');
+  // 854-сонли қарор (hk)
+  if(__findValueByTail(row, /^854-?сонли/)) addTag('q854');
+  // Ер қаъридан келган таклифлар (hk)
+  if(__findValueByTail(row, /^ер\s+қаъридан\s+келган/)) addTag('erqar');
+  // Маҳаллий ҳокимликлар таклифлари (hk)
+  if(__findValueByTail(row, /^маҳаллий\s+ҳокимлик/)) addTag('mahal');
   const binoKon = String(row['Бино-иншоот/Кон']||'').toLowerCase().trim();
   if(/геолог|^кон\b|^kon\b/.test(binoKon)) addTag('kon');
   if(!tags.includes('kon')){
@@ -5046,13 +5089,14 @@ function renderStageFilter(){
     .map(def => {
       const active = sourceSel === def.key;
       const matched = (sourceStats[def.key] && sourceStats[def.key].count) || 0;
-      // Prefer the user-facing displayCount (source-file row count) over the
-      // matched-master-parcels count. The two differ when a source row is a
-      // sub-plot (1→N split) of a Changed parcel.
-      const cnt = (def.displayCount != null) ? def.displayCount : matched;
+      // Чипда ҲАҚИҚИЙ сон кўрсатилади. Аввал эски манба файлидан олинган
+      // displayCount кўрсатиларди (пқ12 учун 80), фильтр эса 7 та берарди —
+      // яъни рақам босилгандан кейин ўзгариб, фойдаланувчини чалғитарди.
+      // Манба файлидаги сон изоҳга (title) кўчирилди.
+      const cnt = matched;
       const cls = (cnt === 0) ? 'sp-stage-chip muted' : 'sp-stage-chip';
       const tip = (def.displayCount != null && matched !== def.displayCount)
-        ? `${def.label}да ${def.displayCount} та участка кўрсатилган. Платформада улар ${matched} та ёзувда учрайди (бир участка бир неча ёзувда қайтариши мумкин).`
+        ? `${def.label}: платформада ${matched} та участка. Манба файлида ${def.displayCount} та қатор бор эди (бир участка бир неча қаторда қайтариши мумкин).`
         : (cnt === 0 ? 'Бу манбада ҳозирча парча йўқ' : `${def.label} бўйича участкалар`);
       return `<button class="${cls} ${active?'active':''}" data-source="${def.key}"
         style="--ch-bg:${def.color};--ch-dot:${def.color}" type="button"${tip?` title="${tip}"`:''} ${cnt===0?'disabled':''}>
@@ -7934,6 +7978,18 @@ function collectPlotPoints(){
   const catFilter = (typeof activeCategoryFilter === 'function') ? activeCategoryFilter() : null;
   if(catFilter){
     candidates = candidates.filter(c => parcelMatchesCategory(c.section, c.row, catFilter));
+  }
+  // Манба ва босқич фильтрлари ҳам номзодларни ТОРАЙТИРИШИ керак. Аввал улар
+  // фақат «пин умуман кўрсатилсинми» деган қарорга таъсир қиларди, рўйхатни
+  // эса фильтрламасди — натижада «854-сонли қарор» (264 та) босилса ҳам
+  // харитада ўша 621 пин турарди.
+  const _srcFilter = (typeof activeSourceTagFilter === 'function') ? activeSourceTagFilter() : null;
+  if(_srcFilter && typeof rowMatchesSourceTag === 'function'){
+    candidates = candidates.filter(c => rowMatchesSourceTag(c.section, c.row, _srcFilter));
+  }
+  const _stgFilter = (typeof activeStageFilter === 'function') ? activeStageFilter() : null;
+  if(_stgFilter && typeof rowMatchesStage === 'function'){
+    candidates = candidates.filter(c => rowMatchesStage(c.section, c.row, _stgFilter));
   }
   resetPassportRegistry();
   const items = spreadPlotItems(aggregatePlotCandidates(candidates));
