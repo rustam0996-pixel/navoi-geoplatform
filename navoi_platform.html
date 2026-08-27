@@ -1654,17 +1654,6 @@ body.search-mode .sp-stage{display:none !important}
 
 /* Bottom mode switch: Харита / Рўйхат */
 
-/* Bottom pill */
-.bottom-pill{
-  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:700;
-  background:var(--panel);border:1px solid var(--line);border-radius:999px;
-  padding:10px 18px;display:flex;align-items:center;gap:10px;
-  box-shadow:var(--shadow-lg);font-size:12.5px;font-weight:600;color:var(--ink-2);
-  transition:all .2s;
-}
-.bottom-pill:hover{border-color:#b4c5e5}
-.bottom-pill svg{width:15px;height:15px;color:var(--brand)}
-
 /* Breadcrumb at top of map */
 .breadcrumb{
   position:fixed;right:20px;top:72px;z-index:750;
@@ -2011,9 +2000,6 @@ textarea.hk-control{height:auto;min-height:86px;line-height:1.35;resize:vertical
 .rs-open:hover{transform:translateY(-2px);box-shadow:0 4px 12px -4px rgba(15,107,189,.3)}
 .rs-open:active{transform:translateY(0) scale(.95)}
 
-.bottom-pill{transition:all .25s cubic-bezier(.2,.9,.3,1.15)}
-.bottom-pill:hover{transform:translateX(-50%) translateY(-3px);box-shadow:var(--shadow-lg);border-color:#a5bdea}
-.bottom-pill:active{transform:translateX(-50%) scale(.97)}
 
 .rp-btn{transition:all .2s cubic-bezier(.2,.9,.3,1.15)}
 .rp-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:#b5c9ea}
@@ -2884,6 +2870,113 @@ body.deck-list #mapWrap{
   #masterRegWrap{transition:none;border-radius:0;transform:translateY(100%)}
   #masterRegWrap.deck-in{transform:none}
   body.deck-list #mapWrap{transform:none;filter:none}
+}
+
+
+/* ===================== ТЕПА ПАНЕЛ — ҚАЙТА ИШЛАНГАН =====================
+   Муаммо: бренд, КПИ ва 9 та асбоб тугмаси — ҳаммаси бир хил «оқ
+   карточка», бир хил соя, деярли бир хил радиус. Натижада улар бир-бири
+   билан рақобатлашиб, тепа қисм ясси ва тартибсиз кўринарди.
+
+   Ечим — уч поғонали иерархия:
+     1-поғона (юқори)  : бренд ва «Жами ер майдонлари» — асосий, кучли соя
+     2-поғона (пастроқ): асбоблар — БИТТА шиша поднос ичида, ичидаги
+                          тугмалар ўз сояси ва чегарасини йўқотади
+     3-поғона          : амал тугмалари (Ҳисобот, Админ) — рангли, ажралиб
+   Шу боис кўз аввал брендни, сўнг рақамни, кейин асбобларни кўради. */
+
+/* ---------- 1-поғона: бренд ва КПИ ---------- */
+.brand{
+  border-radius:14px;
+  box-shadow:0 1px 2px rgba(10,20,40,.05),
+             0 8px 20px -8px rgba(10,20,40,.18),
+             var(--ring-in-strong);
+}
+/* Тартиб муҳим: .cat-hero да ҳам `cat` синфи бор, иккаласи ҳам бир хил
+   specificity — шу боис умумийси АВВАЛ турсин, акс ҳолда у hero'ни босади. */
+.cat{border-radius:12px}
+.cat-hero{border-radius:14px}
+
+/* ---------- 2-поғона: асбоблар подноси ----------
+   Тугмалар энди алоҳида сузмайди — умумий шиша сатҳ ичида туради. */
+.toolbar{
+  background:color-mix(in srgb, var(--panel) 80%, transparent);
+  border:1px solid color-mix(in srgb, var(--line) 85%, transparent);
+  border-radius:14px;
+  padding:5px;
+  gap:3px !important;
+  backdrop-filter:blur(16px) saturate(1.5);
+  -webkit-backdrop-filter:blur(16px) saturate(1.5);
+  box-shadow:0 1px 2px rgba(10,20,40,.04),
+             0 6px 16px -8px rgba(10,20,40,.14),
+             var(--ring-in);
+}
+body[data-theme="dark"] .toolbar{
+  background:color-mix(in srgb, var(--panel) 78%, transparent);
+  border-color:color-mix(in srgb, var(--line) 90%, transparent);
+}
+/* Поднос ичидаги оддий тугма — шаффоф, чегарасиз */
+.toolbar .tb-btn{
+  background:transparent;
+  border-color:transparent;
+  box-shadow:none;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  border-radius:10px;
+}
+.toolbar .tb-btn:hover{
+  background:color-mix(in srgb, var(--brand) 9%, transparent);
+  border-color:transparent;
+  color:var(--brand);
+  box-shadow:none;
+}
+/* Рангли амал тугмалари поднос ичида ҳам ажралиб турсин */
+.toolbar .tb-btn.primary,
+.toolbar .tb-btn.excel-tb{border-color:transparent}
+.toolbar .tb-btn.primary:hover,
+.toolbar .tb-btn.excel-tb:hover{color:#fff}
+
+/* ---------- 3-поғона: ўзгача БОСИШ ҳаракати ----------
+   Оддий «пастга силжиш» ўрнига — пружинали сиқилиш. Босилганда элемент
+   0.94 га сиқилади, қўйиб юборилганда сал ошиб қайтади (overshoot).
+   Шу боис босиш «қаттиқ» эмас, «тирик» ҳис берадиган бўлади. */
+.brand, .cat, .tb-btn, .deck-cue, .nocoord, .tab, .mr-btn, .rs-action-btn{
+  transition:transform .34s var(--ease-spring),
+             box-shadow .22s var(--ease-out),
+             background .22s var(--ease-out),
+             border-color .22s var(--ease-out),
+             color .22s var(--ease-out);
+}
+.brand:active, .cat:active, .tb-btn:active,
+.nocoord:active, .tab:active, .mr-btn:active, .rs-action-btn:active{
+  transform:scale(.94);
+  transition-duration:.09s;
+}
+/* Бренд ва КПИ каттароқ — уларда сиқилиш нозикроқ бўлсин */
+.brand:active{transform:scale(.975)}
+.cat-hero:active{transform:scale(.97)}
+
+/* Иконка босилганда бир зум орқага чекинади — «босилди» ҳисси */
+.tb-btn svg{transition:transform .28s var(--ease-spring)}
+.tb-btn:active svg{transform:scale(.86)}
+/* Қидирув иконкаси hover'да сал каттаради */
+#openSearch:hover svg{transform:scale(1.12) rotate(-6deg)}
+
+/* Ripple — энди аниқроқ ва бренд рангида */
+.ripple-circle{
+  background:radial-gradient(circle, color-mix(in srgb,var(--brand) 45%,transparent) 0%,
+                                     color-mix(in srgb,var(--brand) 12%,transparent) 60%,
+                                     transparent 72%);
+}
+.tb-btn.primary .ripple-circle,
+.tb-btn.excel-tb .ripple-circle,
+.cat-hero .ripple-circle{
+  background:radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,255,255,.18) 60%, transparent 72%);
+}
+
+@media (prefers-reduced-motion: reduce){
+  .brand:active,.cat:active,.tb-btn:active,.nocoord:active,
+  .tab:active,.mr-btn:active,.rs-action-btn:active{transform:none}
+  .tb-btn:active svg,#openSearch:hover svg{transform:none}
 }
 
 </style>
@@ -10979,7 +11072,7 @@ ${bodyHtml}
 
   /* ===== Ripple effect ===== */
   document.addEventListener('click', (e)=>{
-    const btn = e.target.closest('.tb-btn,.chip,.yr,.rp-btn,.rs-open,.btn,.bottom-pill');
+    const btn = e.target.closest('.tb-btn,.chip,.yr,.rp-btn,.rs-open,.btn,.cat,.deck-cue');
     if(!btn) return;
     const rect = btn.getBoundingClientRect();
     const circle = document.createElement('span');
