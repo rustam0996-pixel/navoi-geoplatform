@@ -134,6 +134,32 @@ def close_gaps(geoms, label):
         closed += sum(len(v) for v in assign.values())
     return closed
 
+def drop_debris(cut, orig_area):
+    """Қирқишдан кейин қолган МАЙДА ПАРЧАЛАРНИ олиб ташлайди.
+
+    Устма-устликни ечишда катта полигон кичиклари билан кесилади ва
+    чеккаларида қоғоз қириндисидек майда бўлаклар қолади. Мисол: Томди
+    туманининг «Sharq OFY» полигони Зарафшон маҳаллалари билан кесилгач,
+    39 та 0.0-0.1 км² лик парчага айланиб қолди — харитада туман
+    майдаланиб кетгандек кўринарди.
+
+    Парча деб ҳисобланади: (а) ўз полигонининг 1% идан кичик ВА
+    (б) 5 гектардан кичик. Иккала шарт бирга — шунда ҳақиқий кичик
+    маҳалла тасодифан ўчиб кетмайди.
+    Ташлангани бўш жой қолдирмайди: у ер аллақачон қўшни полигон
+    остида, чунки бу устма-уст тушган жойнинг қолдиғи.
+    """
+    if cut is None or cut.is_empty: return cut
+    parts = polys_of(cut)
+    if len(parts) <= 1: return cut
+    # 15 гектар чегараси. Ҳақиқий кичик маҳалла тасодифан ўчиб кетмайди,
+    # чунки ИККИНЧИ шарт ҳимоя қилади: кичик маҳалланинг ўз бўлаги унинг
+    # майдонининг 100% и бўлади, яъни 1% дан катта — сақланади.
+    keep = [p for p in parts
+            if p.area >= orig_area * 0.01 or p.area * M_LAT * M_LON >= 150000]
+    if not keep: return cut          # ҳаммаси майда бўлса — тегмаймиз
+    return unary_union(keep)
+
 def close_seams(geoms, max_gap_m=60.0):
     """ЧЕТГА ОЧИЛАДИГАН тирқишларни ёпади.
 
@@ -229,6 +255,7 @@ for i in order:
         hits = [done_geom[j] for j in STRtree(done_geom).query(g)]
         if hits:
             cut = clean(g.difference(unary_union(hits)))
+            cut = drop_debris(cut, g.area)
             if cut is None or cut.is_empty or cut.area < g.area * MIN_KEEP:
                 # Полигон бутунлай йўқолиб кетмасин — қирқмаймиз
                 protected.append(i)
