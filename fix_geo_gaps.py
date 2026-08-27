@@ -134,6 +134,53 @@ def close_gaps(geoms, label):
         closed += sum(len(v) for v in assign.values())
     return closed
 
+def close_seams(geoms, max_gap_m=60.0):
+    """ЧЕТГА ОЧИЛАДИГАН тирқишларни ёпади.
+
+    close_gaps() фақат unary_union ичидаги ЁПИҚ тешикларни топади. Аммо икки
+    полигон орасидаги тирқиш ташқарига очилиб турса, у «тешик» эмас —
+    union'нинг ташқи чегарасидаги ботиқ бўлиб қолади ва сезилмай кетади.
+    Харитада эса у худди тешикдек кўринади.
+
+    Бу ерда морфологик ёпиш (buffer(+d).buffer(-d)) билан тор бўйинли
+    жойлар топилади. МУҲИМ: улардан фақат ИККИ ВА УНДАН ОРТИҚ полигонга
+    тегадиганлари олинади — улар ҳақиқий тирқиш. Битта полигонга
+    тегадигани эса ўша полигоннинг ЎЗ ШАКЛИ (табиий ботиғи); уни
+    тўлдириш туман чегарасини нотўғри катталаштирган бўларди.
+    """
+    d = max_gap_m / M_LON
+    live = [g for g in geoms if g is not None]
+    u = unary_union(live)
+    gap = u.buffer(d, join_style=2).buffer(-d, join_style=2).difference(u)
+    cand = [p for p in polys_of(gap) if p.area * M_LAT * M_LON > 200]
+    if not cand:
+        print('  чет тирқиш: йўқ'); return 0
+
+    parts_idx, parts_geom = [], []
+    for i, g in enumerate(geoms):
+        for pp in polys_of(g):
+            parts_idx.append(i); parts_geom.append(pp)
+    tree = STRtree(parts_geom)
+
+    assign, seams, shape_only = collections.defaultdict(list), 0, 0
+    for pc in cand:
+        pb = pc.boundary.buffer(d / 3)
+        touch = {}
+        for j in tree.query(pc.buffer(d)):
+            L = parts_geom[j].boundary.intersection(pb).length
+            if L > 0: touch[parts_idx[j]] = touch.get(parts_idx[j], 0) + L
+        if len(touch) < 2:
+            shape_only += 1        # полигоннинг ўз шакли — тегмаймиз
+            continue
+        seams += 1
+        assign[max(touch.items(), key=lambda kv: kv[1])[0]].append(pc)
+
+    for i, ps in assign.items():
+        geoms[i] = clean(unary_union([geoms[i]] + ps))
+    print('  чет тирқиш: %d ёпилди, %d бўлак полигоннинг ўз шакли — тегилмади'
+          % (seams, shape_only))
+    return seams
+
 def overlap_area(geoms):
     live = [g for g in geoms if g is not None]
     return sum(g.area for g in live) - unary_union(live).area
@@ -198,6 +245,12 @@ print()
 # ---------- C: артефактларни тозалаш ----------
 print('C. қолдиқ тешикларни ёпиш')
 print('   ёпилди: %d' % close_gaps(geoms, 'C'))
+print()
+
+# ---------- D: четга очиладиган тирқишлар ----------
+print('D. чет тирқишларини ёпиш (икки полигон орасидагилар)')
+close_seams(geoms)
+close_gaps(geoms, 'D')      # ёпишдан кейин майда артефакт қолиши мумкин
 print()
 
 # ---------- текшириш ----------
