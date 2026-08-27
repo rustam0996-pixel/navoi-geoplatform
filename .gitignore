@@ -37,3 +37,4 @@ navoi_platform.backup.*.html
 changed_data_v2.js
 changed_data_v3.js
 changed_data_v4.js
+__pycache__/
