@@ -2897,43 +2897,50 @@ body.deck-list #mapWrap{
 .cat{border-radius:12px}
 .cat-hero{border-radius:14px}
 
-/* ---------- 2-поғона: асбоблар подноси ----------
-   Тугмалар энди алоҳида сузмайди — умумий шиша сатҳ ичида туради. */
-.toolbar{
-  background:color-mix(in srgb, var(--panel) 80%, transparent);
-  border:1px solid color-mix(in srgb, var(--line) 85%, transparent);
-  border-radius:14px;
-  padding:5px;
-  gap:3px !important;
-  backdrop-filter:blur(16px) saturate(1.5);
-  -webkit-backdrop-filter:blur(16px) saturate(1.5);
-  box-shadow:0 1px 2px rgba(10,20,40,.04),
-             0 6px 16px -8px rgba(10,20,40,.14),
+/* ---------- 2-поғона: асбоблар ----------
+   ДИҚҚАТ: аввал бу ерда «битта шиша поднос» ғояси бор эди — тугмалар ўз
+   фонини йўқотиб, умумий сатҳ ичига кирарди. Иккита жиддий камчилиги
+   чиқди: (1) ҳамма нарса битта ясси оқ қаторга айланиб, янгилик ўрнига
+   аксинча зерикарли кўринди; (2) `.toolbar .tb-btn{background:transparent}`
+   қоидаси `.tb-btn.excel-tb` билан БИР ХИЛ вазнда бўлиб, кейин тургани
+   учун уни босиб кетди — «Ҳисобот» тугмаси оқ фонда оқ ёзув бўлиб
+   БУТУНЛАЙ КЎРИНМАЙ ҚОЛДИ. Шу боис поднос олиб ташланди: тугмалар яна
+   мустақил карточка, фақат чегара ва сояси аниқроқ. */
+.toolbar{gap:6px}
+/* Тугмалар тўлиқ юмалоқ — сайтда чиплар, тамғалар ва белгилар аллақачон
+   шу шаклда, шу боис ягона тилга келади ва бир қарашда янгича кўринади. */
+.tb-btn{
+  border-radius:999px;
+  border-color:color-mix(in srgb, var(--line) 92%, transparent);
+}
+/* Устига келганда бренд рангида ёнади ва кўтарилади.
+   ДИҚҚАТ: рангли амал тугмалари (primary / excel / admin) истисно —
+   акс ҳолда уларнинг ранги оқга алмашиб, ёзуви ўқилмай қоларди. */
+.tb-btn:not(.primary):not(.excel-tb):not(.admin-tb):hover{
+  background:#fff;
+  border-color:color-mix(in srgb, var(--brand) 45%, #ffffff);
+  color:var(--brand);
+  box-shadow:0 6px 16px -6px color-mix(in srgb, var(--brand) 55%, transparent),
+             var(--ring-in-strong);
+}
+body[data-theme="dark"] .tb-btn:not(.primary):not(.excel-tb):not(.admin-tb):hover{
+  background:#1a2440;
+}
+
+/* Бренд логотипи — юмшоқ нур таратади, тепа панелнинг «юраги» бўлиб туради */
+.brand-logo{
+  position:relative;
+  box-shadow:0 6px 16px -5px rgba(18,38,107,.55),
+             0 0 0 4px color-mix(in srgb, var(--brand) 10%, transparent),
+             var(--ring-in);
+  transition:box-shadow .3s var(--ease-out), transform .34s var(--ease-spring);
+}
+.brand:hover .brand-logo{
+  transform:scale(1.06) rotate(-3deg);
+  box-shadow:0 10px 22px -6px rgba(18,38,107,.6),
+             0 0 0 6px color-mix(in srgb, var(--brand) 16%, transparent),
              var(--ring-in);
 }
-body[data-theme="dark"] .toolbar{
-  background:color-mix(in srgb, var(--panel) 78%, transparent);
-  border-color:color-mix(in srgb, var(--line) 90%, transparent);
-}
-/* Поднос ичидаги оддий тугма — шаффоф, чегарасиз */
-.toolbar .tb-btn{
-  background:transparent;
-  border-color:transparent;
-  box-shadow:none;
-  backdrop-filter:none;-webkit-backdrop-filter:none;
-  border-radius:10px;
-}
-.toolbar .tb-btn:hover{
-  background:color-mix(in srgb, var(--brand) 9%, transparent);
-  border-color:transparent;
-  color:var(--brand);
-  box-shadow:none;
-}
-/* Рангли амал тугмалари поднос ичида ҳам ажралиб турсин */
-.toolbar .tb-btn.primary,
-.toolbar .tb-btn.excel-tb{border-color:transparent}
-.toolbar .tb-btn.primary:hover,
-.toolbar .tb-btn.excel-tb:hover{color:#fff}
 
 /* ---------- 3-поғона: ўзгача БОСИШ ҳаракати ----------
    Оддий «пастга силжиш» ўрнига — пружинали сиқилиш. Босилганда элемент
